@@ -22,7 +22,12 @@ file(GLOB NGPT_CORE_SOURCES ${NGPT_CORE_DIR}/*.cpp)
 add_library(ngpt_core STATIC ${NGPT_CORE_SOURCES})
 target_include_directories(ngpt_core PUBLIC ${NGPT_CORE_DIR})
 
-set(SANITIZE_FLAGS -fsanitize=address,undefined -fno-sanitize-recover=all -g)
+option(NGPT_SANITIZE "Build tests with ASan/UBSan" ON)
+if(NGPT_SANITIZE)
+  set(SANITIZE_FLAGS -fsanitize=address,undefined -fno-sanitize-recover=all -g)
+else()
+  set(SANITIZE_FLAGS -g)
+endif()
 target_compile_options(ngpt_core PUBLIC ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(ngpt_core PUBLIC ${SANITIZE_FLAGS})
 
