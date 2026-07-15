@@ -1,0 +1,17 @@
+# host test build
+/build/
+
+# Pyrite64 build artifacts (the editor also writes its own game/.gitignore)
+game/build/
+game/engine/
+game/filesystem/
+game/Makefile
+game/*.z64
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# macOS
+.DS_Store
