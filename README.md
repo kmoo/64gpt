@@ -28,11 +28,10 @@ The on-console proof is re-verified continuously:
 - [x] **M0** — repo skeleton, docs, verification loop: toolchain +
       Ares installed, stock example built headlessly and boots in Ares
       (`docs/milestones/m0.md`)
-- [x] **M1 (host side)** — walking skeleton: canned-line "model" behind
-      the final streaming API; parser + generation tests green under
-      ASan/UBSan *(ROM assembly pending M0's toolchain —
-      `docs/milestones/m1.md`)*
-- [ ] **M1 (on Ares)** — ROM v0.1: SELFTEST PASS + streaming dialogue box
+- [x] **M1** — ROM v0.1, the walking skeleton: canned-line "model" behind
+      the final streaming API; parser + generation tests green; boots in
+      Ares with SELFTEST PASS + streaming dialogue box
+      (`docs/milestones/m1.md`)
 - [ ] **M2** — ROM v0.2: real GRU overfit on ONE line (first neural net on N64)
 - [ ] **M3** — ROM v0.3: conditioning on a dozen hand-written lines
 - [ ] **M4** — ROM v0.9: full generated corpus + temperature/top-k sampling
@@ -58,7 +57,10 @@ Build the ROM (macOS, after the one-time toolchain install —
 `docs/01-toolchain-and-pyrite64.md`):
 
 ```sh
-./pyrite64 --cli --cmd build game/project.p64proj   # → game/64gpt.z64
+# ./pyrite64 is a local wrapper that execs the app binary by its REAL path —
+# running it via a plain symlink breaks the app's resource lookup and the
+# build fails with an empty Makefile (docs/01-toolchain-and-pyrite64.md).
+./pyrite64 --cli --cmd build "$PWD/game/project.p64proj"   # → game/64gpt.z64
 ares game/64gpt.z64
 ```
 

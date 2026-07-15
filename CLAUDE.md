@@ -25,16 +25,21 @@ background. Explain why, not just what.
 ## Commands
 
 ```sh
-# host tests (any OS)
-cmake -B build tests && cmake --build build && ctest --test-dir build --output-on-failure
-# on macOS 26.5 + AppleClang 17 ASan deadlocks before main — disable locally:
-cmake -B build tests -DNGPT_SANITIZE=OFF
+# host tests — verified sequence on this Mac (macOS 26.5 + AppleClang 17:
+# ASan deadlocks before main, so sanitizers off; rm build/ first so a stale
+# sanitized CMake cache can't leak into the fresh configure)
+rm -rf build
+cmake -B build tests -DNGPT_SANITIZE=OFF && cmake --build build && ctest --test-dir build --output-on-failure
 
 # regenerate model blob + golden vectors + ROM self-test header (one script = no drift)
 python3 trainer/make_canned_blob.py
 
 # ROM build (after one-time toolchain install, see docs/01-toolchain-and-pyrite64.md)
-./pyrite64 --cli --cmd build game/project.p64proj   # → game/64gpt.z64, boot in Ares
+# ⚠ invoke the app binary by its REAL path — exec'ing it via a symlink breaks
+# NSBundle's Resources/ lookup and every build template silently loads empty
+# (0-byte generated game/Makefile → "make: No targets"). Any CWD works.
+"$HOME/GitHub/Pyrite64-v0.4.0/Pyrite64.app/Contents/MacOS/pyrite64" \
+  --cli --cmd build "$PWD/game/project.p64proj"   # → game/64gpt.z64, boot in Ares
 ```
 
 ## Hard constraints (violating any breaks the build or the bit-exactness proof)

@@ -1,0 +1,9 @@
+{
+  "name": "64gpt",
+  "pathEmu": "ares",
+  "pathN64Inst": "",
+  "romName": "64gpt",
+  "sceneIdLastOpened": 1,
+  "sceneIdOnBoot": 1,
+  "sceneIdOnReset": 1
+}

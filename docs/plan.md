@@ -11,12 +11,14 @@ live in `docs/milestones/`.
   loop, Mac toolchain (GCC 14.4.0 → `~/pyrite64-sdk`), pyrite64-mac
   v0.4.0, stock `empty` example built headlessly and boots in Ares.
   CLI path gotchas documented in `docs/milestones/m0.md`. Tagged `m0`.
-- **M1 (host side)** — done and verified on Linux/gcc (with ASan/UBSan) and
-  macOS/AppleClang (with `-DNGPT_SANITIZE=OFF`; the ASan runtime deadlocks
-  before `main` on macOS 26.5 + AppleClang 17 — see `docs/milestones/m1.md`).
-  **Pending:** one-time Pyrite64 project creation in `game/`
-  (`game/README.md`), headless ROM build, Ares boot with SELFTEST PASS,
-  then tag `m1`.
+- **M1** — done (2026-07-15): canned-line model behind the frozen
+  streaming API. Host tests green on Linux/gcc (ASan/UBSan) and
+  macOS/AppleClang (`-DNGPT_SANITIZE=OFF`; the ASan runtime deadlocks
+  before `main` on macOS 26.5 + AppleClang 17). ROM v0.1 built headlessly
+  and verified in Ares: SELFTEST PASS, line streams, A regenerates
+  (screenshot in `docs/milestones/m1.md`). CLI invocation gotcha (must
+  exec the app binary by real path, not a symlink) documented there and
+  in `CLAUDE.md`. Tagged `m1`.
 - **M2–M6** — not started; specified below.
 
 ## Context

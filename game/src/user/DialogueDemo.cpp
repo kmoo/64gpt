@@ -2,11 +2,11 @@
  * 64GPT dialogue demo — Pyrite64 object script.
  *
  * Attach to any (empty) object via a "Code" component in the editor.
- * Init  : loads the model blob from the ROM filesystem and runs the boot
- *         self-test (full generation vs the committed golden bytes).
- * Update: streams a few characters per frame; A regenerates.
- * Draw  : dialogue box + SELFTEST PASS/FAIL banner, drawn with the
- *         engine's builtin debug font (uppercase only — fine for now).
+ * initDelete: loads the model blob from the ROM filesystem and runs the
+ *             boot self-test (full generation vs the committed goldens).
+ * update    : streams a few characters per frame; A regenerates.
+ * draw      : dialogue box + SELFTEST PASS/FAIL banner, drawn with the
+ *             engine's builtin debug font (uppercase only — fine for now).
  */
 #include <stdlib.h>
 #include "script/userScript.h"
@@ -54,22 +54,25 @@ namespace P64::Script::C64D1A106DE00001
 {
   P64_DATA();
 
-  void init(Object& obj, Data *data)
+  /* v0.4.0 lifecycle: one hook for both spawn (isDelete=false) and
+   * teardown (isDelete=true) — the scanner only recognizes
+   * initDelete/update/draw/onEvent/onCollision (src/build/scriptBuilder.cpp). */
+  void initDelete(Object& obj, Data *data, bool isDelete)
   {
+    if(isDelete) {
+      if(blobData) {
+        free(blobData);
+        blobData = nullptr;
+      }
+      loaded = false;
+      return;
+    }
+
     int blobSize = 0;
     blobData = (uint8_t*)asset_load("rom:/model.bin", &blobSize);
     loaded = blobData && ngpt_load(&model, blobData, (uint32_t)blobSize) == NGPT_OK;
     selftestPass = loaded && runSelfTest();
     restartGeneration();
-  }
-
-  void destroy(Object& obj, Data *data)
-  {
-    if(blobData) {
-      free(blobData);
-      blobData = nullptr;
-    }
-    loaded = false;
   }
 
   void update(Object& obj, Data *data, float deltaTime)

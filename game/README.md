@@ -31,6 +31,10 @@ are generated and git-ignored.
    ./pyrite64 --cli --cmd build /path/to/64gpt/game/project.p64proj
    ```
 
+   (`./pyrite64` must exec the app binary by its real path, not be a
+   symlink to it — see the Building section of
+   `docs/01-toolchain-and-pyrite64.md` for why.)
+
 4. Boot the resulting `.z64` in Ares. You should see `SELFTEST PASS`,
    the canned line streaming in, and A regenerating it.
 

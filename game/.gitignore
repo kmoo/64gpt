@@ -1,0 +1,17 @@
+# Generic build files
+*.z64
+build
+filesystem
+*.blend1
+
+# Auto-generated files
+Makefile
+
+# Pyrite64 files
+assets/p64
+src/p64
+engine
+
+# object files for the symlinked core escape build/ (compiled as
+# src/user/../../../core/*.cpp), landing here
+core/

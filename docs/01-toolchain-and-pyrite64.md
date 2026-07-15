@@ -68,8 +68,32 @@ GUI: the editor's build button. Headless (what we script and what CI
 would run — a GPU isn't even required):
 
 ```sh
-./pyrite64 --cli --cmd build /path/to/64gpt/game/project.p64proj
+"$HOME/GitHub/Pyrite64-v0.4.0/Pyrite64.app/Contents/MacOS/pyrite64" \
+  --cli --cmd build /path/to/64gpt/game/project.p64proj
 ```
+
+**Invoke the binary by its real path — never through a symlink.** At
+startup the app locates its build templates (`data/`, `n64/`) relative
+to the executable via macOS's bundle API (`NSBundle`/`SDL_GetBasePath`),
+then `chdir`s there. When the process is exec'd through a symlink, the
+kernel reports the *symlink's* path as the executable path, the bundle's
+`Resources/` directory is never found, and — because the engine's file
+loader silently returns `""` for missing files — every generated file
+comes out **empty**. The symptom is a 0-byte `game/Makefile` and
+`make: *** No targets. Stop.` (M0's "run from the clone root" rule was a
+misdiagnosis of this: the CWD never mattered, only how the binary was
+invoked.) A wrapper *script* is fine, because `exec` inside it uses the
+real path:
+
+```sh
+# ./pyrite64 (git-ignored, machine-local)
+#!/bin/sh
+exec "$HOME/GitHub/Pyrite64-v0.4.0/Pyrite64.app/Contents/MacOS/pyrite64" "$@"
+```
+
+Also pass the project as an **absolute path** (`"$PWD/game/..."`): the
+app has chdir'd away from your shell's directory, so a relative project
+path would resolve inside the app bundle.
 
 Output: `game/64gpt.z64`. Boot it:
 
