@@ -13,5 +13,8 @@ __pycache__/
 *.pyc
 .venv/
 
+# machine-local symlink to the pinned Pyrite64.app CLI binary
+/pyrite64
+
 # macOS
 .DS_Store

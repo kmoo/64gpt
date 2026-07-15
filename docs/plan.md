@@ -7,9 +7,10 @@ live in `docs/milestones/`.
 
 ## Status at handoff (2026-07-15)
 
-- **M0** — repo skeleton, docs, host verification loop: done.
-  **Pending:** Mac toolchain install + stock-example Ares boot
-  (`docs/milestones/m0.md` checklist), then tag `m0`.
+- **M0** — done (2026-07-15): repo skeleton, docs, host verification
+  loop, Mac toolchain (GCC 14.4.0 → `~/pyrite64-sdk`), pyrite64-mac
+  v0.4.0, stock `empty` example built headlessly and boots in Ares.
+  CLI path gotchas documented in `docs/milestones/m0.md`. Tagged `m0`.
 - **M1 (host side)** — done and verified on Linux/gcc (with ASan/UBSan) and
   macOS/AppleClang (with `-DNGPT_SANITIZE=OFF`; the ASan runtime deadlocks
   before `main` on macOS 26.5 + AppleClang 17 — see `docs/milestones/m1.md`).

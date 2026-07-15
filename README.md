@@ -25,8 +25,9 @@ The on-console proof is re-verified continuously:
 
 ## Status
 
-- [x] **M0** — repo skeleton, docs, verification loop *(toolchain
-      install on the Mac still pending — see `docs/milestones/m0.md`)*
+- [x] **M0** — repo skeleton, docs, verification loop: toolchain +
+      Ares installed, stock example built headlessly and boots in Ares
+      (`docs/milestones/m0.md`)
 - [x] **M1 (host side)** — walking skeleton: canned-line "model" behind
       the final streaming API; parser + generation tests green under
       ASan/UBSan *(ROM assembly pending M0's toolchain —
@@ -86,6 +87,7 @@ embedded ML — start at 00 and read in order, or jump in:
 
 | what | version | why |
 |---|---|---|
-| [pyrite64-mac](https://github.com/proverbiallemon/pyrite64-mac) | latest tag (v0.4.0 at time of writing) | early-dev engine, breaking changes; upgrade deliberately |
+| [pyrite64-mac](https://github.com/proverbiallemon/pyrite64-mac) | **v0.4.0** (release-asset app at `~/GitHub/Pyrite64-v0.4.0`, source clone at `~/GitHub/pyrite64-mac`) | early-dev engine, breaking changes; upgrade deliberately |
+| MIPS toolchain | GCC 14.4.0 in `~/pyrite64-sdk` | installed by the Toolchain Manager |
 | Ares emulator | v147+ | hardware-accurate; installed by the Toolchain Manager |
 | Python | 3.12 via `uv python pin 3.12` (from M2) | PyTorch wheel availability |
