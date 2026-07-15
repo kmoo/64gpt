@@ -42,6 +42,13 @@ python3 trainer/make_canned_blob.py
   --cli --cmd build "$PWD/game/project.p64proj"   # → game/64gpt.z64, boot in Ares
 ```
 
+## Public repo
+
+This repo is public. Nothing private ever gets committed: no absolute
+`/Users/<name>` paths (write `~` or `$HOME`), no emails, no machine-local
+config (that goes in git-ignored `CLAUDE.local.md`). Check `git diff
+--cached` for leaks before every commit, and again before any push.
+
 ## Hard constraints (violating any breaks the build or the bit-exactness proof)
 
 - `core/` is the inference engine: **flat directory, `.cpp`/`.h` only** —

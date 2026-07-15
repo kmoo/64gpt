@@ -17,13 +17,23 @@ namespace P64::Script::C64D1A106DE00001   // 16-hex-digit UUID, the script's ide
 {
   P64_DATA();                              // per-instance data (ours is empty)
 
-  void init(Object& obj, Data *data);                      // on spawn
-  void destroy(Object& obj, Data *data);                   // on removal
-  void update(Object& obj, Data *data, float deltaTime);   // once per frame, logic
-  void fixedUpdate(Object& obj, Data *data, float dt);     // physics steps (unused here)
-  void draw(Object& obj, Data *data, float deltaTime);     // once per camera pass, rendering
+  void initDelete(Object& obj, Data *data, bool isDelete);  // spawn (false) AND removal (true)
+  void update(Object& obj, Data *data, float deltaTime);    // once per frame, logic
+  void draw(Object& obj, Data *data, float deltaTime);      // once per camera pass, rendering
+  void onEvent(...);                                        // engine events (unused here)
+  void onCollision(...);                                    // collisions (unused here)
 }
 ```
+
+⚠ **These five names are the complete set in pyrite64-mac v0.4.0**, and
+the build scanner (`src/build/scriptBuilder.cpp`) **silently ignores any
+other function name**. Upstream docs describe an
+`Init/Update/FixedUpdate/Draw/Destroy` lifecycle — the fork doesn't have
+it. We lost an afternoon to this: a `void init(...)` compiles fine, is
+never called, and the symptom is simply "nothing happens" (for us:
+SELFTEST FAIL with no text, because the model never loaded). Spawn and
+teardown share one hook, `initDelete`, distinguished by the `isDelete`
+flag.
 
 The UUID in the namespace is how the editor identifies the script — you
 can rename the file freely, but never change the UUID. `P64_DATA(...)`
@@ -31,9 +41,11 @@ declares per-instance state the engine allocates for you; since our demo
 is a singleton we keep shared state in an anonymous namespace instead
 (a pattern the official examples also use) and leave `P64_DATA` empty.
 
-## `init` — load the model, prove it works
+## `initDelete` (spawn leg) — load the model, prove it works
 
 ```cpp
+if(isDelete) { /* free the blob, mark unloaded */ return; }
+
 int blobSize = 0;
 blobData = (uint8_t*)asset_load("rom:/model.bin", &blobSize);   // DFS → RAM
 loaded = blobData && ngpt_load(&model, blobData, blobSize) == NGPT_OK;

@@ -13,8 +13,11 @@ __pycache__/
 *.pyc
 .venv/
 
-# machine-local symlink to the pinned Pyrite64.app CLI binary
+# machine-local wrapper script for the pinned Pyrite64.app CLI binary
 /pyrite64
+
+# machine-local Claude instructions (private)
+/CLAUDE.local.md
 
 # macOS
 .DS_Store

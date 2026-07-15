@@ -46,7 +46,7 @@ Environment: repo `~/GitHub/64gpt` (git `main`, remote `git@github.com:kmoo/64gp
   ```
   (`assets_conv +=` would NOT work — the template assigns `assets_conv =` *after* the include; an extra prerequisite on the `.dfs` target does.) Runtime load: libdragon `asset_load("rom:/model.bin", &size)`.
 - **Dialogue box reference implementation exists:** upstream example `n64/examples/jam25/src/user/systems/dialog.cpp` + `systems/fonts.cpp` — a complete text box with `rdpq_font_load` + `rdpq_text_printf` from a script's `Draw`. Crib this pattern for M1 instead of inventing one.
-- Object scripts: C++ in `src/user/`, UUID namespace `P64::Script::<UUID>`, `P64_DATA` params, lifecycle `Init/Update/FixedUpdate/Draw/Destroy/OnEvent` (docs `manual/script/objScript.md`).
+- Object scripts: C++ in `src/user/`, UUID namespace `P64::Script::<UUID>`, `P64_DATA` params. Lifecycle **in the mac fork v0.4.0**: `initDelete/update/draw/onEvent/onCollision` only — the scanner (`src/build/scriptBuilder.cpp`) silently drops any other name. (Upstream docs' `Init/Update/FixedUpdate/Draw/Destroy` does NOT apply; verified the hard way in M1, see `docs/02-pyrite64-scripting.md`.)
 - mac fork ([proverbiallemon/pyrite64-mac](https://github.com/proverbiallemon/pyrite64-mac)): Apple-Silicon-only, Toolchain Manager installs libdragon SDK to `$HOME/pyrite64-sdk` (~30–60 min, **user-attended**, no sudo), auto-installs Ares via Homebrew.
 - **Endianness:** N64 is big-endian MIPS, Mac is little-endian. Inference is pure integer math and the blob parser is byte-oriented ⇒ bit-exact identical output on host tests, Ares, and real N64. This is what lets host TDD prove hardware correctness.
 
