@@ -19,5 +19,8 @@ __pycache__/
 # machine-local Claude instructions (private)
 /CLAUDE.local.md
 
+# conference-talk screenshot stash (machine-local)
+/talk/
+
 # macOS
 .DS_Store
