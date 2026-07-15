@@ -1,0 +1,16 @@
+[project]
+name = "ngpt-trainer"
+version = "0.2.0"
+description = "Training/quantization/export pipeline for the 64GPT N64 dialogue model"
+requires-python = "==3.12.*"
+dependencies = [
+    "torch>=2.4",
+    "numpy>=2.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
