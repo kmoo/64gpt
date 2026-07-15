@@ -1,0 +1,4 @@
+#!/bin/zsh
+# Project shim — the global hardened launcher lives at ~/bin/qwen
+# (nice, memory guard, lockfile, start/stop/status).
+exec "$HOME/bin/qwen" "$@"
