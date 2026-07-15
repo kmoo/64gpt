@@ -27,7 +27,7 @@ Goal (non-negotiable): a character-level GRU (~100K params, int8) generating sho
 
 **Emulator-first workflow (per user):** Ares (v147+, hardware-accurate) is the per-milestone gate — every ROM must boot there with `SELFTEST PASS`. The user has an EverDrive-64; real-console runs are **occasional spot-checks**, recommended at M2 (first neural net on silicon) and required for final v1.0 (M6). Bit-exact integer math makes this safe: host-green ⟹ Ares-green ⟹ silicon-green.
 
-Environment: repo `/Users/luke/GitHub/64gpt` (git `main`, remote `git@github.com:kmoo/64gpt.git`, one empty commit). macOS Apple Silicon, no N64 toolchain yet. Python 3.14.6 → **pin 3.12 via uv** for PyTorch. Host-side milestones (core/, tests/, trainer/) are OS-agnostic; ROM builds require the Mac toolchain install (M0).
+Environment: repo `~/GitHub/64gpt` (git `main`, remote `git@github.com:kmoo/64gpt.git`, one empty commit). macOS Apple Silicon, no N64 toolchain yet. Python 3.14.6 → **pin 3.12 via uv** for PyTorch. Host-side milestones (core/, tests/, trainer/) are OS-agnostic; ROM builds require the Mac toolchain install (M0).
 
 ## Verified facts (checked against Pyrite64 source, not just README)
 
