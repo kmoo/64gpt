@@ -46,12 +46,16 @@ int ngpt_load(ngpt_model *m, const void *blob, uint32_t blob_len)
 
 void ngpt_reset(ngpt_ctx *ctx, const ngpt_model *m, const char *prompt)
 {
-  (void)prompt; /* canned model ignores conditioning; used from M3 on */
   ctx->model = m;
   ctx->pos = 0;
   ctx->finished = 0;
   ctx->cur = 0; /* GRU: generation starts from the EOS token... */
   for (uint32_t j = 0; j < NGPT_GRU_MAX_HIDDEN; ++j) ctx->h[j] = 0; /* ...and h = 0 */
+
+  /* M3 conditioning: prime the GRU on the prompt (h-updates only, no
+   * emission). The canned model ignores prompts. */
+  if (m && m->model_type == NGPT_MODEL_GRU && prompt && prompt[0])
+    ngpt_gru_prime(ctx, prompt);
 }
 
 int ngpt_step(ngpt_ctx *ctx)

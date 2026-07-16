@@ -35,7 +35,10 @@ The on-console proof is re-verified continuously:
 - [x] **M2** — ROM v0.2: real GRU overfit on ONE line — first neural net
       on N64: int8 weights, integer-only inference, bit-identical to the
       Python trainer (`docs/milestones/m2.md`)
-- [ ] **M3** — ROM v0.3: conditioning on a dozen hand-written lines
+- [x] **M3** — ROM v0.3: conditioning on a dozen hand-written lines —
+      prompt priming (`NPC=… MOOD=… EV=…|`) selects which line the GRU
+      speaks; 12/12 bit-exact on host and in the ROM self-test
+      (`docs/milestones/m3.md`)
 - [ ] **M4** — ROM v0.9: full generated corpus + temperature/top-k sampling
 - [ ] **M5** — ROM v1.0-rc: performance pass, ≥30 chars/sec
 - [ ] **M6** — ROM v1.0: running on a real N64 via EverDrive
@@ -88,7 +91,7 @@ embedded ML — start at 00 and read in order, or jump in:
 - [04 — Fixed-point inference](docs/04-fixed-point-inference.md)
 - [05 — A GRU on a napkin](docs/05-gru-on-a-napkin.md)
 - [06 — The training pipeline](docs/06-training-pipeline.md)
-- Milestone notes: [m0](docs/milestones/m0.md) · [m1](docs/milestones/m1.md) · [m2](docs/milestones/m2.md)
+- Milestone notes: [m0](docs/milestones/m0.md) · [m1](docs/milestones/m1.md) · [m2](docs/milestones/m2.md) · [m3](docs/milestones/m3.md)
 
 ## Pinned versions
 

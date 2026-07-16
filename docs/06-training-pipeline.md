@@ -66,6 +66,31 @@ generated separately, the blob and its expectations *cannot drift
 apart* — a property the M1 canned pipeline established and every later
 milestone inherits.
 
+## M3: the conditioning stage
+
+M3 adds one capability — *which* line comes out is chosen by a prompt —
+without touching the pipeline's shape:
+
+- **Corpus** (`corpus.py`): 12 hand-written `NPC/MOOD/EV` prompt→response
+  pairs; the single source for training data, demo string tables, and
+  goldens alike.
+- **Prompted overfit** (`overfit_corpus`): one GRU (H=64) trained on all
+  12 sequences (`EOS+prompt+response`) with a summed loss; training
+  stops when every pair reproduces exactly under greedy decoding — the
+  behavioral goal — with the loss threshold only as margin insurance.
+- **Priming** (`ref_impl.prime`, mirrored by `ngpt_gru_prime` in C):
+  consume the prompt with hidden-state updates only (no logits, nothing
+  emitted), then generate as before. Same numbers, same shifts — the
+  bit-exactness contract simply gained a prefix phase.
+- **Artifacts** (`make_m3_blob.py`): refuses to emit unless the *integer*
+  model reproduces all 12 from their prompts, then writes blob, 12
+  per-prompt goldens, a priming-aware trace, and the ROM self-test
+  header (now carrying prompts, goldens, and the demo's cycle tables).
+- **Fast regression** (`test_m3_blob.py`): parses the *committed* blob
+  and replays all 12 through the integer path — no training, seconds.
+  Training-heavy tests are marked `slow` and skipped by default;
+  milestone gates run `pytest -m ''` for the full suite.
+
 ## Downstream: how the C side consumes this
 
 `tests/test_gru_model.cpp` loads `m2_gru.bin`, generates, and compares

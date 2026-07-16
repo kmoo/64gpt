@@ -36,9 +36,9 @@ def lut_lookup(lut: np.ndarray, x_q11: np.ndarray) -> np.ndarray:
     return lut[(clamped + 16384) >> 7].astype(np.int64)
 
 
-def gru_step(q, h: np.ndarray, x_id: int):
-    """One GRU step. h is int16-valued Q14 [H] (carried as int64), x_id a
-    token id. Returns (h_next, logits) — logits int64 [V], argmax-ready."""
+def gru_h_update(q, h: np.ndarray, x_id: int) -> np.ndarray:
+    """The gate math only: consume token x_id, return h_next. Priming
+    uses this without computing logits (mirrors the C split exactly)."""
     H = q.H
     # Input-side "matvec" is a column lookup: one-hot in Q14 is a single
     # 16384, so acc = W_ih[:, x] << 14, already in scale 2^(k_w+14).
@@ -55,17 +55,40 @@ def gru_step(q, h: np.ndarray, x_id: int):
     n = lut_lookup(q.lut_tanh, rshift_round(n_acc, s))
 
     # h' = (1-z)*n + z*h, all Q14: products are Q28, shift 14 back, saturate.
-    h_next = sat16(rshift_round((Q14_ONE - z) * n, 14) + rshift_round(z * h, 14))
+    return sat16(rshift_round((Q14_ONE - z) * n, 14) + rshift_round(z * h, 14))
 
+
+def gru_step(q, h: np.ndarray, x_id: int):
+    """One full step: h-update then logits. Returns (h_next, logits) —
+    logits int64 [V], argmax-ready."""
+    h_next = gru_h_update(q, h, x_id)
     acc_o = q.W_out.astype(np.int64) @ h_next + q.b_out.astype(np.int64)
     return h_next, acc_o
 
 
-def generate(q, vocab, max_len: int = 256) -> str:
-    """Greedy decode from h = 0 and EOS as the first input. np.argmax
-    breaks ties toward the lowest index — the C loop must do the same."""
+def prime(q, vocab, prompt: str):
+    """Consume the prompt without emitting: h-updates only, no logits.
+    Returns (h, cur) ready for the generation loop — cur is the LAST
+    prompt char, so the first gru_step consumes it and its argmax is the
+    first generated character. Unknown chars are skipped (m3.md rule).
+    The C implementation must mirror this exactly."""
     h = np.zeros(q.H, dtype=np.int64)
-    x = vocab.eos_id
+    cur = vocab.eos_id
+    for ch in prompt:
+        try:
+            nxt = vocab.encode(ch)[0]
+        except KeyError:
+            continue
+        h = gru_h_update(q, h, cur)
+        cur = nxt
+    return h, cur
+
+
+def generate(q, vocab, prompt: str = "", max_len: int = 256) -> str:
+    """Greedy decode; empty prompt reproduces M2 behavior (h = 0, EOS as
+    first input). np.argmax breaks ties toward the lowest index — the C
+    loop must do the same."""
+    h, x = prime(q, vocab, prompt)
     out = []
     for _ in range(max_len):
         h, logits = gru_step(q, h, x)
@@ -76,11 +99,11 @@ def generate(q, vocab, max_len: int = 256) -> str:
     return "".join(out)
 
 
-def trace(q, vocab, max_len: int = 256):
+def trace(q, vocab, prompt: str = "", max_len: int = 256):
     """Per-step goldens for the C tests: list of (input_id, h_after int16[H],
-    argmax_id). The blob exporter serializes this."""
-    h = np.zeros(q.H, dtype=np.int64)
-    x = vocab.eos_id
+    argmax_id), generation steps only (priming is replayed by ngpt_reset
+    on the C side). The blob exporter serializes this."""
+    h, x = prime(q, vocab, prompt)
     steps = []
     for _ in range(max_len):
         h, logits = gru_step(q, h, x)

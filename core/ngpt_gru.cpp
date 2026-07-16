@@ -73,7 +73,9 @@ int ngpt_gru_load(ngpt_model *m)
   return NGPT_OK;
 }
 
-int ngpt_gru_step(ngpt_ctx *ctx)
+/* The gate math only: consume token x_id, update ctx->h in place.
+ * Priming uses this without the logits pass. */
+static void gru_h_update(ngpt_ctx *ctx, uint32_t x_id)
 {
   const ngpt_gru_view *g = &ctx->model->gru;
   const uint32_t H = g->H, V = g->V;
@@ -89,7 +91,7 @@ int ngpt_gru_step(ngpt_ctx *ctx)
   static int64_t acc_i[3 * NGPT_GRU_MAX_HIDDEN];
   static int64_t acc_h[3 * NGPT_GRU_MAX_HIDDEN];
   for (uint32_t i = 0; i < 3 * H; ++i) {
-    int64_t w = (int8_t)g->w_ih[i * V + ctx->cur];
+    int64_t w = (int8_t)g->w_ih[i * V + x_id];
     acc_i[i] = (w << 14) + read_i32be(g->b_ih + 4 * i);
 
     int64_t sum = 0;
@@ -109,6 +111,32 @@ int ngpt_gru_step(ngpt_ctx *ctx)
                       rshift_round(z * (int64_t)ctx->h[j], 14));
   }
   for (uint32_t j = 0; j < H; ++j) ctx->h[j] = h_next[j];
+}
+
+void ngpt_gru_prime(ngpt_ctx *ctx, const char *prompt)
+{
+  const ngpt_gru_view *g = &ctx->model->gru;
+  /* cur starts as EOS (set by ngpt_reset); for each prompt char: consume
+   * cur, then make the char the next input. After the loop cur is the
+   * LAST prompt char, so the first ngpt_step consumes it and its argmax
+   * is the first generated character. Mirrors ref_impl.prime(). */
+  for (const char *p = prompt; p && *p; ++p) {
+    uint32_t id = 0;
+    for (uint32_t v = 1; v < g->V; ++v) {
+      if (g->charset[v] == (uint8_t)*p) { id = v; break; }
+    }
+    if (id == 0) continue; /* unknown char: skip (docs/milestones/m3.md) */
+    gru_h_update(ctx, ctx->cur);
+    ctx->cur = (uint16_t)id;
+  }
+}
+
+int ngpt_gru_step(ngpt_ctx *ctx)
+{
+  const ngpt_gru_view *g = &ctx->model->gru;
+  const uint32_t H = g->H, V = g->V;
+
+  gru_h_update(ctx, ctx->cur);
 
   /* logits + argmax; ties break toward the lowest id (matches np.argmax) */
   uint32_t best = 0;

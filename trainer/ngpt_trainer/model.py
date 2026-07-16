@@ -69,3 +69,64 @@ def generate_greedy(model: CharGRU, vocab, max_len: int = 256) -> str:
                 break
             out.append(vocab.decode([current]))
     return "".join(out)
+
+
+def overfit_corpus(pairs: list[tuple[str, str]], vocab, hidden: int = 64,
+                   seed: int = 0, lr: float = 5e-3, max_steps: int = 8000,
+                   target_loss: float = 1e-2) -> CharGRU:
+    """Memorize all prompt->response pairs. One optimizer step per epoch
+    on the SUM of per-sequence losses; stops once the max per-sequence
+    loss is under target AND every pair reproduces exactly (greedy)."""
+    torch.manual_seed(seed)
+    model = CharGRU(vocab_size=len(vocab), hidden=hidden)
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.CrossEntropyLoss()
+
+    seqs = []
+    for prompt, response in pairs:
+        ids = vocab.encode(prompt) + vocab.encode(response)
+        seqs.append((one_hot([vocab.eos_id] + ids, len(vocab)),
+                     torch.tensor(ids + [vocab.eos_id], dtype=torch.long)))
+
+    worst = None
+    for step in range(max_steps):
+        opt.zero_grad()
+        losses = []
+        for inputs, targets in seqs:
+            logits, _ = model(inputs)
+            losses.append(loss_fn(logits.squeeze(0), targets))
+        sum(losses).backward()
+        opt.step()
+        worst = max(l.item() for l in losses)
+        # The real goal is behavioral: every pair reproduced exactly.
+        # The loss threshold on top keeps enough margin that int8
+        # quantization doesn't flip an argmax (the integer ref-impl
+        # tests are the final judge of that).
+        if worst < target_loss and step % 25 == 0:
+            model.eval()
+            ok = all(generate_greedy_prompted(model, vocab, p) == r
+                     for p, r in pairs)
+            model.train()
+            if ok:
+                break
+
+    model.eval()
+    model.final_loss = worst
+    return model
+
+
+def generate_greedy_prompted(model: CharGRU, vocab, prompt: str,
+                             max_len: int = 256) -> str:
+    """Prime ONCE on EOS+prompt (the last position's logits are the first
+    prediction), then greedy-decode exactly like generate_greedy."""
+    out = []
+    with torch.no_grad():
+        logits, h = model(one_hot([vocab.eos_id] + vocab.encode(prompt), len(vocab)))
+        current = int(torch.argmax(logits[0, -1]).item())
+        for _ in range(max_len):
+            if current == vocab.eos_id:
+                break
+            out.append(vocab.decode([current]))
+            logits, h = model(one_hot([current], len(vocab)), h)
+            current = int(torch.argmax(logits[0, -1]).item())
+    return "".join(out)
