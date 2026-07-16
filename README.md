@@ -85,6 +85,7 @@ ares game/64gpt.z64
 | `trainer/` | Python tooling: blob export now; corpus/train/quantize/ref-impl from M2 |
 | `game/` | the Pyrite64 project (see `game/README.md`) |
 | `docs/` | concept guides + per-milestone notes |
+| `versions/` | built `.z64` ROMs, one per milestone (EverDrive-ready; see its README) |
 
 ## Docs
 
