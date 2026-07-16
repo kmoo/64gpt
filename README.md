@@ -7,6 +7,8 @@ short NPC dialogue **on real N64 hardware**, built with the
 streams AI-generated text; controller buttons cycle the conditioning
 (`NPC=guard / Mood=angry / Event=stole_sword`), A regenerates.
 
+![64GPT Demo](64GPT_demo.gif)
+
 ## Method: the walking skeleton
 
 The AI is never built in isolation and "ported at the end". A bootable
