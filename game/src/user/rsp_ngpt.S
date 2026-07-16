@@ -1,18 +1,28 @@
 ########################################################
 # rsp_ngpt.S — SPIKE: GRU matvec on the RSP (rspq overlay)
 #
-# Gate G1: command 0 (NgptEcho) DMAs an 8-byte magic constant from DMEM
-# to a caller-supplied RDRAM address — proves assemble/register/dispatch.
-# The filename MUST start with "rsp": n64.mk keys RSP-ucode assembly off
-# that prefix.
+# Commands:
+#   0 NgptEcho   — DMA magic to RDRAM (gate G1: toolchain/dispatch)
+#   1 NgptDot    — one exact 128-wide int8x16 dot product (gate G2)
+#   2 NgptMatvec — 384 rows, DMA-tiled, timed by the CPU (gate G3)
+#
+# The filename MUST start with "rsp": n64.mk keys RSP-ucode assembly
+# off that prefix. Hard-won lessons encoded below:
+#  - vector shifts are multiplies: they CLOBBER the accumulator, so all
+#    unpacking runs before any vmudh/vmadh
+#  - lpv rotates lanes by addr&15: weights are unpacked from lqv
+#    byte-pairs instead (even/odd split; the CPU pre-shuffles h once)
+#  - lqv/sqv only reach the next 16B boundary: buffers are .align 4
+#  - mfc2 .eN maps lane N to byte offset 2N via byteVectorElements
 ########################################################
 #include <rsp_queue.inc>   /* already provides the rsp_dma.inc routines */
 
 .data
 
 RSPQ_BeginOverlayHeader
-    RSPQ_DefineCommand NgptEcho, 8   # word0: cmd, word1: RDRAM dest
-    RSPQ_DefineCommand NgptDot, 16   # cmd, dram_w, dram_h, dram_out
+    RSPQ_DefineCommand NgptEcho, 8    # word0: cmd, word1: RDRAM dest
+    RSPQ_DefineCommand NgptDot, 16    # cmd, dram_w, dram_h, dram_out
+    RSPQ_DefineCommand NgptMatvec, 16 # cmd, dram_w(384x128), dram_h, dram_out
 RSPQ_EndOverlayHeader
 
 RSPQ_EmptySavedState
@@ -23,24 +33,21 @@ NGPT_MAGIC:
     .long 0x364D4143        # '6','M','A','C'
 
 .bss
-    # 16-byte alignment is load-bearing: lqv/sqv transfer only up to the
-    # next 16B boundary, so an 8-aligned buffer half-fills the lanes and
-    # leaves stale DMEM in the rest.
     .align 4
-W_BUF:   .space 128          # one row of int8 weights (packed)
+W_TILE:  .space 2048         # 16 packed int8 rows per DMA tile
     .align 4
-W16_BUF: .space 512          # unpacked: 16 quads of EVEN w, then ODD w
+W16_BUF: .space 512          # one row unpacked: 16 quads EVEN w, then ODD w
     .align 4
 H_BUF:   .space 256          # h, CPU-shuffled: h[0,2,..126] then h[1,3,..127]
     .align 4
-OUT_BUF: .space 16           # int32 result (+ pad)
+OUT_TILE: .space 64          # 16 int32 row sums per tile
+    .align 4
+OUT_BUF: .space 32           # G2 result + debug dump
 
 .text
 
 ########################################################
 # NgptEcho: a0 = command word (unused args), a1 = RDRAM destination
-# Tail-jump into DMAOut: ra still points at RSPQ_Loop, so the DMA
-# routine's return hands control straight back to the queue engine.
 ########################################################
     .func NgptEcho
 NgptEcho:
@@ -52,85 +59,60 @@ NgptEcho:
     .endfunc
 
 ########################################################
-# NgptDot (gate G2): exact int32 dot product of one weight row.
-#   a1 = RDRAM addr of 128 int8 weights
-#   a2 = RDRAM addr of 128 int16 h values (big-endian, as everywhere)
-#   a3 = RDRAM addr of the int32 result
+# DotRow: exact int32 dot product of one 128-wide row.
+#   in : t6 = DMEM addr of 128 packed int8 weights (clobbered)
+#        H_BUF holds the CPU-shuffled h (even stream, then odd)
+#   out: t7 = int32 sum
+#   clobbers: t0,t1,t3,t5,t6,t8, $v01-$v05, ACC
+#   preserves: s0-s7, t9, a0-a3
 #
-# Exactness scheme: vmudh/vmadh multiply S16xS16 and add (product << 16)
-# into the 48-bit accumulators. Per lane: 16 products of <= 2^22, so the
-# accumulator peaks below 2^42 — no clamp, no rounding. The exact 32-bit
-# per-lane sum is then (ACC_HI << 16) | ACC_MD, folded on the scalar
-# unit. Weights arrive as packed bytes via lpv (byte << 8 per lane) and
-# are sign-restored with an arithmetic >> 8.
+# vmudh/vmadh accumulate (S16xS16 product << 16) into the 48-bit ACC;
+# per lane 16 products of <= 2^22 peak below 2^42 — no clamp, no
+# rounding. Exact per-lane int32 = (ACC_HI << 16) | (u16)ACC_MD.
 ########################################################
-    .func NgptDot
-NgptDot:
-    move s7, ra              # jal below clobbers ra (= RSPQ_Loop)
-    move s1, a1
-    move s2, a2
-    move s3, a3
-
-    li s4, %lo(H_BUF)
-    move s0, s2
-    jal DMAIn
-    li t0, DMA_SIZE(256, 1)
-
-    li s4, %lo(W_BUF)
-    move s0, s1
-    jal DMAIn
-    li t0, DMA_SIZE(128, 1)
-
-    # Phase 1: unpack int8 -> int16 with lqv ONLY (lpv rotates lanes by
-    # the address's low 4 bits — the deterministic wrong-sum bug). Each
-    # lqv reads 16 packed weights as 8 big-endian byte-pairs; the even
-    # byte is lane>>8 (exact: vsra is x*0x100 taking the high half), the
-    # odd byte is (lane<<8)>>8. Even quads land at W16_BUF[k], odd quads
-    # at W16_BUF+256[k]; the CPU pre-shuffles h to match. All shifts run
-    # before any accumulation (vector shifts are multiplies and clobber
-    # the accumulator — the earlier zero-sum bug).
-    li t6, %lo(W_BUF)
-    li t7, %lo(W16_BUF)
+    .func DotRow
+DotRow:
+    # Phase 1: unpack int8 -> int16 (all shifts BEFORE any MAC)
+    li t8, %lo(W16_BUF)
     li t3, 8
 UnpackLoop:
     lqv $v04.e0, 0,t6
-    vsra $v02, $v04, 8       # even-index weights, sign-extended
-    sqv $v02.e0, 0,t7
+    vsra $v02, $v04, 8       # even-index weights (BE high byte), exact
+    sqv $v02.e0, 0,t8
     vsll8 $v05, $v04, 8
     vsra $v05, $v05, 8       # odd-index weights, sign-extended
-    sqv $v05.e0, 256,t7
+    sqv $v05.e0, 256,t8
     addi t6, 16
-    addi t7, 16
+    addi t8, 16
     addi t3, -1
     bnez t3, UnpackLoop
     nop
 
-    # Phase 2: clean accumulation — 16 quads (8 even + 8 odd) against
-    # the matching CPU-shuffled h stream; first vmudh clears ACC.
+    # Phase 2: clean accumulation; first vmudh clears ACC
     li t5, %lo(H_BUF)
-    li t7, %lo(W16_BUF)
+    li t8, %lo(W16_BUF)
     lqv $v01.e0, 0,t5
-    lqv $v02.e0, 0,t7
+    lqv $v02.e0, 0,t8
     vmudh $v03, $v01, $v02
     li t3, 7
 EvenLoop:
     addi t5, 16
-    addi t7, 16
+    addi t8, 16
     lqv $v01.e0, 0,t5
-    lqv $v02.e0, 0,t7
+    lqv $v02.e0, 0,t8
     vmadh $v03, $v01, $v02
     addi t3, -1
     bnez t3, EvenLoop
     nop
     li t5, %lo(H_BUF)
-    li t7, %lo(W16_BUF)
+    li t8, %lo(W16_BUF)
     li t3, 8
 OddLoop:
     lqv $v01.e0, 128,t5
-    lqv $v02.e0, 256,t7
+    lqv $v02.e0, 256,t8
     vmadh $v03, $v01, $v02
     addi t5, 16
-    addi t7, 16
+    addi t8, 16
     addi t3, -1
     bnez t3, OddLoop
     nop
@@ -138,9 +120,6 @@ OddLoop:
     vsar $v04, COP2_ACC_MD
     vsar $v05, COP2_ACC_HI
 
-    # fold 8 lanes on the scalar unit: sum += (HI << 16) | (u16)MD.
-    # (.eN on mfc2 goes through byteVectorElements, which maps lane N to
-    # byte offset 2N — plain 0..7 is correct.)
     li t7, 0
 .macro FoldLane lane
     mfc2 t0, $v05.e\lane
@@ -158,15 +137,41 @@ OddLoop:
     FoldLane 5
     FoldLane 6
     FoldLane 7
+    jr ra
+    nop
+    .endfunc
 
-    # DEBUG DUMP (spike): result + the RSP's view of its inputs, so the
-    # CPU can print exactly what arrived — a1/a2 (DRAM addrs), first
-    # word of W_BUF and H_BUF after DMA-in, first word of the unpacked
-    # W16_BUF. 32 bytes out.
+########################################################
+# NgptDot (gate G2): one row, plus a debug dump of the RSP's view.
+#   a1 = RDRAM addr of 128 int8 weights
+#   a2 = RDRAM addr of shuffled h (256B)
+#   a3 = RDRAM addr of the 32B result+dump buffer
+########################################################
+    .func NgptDot
+NgptDot:
+    move s7, ra              # jal clobbers ra (= RSPQ_Loop)
+    move s1, a1
+    move s2, a2
+    move s3, a3
+
+    li s4, %lo(H_BUF)
+    move s0, s2
+    jal DMAIn
+    li t0, DMA_SIZE(256, 1)
+
+    li s4, %lo(W_TILE)
+    move s0, s1
+    jal DMAIn
+    li t0, DMA_SIZE(128, 1)
+
+    li t6, %lo(W_TILE)
+    jal DotRow
+    nop
+
     li t8, %lo(OUT_BUF)
     sw t7, 0(t8)
     sw s1, 4(t8)
-    lw t0, %lo(W_BUF)
+    lw t0, %lo(W_TILE)
     sw t0, 8(t8)
     lw t0, %lo(H_BUF)
     sw t0, 12(t8)
@@ -179,5 +184,60 @@ OddLoop:
     li t0, DMA_SIZE(32, 1)
     move ra, s7              # tail into DMAOut returns to RSPQ_Loop
     j DMAOut
+    nop
+    .endfunc
+
+########################################################
+# NgptMatvec (gate G3): 384 rows x 128, tiled 16 rows (2KB) per DMA.
+#   a1 = RDRAM addr of 384x128 int8 weights, row-major
+#   a2 = RDRAM addr of shuffled h (256B)
+#   a3 = RDRAM addr of 384 int32 outputs (1536B)
+########################################################
+    .func NgptMatvec
+NgptMatvec:
+    move s7, ra
+    move s1, a1              # w cursor (advances 2KB per tile)
+    move s2, a2
+    move s3, a3              # out cursor (advances 64B per tile)
+
+    li s4, %lo(H_BUF)
+    move s0, s2
+    jal DMAIn
+    li t0, DMA_SIZE(256, 1)
+
+    li t9, 24                # 24 tiles x 16 rows = 384
+TileLoop:
+    li s4, %lo(W_TILE)
+    move s0, s1
+    jal DMAIn
+    li t0, DMA_SIZE(2048, 1)
+
+    li s5, 0                 # row-in-tile 0..15
+RowLoop:
+    sll t6, s5, 7            # row * 128
+    addi t6, %lo(W_TILE)
+    jal DotRow
+    nop
+    sll t0, s5, 2
+    addi t0, %lo(OUT_TILE)
+    sw t7, 0(t0)
+    addi s5, 1
+    slti t0, s5, 16
+    bnez t0, RowLoop
+    nop
+
+    li s4, %lo(OUT_TILE)
+    move s0, s3
+    jal DMAOut
+    li t0, DMA_SIZE(64, 1)
+
+    addi s1, 2048
+    addi s3, 64
+    addi t9, -1
+    bnez t9, TileLoop
+    nop
+
+    move ra, s7
+    jr ra
     nop
     .endfunc

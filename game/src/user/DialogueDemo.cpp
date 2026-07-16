@@ -31,7 +31,7 @@ namespace
   // syncpoints and a frame budget — a stuck RSP shows "HANG" on screen
   // instead of a black boot (lesson: rspq_wait in initDelete hung the
   // whole boot with nothing drawn).
-  enum { SPIKE_IDLE, SPIKE_G1_SENT, SPIKE_G2_SENT, SPIKE_DONE };
+  enum { SPIKE_IDLE, SPIKE_G1_SENT, SPIKE_G2_SENT, SPIKE_G3, SPIKE_DONE };
   int spikeState{};
   int spikeFrames{};                // frames since current dispatch
   uint32_t spikeOvlId{};
@@ -44,6 +44,11 @@ namespace
   int16_t rspH[128] __attribute__((aligned(16)));
   uint32_t rspDotOut[8] __attribute__((aligned(16))); // result + debug dump; own cache line
   constexpr int SPIKE_BUDGET_FRAMES = 120; // 2s per gate, then HANG
+
+  // G3: full 384x128 matvec (the GRU's 3H rows at H=128)
+  int8_t rspWM[384 * 128] __attribute__((aligned(16)));
+  int32_t rspMvOut[384] __attribute__((aligned(16))); // 1536B, 16B multiple
+  int32_t cpuRef[384];
 
   void spikeAdvance(uint32_t frame)
   {
@@ -109,19 +114,67 @@ namespace
       return;
     }
 
-    // G2 completed
-    volatile uint32_t *dot = (volatile uint32_t *)UncachedAddr(rspDotOut);
-    if((int32_t)dot[0] == dotWant)
-      snprintf(rspStatus, sizeof(rspStatus), "RSPV6: G1 PASS  G2 DOT PASS");
-    else
-      snprintf(rspStatus, sizeof(rspStatus), "RSPV6: G2 FAIL %08lX/%08lX",
-               (unsigned long)dot[0], (unsigned long)(uint32_t)dotWant);
-    // debug dump: RSP's a1 | W_BUF[0..3] | H_BUF[0..1] | W16_BUF[0..1] | a2
-    // expected:   &rspW    11 3B 65 8F     8000 8206      000B 0065      &rspH
-    snprintf(rspDump, sizeof(rspDump), "A%08lX W%08lX H%08lX U%08lX",
-             (unsigned long)dot[1], (unsigned long)dot[2],
-             (unsigned long)dot[3], (unsigned long)dot[4]);
-    spikeState = SPIKE_DONE;
+    if(spikeState == SPIKE_G2_SENT) {
+      volatile uint32_t *dot = (volatile uint32_t *)UncachedAddr(rspDotOut);
+      if((int32_t)dot[0] != dotWant) {
+        snprintf(rspStatus, sizeof(rspStatus), "RSPV6: G2 FAIL %08lX/%08lX",
+                 (unsigned long)dot[0], (unsigned long)(uint32_t)dotWant);
+        snprintf(rspDump, sizeof(rspDump), "A%08lX W%08lX H%08lX U%08lX",
+                 (unsigned long)dot[1], (unsigned long)dot[2],
+                 (unsigned long)dot[3], (unsigned long)dot[4]);
+        spikeState = SPIKE_DONE;
+        return;
+      }
+      snprintf(rspStatus, sizeof(rspStatus), "RSPV6: G1+G2 PASS, G3 RUN");
+      spikeState = SPIKE_G3;
+      return; // run the timed matvec next frame (this one already paid)
+    }
+
+    // G3: full matvec, synchronous + timed on both engines
+    {
+      volatile int8_t *wm = (volatile int8_t *)UncachedAddr(rspWM);
+      volatile int32_t *out = (volatile int32_t *)UncachedAddr(rspMvOut);
+      // natural-order h for the CPU reference (rspH is RSP-shuffled)
+      static int16_t hNat[128];
+      for (int j = 0; j < 128; ++j)
+        hNat[j] = (int16_t)(j * 517 - 32768 + j * j);
+      for (int r = 0; r < 384; ++r)
+        for (int j = 0; j < 128; ++j)
+          wm[r * 128 + j] = (int8_t)(r * 13 + j * 37 + 5);
+
+      uint64_t c0 = get_ticks();
+      for (int r = 0; r < 384; ++r) {
+        int32_t sum = 0;
+        const volatile int8_t *row = wm + r * 128;
+        for (int j = 0; j < 128; ++j) sum += (int32_t)row[j] * hNat[j];
+        cpuRef[r] = sum;
+      }
+      uint32_t cpuUs = (uint32_t)TICKS_TO_US(get_ticks() - c0);
+
+      for (int r = 0; r < 384; ++r) out[r] = 0x5A5A5A5A;
+      uint64_t r0 = get_ticks();
+      rspq_write(spikeOvlId, 2, 0, PhysicalAddr(rspWM), PhysicalAddr(rspH),
+                 PhysicalAddr(rspMvOut));
+      rspq_wait();
+      uint32_t rspUs = (uint32_t)TICKS_TO_US(get_ticks() - r0);
+
+      int bad = 0, firstBad = -1;
+      for (int r = 0; r < 384; ++r)
+        if(out[r] != cpuRef[r]) { if(firstBad < 0)firstBad = r; ++bad; }
+
+      if(bad == 0) {
+        snprintf(rspStatus, sizeof(rspStatus), "RSP: G1+G2+G3 ALL PASS");
+        snprintf(rspDump, sizeof(rspDump), "MATVEC RSP %luUS  CPU %luUS",
+                 (unsigned long)rspUs, (unsigned long)cpuUs);
+      } else {
+        snprintf(rspStatus, sizeof(rspStatus), "RSP: G3 FAIL N=%d AT %d", bad, firstBad);
+        snprintf(rspDump, sizeof(rspDump), "GOT %08lX WANT %08lX RSP %luUS",
+                 (unsigned long)(uint32_t)out[firstBad],
+                 (unsigned long)(uint32_t)cpuRef[firstBad],
+                 (unsigned long)rspUs);
+      }
+      spikeState = SPIKE_DONE;
+    }
   }
 }
 // ---- RSP MATVEC SPIKE (END) --------------------------------------------
