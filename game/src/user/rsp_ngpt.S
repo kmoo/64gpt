@@ -23,12 +23,17 @@ NGPT_MAGIC:
     .long 0x364D4143        # '6','M','A','C'
 
 .bss
-    .align 3
-W_BUF:   .space 128          # one row of int8 weights
-    .align 3
-H_BUF:   .space 256          # h vector, 128 x int16
-    .align 3
-OUT_BUF: .space 8            # int32 result (+ pad to DMA granule)
+    # 16-byte alignment is load-bearing: lqv/sqv transfer only up to the
+    # next 16B boundary, so an 8-aligned buffer half-fills the lanes and
+    # leaves stale DMEM in the rest.
+    .align 4
+W_BUF:   .space 128          # one row of int8 weights (packed)
+    .align 4
+W16_BUF: .space 512          # unpacked: 16 quads of EVEN w, then ODD w
+    .align 4
+H_BUF:   .space 256          # h, CPU-shuffled: h[0,2,..126] then h[1,3,..127]
+    .align 4
+OUT_BUF: .space 16           # int32 result (+ pad)
 
 .text
 
@@ -76,46 +81,85 @@ NgptDot:
     jal DMAIn
     li t0, DMA_SIZE(128, 1)
 
-    # 16 chunks x 8 lanes; first chunk vmudh (clears ACC), rest vmadh
-    li t5, %lo(H_BUF)
+    # Phase 1: unpack int8 -> int16 with lqv ONLY (lpv rotates lanes by
+    # the address's low 4 bits — the deterministic wrong-sum bug). Each
+    # lqv reads 16 packed weights as 8 big-endian byte-pairs; the even
+    # byte is lane>>8 (exact: vsra is x*0x100 taking the high half), the
+    # odd byte is (lane<<8)>>8. Even quads land at W16_BUF[k], odd quads
+    # at W16_BUF+256[k]; the CPU pre-shuffles h to match. All shifts run
+    # before any accumulation (vector shifts are multiplies and clobber
+    # the accumulator — the earlier zero-sum bug).
     li t6, %lo(W_BUF)
+    li t7, %lo(W16_BUF)
+    li t3, 8
+UnpackLoop:
+    lqv $v04.e0, 0,t6
+    vsra $v02, $v04, 8       # even-index weights, sign-extended
+    sqv $v02.e0, 0,t7
+    vsll8 $v05, $v04, 8
+    vsra $v05, $v05, 8       # odd-index weights, sign-extended
+    sqv $v05.e0, 256,t7
+    addi t6, 16
+    addi t7, 16
+    addi t3, -1
+    bnez t3, UnpackLoop
+    nop
+
+    # Phase 2: clean accumulation — 16 quads (8 even + 8 odd) against
+    # the matching CPU-shuffled h stream; first vmudh clears ACC.
+    li t5, %lo(H_BUF)
+    li t7, %lo(W16_BUF)
     lqv $v01.e0, 0,t5
-    lpv $v02.e0, 0,t6
-    vsra $v02, $v02, 8
+    lqv $v02.e0, 0,t7
     vmudh $v03, $v01, $v02
-    li t3, 15
-DotLoop:
+    li t3, 7
+EvenLoop:
     addi t5, 16
-    addi t6, 8
+    addi t7, 16
     lqv $v01.e0, 0,t5
-    lpv $v02.e0, 0,t6
-    vsra $v02, $v02, 8
+    lqv $v02.e0, 0,t7
     vmadh $v03, $v01, $v02
     addi t3, -1
-    bnez t3, DotLoop
+    bnez t3, EvenLoop
+    nop
+    li t5, %lo(H_BUF)
+    li t7, %lo(W16_BUF)
+    li t3, 8
+OddLoop:
+    lqv $v01.e0, 128,t5
+    lqv $v02.e0, 256,t7
+    vmadh $v03, $v01, $v02
+    addi t5, 16
+    addi t7, 16
+    addi t3, -1
+    bnez t3, OddLoop
     nop
 
     vsar $v04, COP2_ACC_MD
     vsar $v05, COP2_ACC_HI
 
-    # fold 8 lanes on the scalar unit: sum += (HI << 16) | (u16)MD
+    # fold 8 lanes on the scalar unit: sum += (HI << 16) | (u16)MD.
+    # mfc2's element is a BYTE offset (0..15), not a lane index — lanes
+    # live at even byte offsets 0,2,..,14. (Reading .e0..e7 folds lanes
+    # 0-3 plus four misaligned lane-straddles — the deterministic wrong
+    # sum that survived two unpack rewrites.)
     li t7, 0
-.macro FoldLane lane
-    mfc2 t0, $v05.e\lane
+.macro FoldLane byteoff
+    mfc2 t0, $v05.e\byteoff
     sll t0, 16
-    mfc2 t1, $v04.e\lane
+    mfc2 t1, $v04.e\byteoff
     andi t1, 0xFFFF
     add t0, t0, t1
     add t7, t7, t0
 .endm
     FoldLane 0
-    FoldLane 1
     FoldLane 2
-    FoldLane 3
     FoldLane 4
-    FoldLane 5
     FoldLane 6
-    FoldLane 7
+    FoldLane 8
+    FoldLane 10
+    FoldLane 12
+    FoldLane 14
 
     li t8, %lo(OUT_BUF)
     sw t7, 0(t8)

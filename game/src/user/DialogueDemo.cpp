@@ -26,39 +26,96 @@ DEFINE_RSP_UCODE(rsp_ngpt);
 
 namespace
 {
-  int rspEcho{}; // 0 = not run, 1 = PASS, 2 = FAIL
-  int rspDot{};
+  // Hang-proof, phase-visible harness: dispatched lazily from update()
+  // once the scene is up, completion polled with NON-blocking
+  // syncpoints and a frame budget — a stuck RSP shows "HANG" on screen
+  // instead of a black boot (lesson: rspq_wait in initDelete hung the
+  // whole boot with nothing drawn).
+  enum { SPIKE_IDLE, SPIKE_G1_SENT, SPIKE_G2_SENT, SPIKE_DONE };
+  int spikeState{};
+  int spikeFrames{};                // frames since current dispatch
+  uint32_t spikeOvlId{};
+  rspq_syncpoint_t spikeSync{};
+  char rspStatus[40] = "RSPV5: WAITING";
+  int32_t dotWant{};
   uint32_t rspEchoBuf[2] __attribute__((aligned(8)));
   int8_t rspW[128] __attribute__((aligned(8)));
   int16_t rspH[128] __attribute__((aligned(8)));
   uint32_t rspDotOut[2] __attribute__((aligned(8)));
+  constexpr int SPIKE_BUDGET_FRAMES = 120; // 2s per gate, then HANG
 
-  void runRspSpike()
+  void spikeAdvance(uint32_t frame)
   {
-    static uint32_t ovlId = rspq_overlay_register(&rsp_ngpt);
+    if(spikeState == SPIKE_DONE)return;
+    if(frame < 60)return; // let the scene settle first
 
-    // G1: echo the magic words
-    volatile uint32_t *out = (volatile uint32_t *)UncachedAddr(rspEchoBuf);
-    out[0] = 0; out[1] = 0;
-    rspq_write(ovlId, 0, 0, PhysicalAddr(rspEchoBuf));
-    rspq_wait();
-    rspEcho = (out[0] == 0x600D64AA && out[1] == 0x364D4143) ? 1 : 2;
-
-    // G2: exact dot product vs the CPU (worst-case-ish magnitudes)
-    volatile int8_t *w = (volatile int8_t *)UncachedAddr(rspW);
-    volatile int16_t *h = (volatile int16_t *)UncachedAddr(rspH);
-    volatile uint32_t *dot = (volatile uint32_t *)UncachedAddr(rspDotOut);
-    int32_t want = 0;
-    for (int j = 0; j < 128; ++j) {
-      w[j] = (int8_t)(j * 37 + 11);              // wraps: mixed signs
-      h[j] = (int16_t)(j * 517 - 32768 + j * j); // wraps: mixed signs
-      want += (int32_t)w[j] * h[j];
+    if(spikeState == SPIKE_IDLE) {
+      spikeOvlId = rspq_overlay_register(&rsp_ngpt);
+      volatile uint32_t *out = (volatile uint32_t *)UncachedAddr(rspEchoBuf);
+      out[0] = 0; out[1] = 0;
+      rspq_write(spikeOvlId, 0, 0, PhysicalAddr(rspEchoBuf));
+      spikeSync = rspq_syncpoint_new();
+      rspq_flush();
+      snprintf(rspStatus, sizeof(rspStatus), "RSPV5: G1 SENT");
+      spikeState = SPIKE_G1_SENT;
+      spikeFrames = 0;
+      return;
     }
-    dot[0] = 0xDEADBEEF;
-    rspq_write(ovlId, 1, 0, PhysicalAddr(rspW), PhysicalAddr(rspH),
-               PhysicalAddr(rspDotOut));
-    rspq_wait();
-    rspDot = ((int32_t)dot[0] == want) ? 1 : 2;
+
+    ++spikeFrames;
+    if(!rspq_syncpoint_check(spikeSync)) {
+      if(spikeFrames > SPIKE_BUDGET_FRAMES) {
+        snprintf(rspStatus, sizeof(rspStatus), "RSPV5: %s HANG",
+                 spikeState == SPIKE_G1_SENT ? "G1" : "G2");
+        spikeState = SPIKE_DONE;
+      }
+      return;
+    }
+
+    if(spikeState == SPIKE_G1_SENT) {
+      volatile uint32_t *out = (volatile uint32_t *)UncachedAddr(rspEchoBuf);
+      bool pass = (out[0] == 0x600D64AA && out[1] == 0x364D4143);
+      if(!pass) {
+        snprintf(rspStatus, sizeof(rspStatus), "RSPV5: G1 FAIL %08lX",
+                 (unsigned long)out[0]);
+        spikeState = SPIKE_DONE;
+        return;
+      }
+      // G1 PASS -> dispatch G2 (exact dot product vs CPU)
+      volatile int8_t *w = (volatile int8_t *)UncachedAddr(rspW);
+      volatile int16_t *h = (volatile int16_t *)UncachedAddr(rspH);
+      volatile uint32_t *dot = (volatile uint32_t *)UncachedAddr(rspDotOut);
+      // h goes to the RSP shuffled even-indices-first (h[0,2,..126],
+      // then h[1,3,..127]) to match the ucode's lqv byte-pair unpack;
+      // the dot product is order-invariant so `want` uses the natural
+      // pairing.
+      dotWant = 0;
+      for (int j = 0; j < 128; ++j) {
+        int8_t wj = (int8_t)(j * 37 + 11);              // wraps: mixed signs
+        int16_t hj = (int16_t)(j * 517 - 32768 + j * j); // wraps: mixed signs
+        w[j] = wj;
+        h[(j & 1) ? 64 + j / 2 : j / 2] = hj;
+        dotWant += (int32_t)wj * hj;
+      }
+      dot[0] = 0xDEADBEEF;
+      rspq_write(spikeOvlId, 1, 0, PhysicalAddr(rspW),
+                 PhysicalAddr(rspH), PhysicalAddr(rspDotOut));
+      spikeSync = rspq_syncpoint_new();
+      rspq_flush();
+      snprintf(rspStatus, sizeof(rspStatus), "RSPV5: G1 PASS, G2 SENT");
+      spikeState = SPIKE_G2_SENT;
+      spikeFrames = 0;
+      return;
+    }
+
+    // G2 completed
+    volatile uint32_t *dot = (volatile uint32_t *)UncachedAddr(rspDotOut);
+    if((int32_t)dot[0] == dotWant)
+      snprintf(rspStatus, sizeof(rspStatus), "RSPV5: G1 PASS  G2 DOT PASS");
+    else
+      snprintf(rspStatus, sizeof(rspStatus), "RSPV5: G2 FAIL %08lX/%08lX",
+               (unsigned long)dot[0], (unsigned long)(uint32_t)dotWant);
+    spikeState = SPIKE_DONE;
   }
 }
 // ---- RSP MATVEC SPIKE (END) --------------------------------------------
@@ -169,7 +226,6 @@ namespace P64::Script::C64D1A106DE00001
     blobData = (uint8_t*)asset_load("rom:/model.bin", &blobSize);
     loaded = blobData && ngpt_load(&model, blobData, (uint32_t)blobSize) == NGPT_OK;
     selftestPass = loaded && runSelfTest();
-    runRspSpike();
     restartGeneration();
   }
 
@@ -184,6 +240,7 @@ namespace P64::Script::C64D1A106DE00001
   void update(Object& obj, Data *data, float deltaTime)
   {
     ++frameCount;
+    spikeAdvance(frameCount);
     auto pressed = joypad_get_buttons_pressed(JOYPAD_PORT_1);
     bool changed = false;
     if(pressed.d_up)   { npcIdx  = cycle(npcIdx,  +1, SELFTEST_NPC_COUNT);   changed = true; }
@@ -255,13 +312,7 @@ namespace P64::Script::C64D1A106DE00001
                  (unsigned long)us, (unsigned long)(us ? 1000000u / us : 0));
         Debug::print(24, 80, perf);
       }
-      if(rspEcho) {
-        char rsp[48];
-        snprintf(rsp, sizeof(rsp), "RSP ECHO %s  DOT %s",
-                 rspEcho == 1 ? "PASS" : "FAIL",
-                 rspDot == 1 ? "PASS" : "FAIL");
-        Debug::print(24, 96, rsp);
-      }
+      Debug::print(24, 96, rspStatus);
 
       // dialogue box: wrap the streamed text into rows
       char row[WRAP_COLS + 1];
