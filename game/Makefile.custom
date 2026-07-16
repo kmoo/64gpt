@@ -15,3 +15,7 @@ filesystem/model.bin: rawfs/model.bin
 # M5: the inference engine wants speed (hot int matvec loops); everything
 # else in the ROM keeps the project-wide -Os. Appended flags win in GCC.
 $(BUILD_DIR)/src/user/../../../core/%.o: N64_CXXFLAGS += -O3 -funroll-loops
+
+# RSP SPIKE (worktree branch): assemble + link the ngpt ucode. n64.mk's
+# %.S rule detects the "rsp" filename prefix and builds it as RSP ucode.
+$(BUILD_DIR)/$(ROM_NAME).elf: $(BUILD_DIR)/src/user/rsp_ngpt.o

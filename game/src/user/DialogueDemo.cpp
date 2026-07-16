@@ -12,10 +12,56 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <rsp.h>
+#include <rspq.h>
 #include "script/userScript.h"
 #include "debug/debugDraw.h"
 #include "n64gpt/ngpt.h"
 #include "selftestGolden.h"
+
+// ---- RSP MATVEC SPIKE (worktree branch only) --------------------------
+// Gate G1: the rsp_ngpt overlay assembles, registers, and echoes its
+// magic words back to RDRAM. Result shown on screen (no debugger).
+DEFINE_RSP_UCODE(rsp_ngpt);
+
+namespace
+{
+  int rspEcho{}; // 0 = not run, 1 = PASS, 2 = FAIL
+  int rspDot{};
+  uint32_t rspEchoBuf[2] __attribute__((aligned(8)));
+  int8_t rspW[128] __attribute__((aligned(8)));
+  int16_t rspH[128] __attribute__((aligned(8)));
+  uint32_t rspDotOut[2] __attribute__((aligned(8)));
+
+  void runRspSpike()
+  {
+    static uint32_t ovlId = rspq_overlay_register(&rsp_ngpt);
+
+    // G1: echo the magic words
+    volatile uint32_t *out = (volatile uint32_t *)UncachedAddr(rspEchoBuf);
+    out[0] = 0; out[1] = 0;
+    rspq_write(ovlId, 0, 0, PhysicalAddr(rspEchoBuf));
+    rspq_wait();
+    rspEcho = (out[0] == 0x600D64AA && out[1] == 0x364D4143) ? 1 : 2;
+
+    // G2: exact dot product vs the CPU (worst-case-ish magnitudes)
+    volatile int8_t *w = (volatile int8_t *)UncachedAddr(rspW);
+    volatile int16_t *h = (volatile int16_t *)UncachedAddr(rspH);
+    volatile uint32_t *dot = (volatile uint32_t *)UncachedAddr(rspDotOut);
+    int32_t want = 0;
+    for (int j = 0; j < 128; ++j) {
+      w[j] = (int8_t)(j * 37 + 11);              // wraps: mixed signs
+      h[j] = (int16_t)(j * 517 - 32768 + j * j); // wraps: mixed signs
+      want += (int32_t)w[j] * h[j];
+    }
+    dot[0] = 0xDEADBEEF;
+    rspq_write(ovlId, 1, 0, PhysicalAddr(rspW), PhysicalAddr(rspH),
+               PhysicalAddr(rspDotOut));
+    rspq_wait();
+    rspDot = ((int32_t)dot[0] == want) ? 1 : 2;
+  }
+}
+// ---- RSP MATVEC SPIKE (END) --------------------------------------------
 
 namespace
 {
@@ -123,6 +169,7 @@ namespace P64::Script::C64D1A106DE00001
     blobData = (uint8_t*)asset_load("rom:/model.bin", &blobSize);
     loaded = blobData && ngpt_load(&model, blobData, (uint32_t)blobSize) == NGPT_OK;
     selftestPass = loaded && runSelfTest();
+    runRspSpike();
     restartGeneration();
   }
 
@@ -207,6 +254,13 @@ namespace P64::Script::C64D1A106DE00001
         snprintf(perf, sizeof(perf), "STEP %lu US  RAW %lu CH/S",
                  (unsigned long)us, (unsigned long)(us ? 1000000u / us : 0));
         Debug::print(24, 80, perf);
+      }
+      if(rspEcho) {
+        char rsp[48];
+        snprintf(rsp, sizeof(rsp), "RSP ECHO %s  DOT %s",
+                 rspEcho == 1 ? "PASS" : "FAIL",
+                 rspDot == 1 ? "PASS" : "FAIL");
+        Debug::print(24, 96, rsp);
       }
 
       // dialogue box: wrap the streamed text into rows
