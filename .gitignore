@@ -24,3 +24,6 @@ __pycache__/
 
 # macOS
 .DS_Store
+
+# machine-local engineering-lead-mode flag (see .ai/README.md)
+/.ai/lead-mode

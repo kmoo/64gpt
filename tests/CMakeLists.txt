@@ -43,3 +43,4 @@ endfunction()
 
 ngpt_test(test_blob_parser)
 ngpt_test(test_canned_model)
+ngpt_test(test_gru_model)

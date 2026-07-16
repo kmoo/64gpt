@@ -39,7 +39,32 @@ enum {
   NGPT_ERR_MAGIC      = -3, /* first 4 bytes are not "NGPT"                 */
   NGPT_ERR_VERSION    = -4, /* format version not understood                */
   NGPT_ERR_MODEL_TYPE = -5, /* model type not understood                    */
+  NGPT_ERR_DIMS       = -6, /* GRU dims exceed the static caps below        */
 };
+
+/* Static caps: ngpt_ctx carries the hidden state inline (no heap), so the
+ * dims a blob may declare are bounded at load time. M2 ships H=32; M4's
+ * ~100K-param model needs H<=128, V<=96. */
+#define NGPT_GRU_MAX_HIDDEN 128
+#define NGPT_GRU_MAX_VOCAB  96
+
+/* GRU payload view (model type 1): pointers into the blob, set up once by
+ * ngpt_load. Weights are read big-endian byte-by-byte at inference time —
+ * nothing is copied or converted, so there is no unpacking buffer and no
+ * alignment requirement. Layout: docs/milestones/m2.md. */
+typedef struct ngpt_gru_view {
+  uint16_t H, V;
+  uint8_t k_w, k_out;
+  const uint8_t *charset;   /* V bytes, [0] = 0x00 EOS slot       */
+  const uint8_t *lut_sig;   /* 256 x i16 BE, Q14 out              */
+  const uint8_t *lut_tanh;  /* 256 x i16 BE                       */
+  const uint8_t *w_ih;      /* 3H*V x i8, row-major, gates r,z,n  */
+  const uint8_t *w_hh;      /* 3H*H x i8                          */
+  const uint8_t *b_ih;      /* 3H x i32 BE, scale 2^(k_w+14)      */
+  const uint8_t *b_hh;      /* 3H x i32 BE                        */
+  const uint8_t *w_out;     /* V*H x i8                           */
+  const uint8_t *b_out;     /* V x i32 BE, scale 2^(k_out+14)     */
+} ngpt_gru_view;
 
 typedef struct ngpt_model {
   const uint8_t *blob;
@@ -48,12 +73,16 @@ typedef struct ngpt_model {
   uint16_t model_type;
   const uint8_t *payload;  /* points into blob, after the 12-byte header */
   uint32_t payload_len;
+  ngpt_gru_view gru;       /* valid only when model_type == NGPT_MODEL_GRU */
 } ngpt_model;
 
 typedef struct ngpt_ctx {
   const ngpt_model *model;
   uint32_t pos;      /* canned model: next payload byte to emit */
   uint8_t finished;  /* 1 once EOS has been reached             */
+  /* GRU state (model type 1) */
+  int16_t h[NGPT_GRU_MAX_HIDDEN];  /* hidden state, Q14 */
+  uint16_t cur;                    /* last emitted token id (0 = EOS) */
 } ngpt_ctx;
 
 /* Byte-oriented big-endian readers — the reason the blob parses
