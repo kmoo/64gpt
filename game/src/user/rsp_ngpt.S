@@ -139,34 +139,44 @@ OddLoop:
     vsar $v05, COP2_ACC_HI
 
     # fold 8 lanes on the scalar unit: sum += (HI << 16) | (u16)MD.
-    # mfc2's element is a BYTE offset (0..15), not a lane index — lanes
-    # live at even byte offsets 0,2,..,14. (Reading .e0..e7 folds lanes
-    # 0-3 plus four misaligned lane-straddles — the deterministic wrong
-    # sum that survived two unpack rewrites.)
+    # (.eN on mfc2 goes through byteVectorElements, which maps lane N to
+    # byte offset 2N — plain 0..7 is correct.)
     li t7, 0
-.macro FoldLane byteoff
-    mfc2 t0, $v05.e\byteoff
+.macro FoldLane lane
+    mfc2 t0, $v05.e\lane
     sll t0, 16
-    mfc2 t1, $v04.e\byteoff
+    mfc2 t1, $v04.e\lane
     andi t1, 0xFFFF
     add t0, t0, t1
     add t7, t7, t0
 .endm
     FoldLane 0
+    FoldLane 1
     FoldLane 2
+    FoldLane 3
     FoldLane 4
+    FoldLane 5
     FoldLane 6
-    FoldLane 8
-    FoldLane 10
-    FoldLane 12
-    FoldLane 14
+    FoldLane 7
 
+    # DEBUG DUMP (spike): result + the RSP's view of its inputs, so the
+    # CPU can print exactly what arrived — a1/a2 (DRAM addrs), first
+    # word of W_BUF and H_BUF after DMA-in, first word of the unpacked
+    # W16_BUF. 32 bytes out.
     li t8, %lo(OUT_BUF)
     sw t7, 0(t8)
+    sw s1, 4(t8)
+    lw t0, %lo(W_BUF)
+    sw t0, 8(t8)
+    lw t0, %lo(H_BUF)
+    sw t0, 12(t8)
+    lw t0, %lo(W16_BUF)
+    sw t0, 16(t8)
+    sw s2, 20(t8)
 
     li s4, %lo(OUT_BUF)
     move s0, s3
-    li t0, DMA_SIZE(8, 1)
+    li t0, DMA_SIZE(32, 1)
     move ra, s7              # tail into DMAOut returns to RSPQ_Loop
     j DMAOut
     nop

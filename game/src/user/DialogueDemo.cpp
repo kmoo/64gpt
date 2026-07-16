@@ -36,12 +36,13 @@ namespace
   int spikeFrames{};                // frames since current dispatch
   uint32_t spikeOvlId{};
   rspq_syncpoint_t spikeSync{};
-  char rspStatus[40] = "RSPV5: WAITING";
+  char rspStatus[40] = "RSPV6: WAITING";
+  char rspDump[64] = "";
   int32_t dotWant{};
-  uint32_t rspEchoBuf[2] __attribute__((aligned(8)));
-  int8_t rspW[128] __attribute__((aligned(8)));
-  int16_t rspH[128] __attribute__((aligned(8)));
-  uint32_t rspDotOut[2] __attribute__((aligned(8)));
+  uint32_t rspEchoBuf[4] __attribute__((aligned(16)));   // 16B = one cache line
+  int8_t rspW[128] __attribute__((aligned(16)));
+  int16_t rspH[128] __attribute__((aligned(16)));
+  uint32_t rspDotOut[8] __attribute__((aligned(16))); // result + debug dump; own cache line
   constexpr int SPIKE_BUDGET_FRAMES = 120; // 2s per gate, then HANG
 
   void spikeAdvance(uint32_t frame)
@@ -111,10 +112,15 @@ namespace
     // G2 completed
     volatile uint32_t *dot = (volatile uint32_t *)UncachedAddr(rspDotOut);
     if((int32_t)dot[0] == dotWant)
-      snprintf(rspStatus, sizeof(rspStatus), "RSPV5: G1 PASS  G2 DOT PASS");
+      snprintf(rspStatus, sizeof(rspStatus), "RSPV6: G1 PASS  G2 DOT PASS");
     else
-      snprintf(rspStatus, sizeof(rspStatus), "RSPV5: G2 FAIL %08lX/%08lX",
+      snprintf(rspStatus, sizeof(rspStatus), "RSPV6: G2 FAIL %08lX/%08lX",
                (unsigned long)dot[0], (unsigned long)(uint32_t)dotWant);
+    // debug dump: RSP's a1 | W_BUF[0..3] | H_BUF[0..1] | W16_BUF[0..1] | a2
+    // expected:   &rspW    11 3B 65 8F     8000 8206      000B 0065      &rspH
+    snprintf(rspDump, sizeof(rspDump), "A%08lX W%08lX H%08lX U%08lX",
+             (unsigned long)dot[1], (unsigned long)dot[2],
+             (unsigned long)dot[3], (unsigned long)dot[4]);
     spikeState = SPIKE_DONE;
   }
 }
@@ -313,6 +319,7 @@ namespace P64::Script::C64D1A106DE00001
         Debug::print(24, 80, perf);
       }
       Debug::print(24, 96, rspStatus);
+      if(rspDump[0])Debug::print(24, 112, rspDump);
 
       // dialogue box: wrap the streamed text into rows
       char row[WRAP_COLS + 1];
