@@ -98,3 +98,10 @@ the N64 — likely the single biggest wow-per-effort on this list.
 Recommended first bites: **2 + 3 + 5** (near-immediate, transform the
 demo's feel), then **1** as the foundation, then **11** as the
 conversation unlock; **6** is the moonshot worth one dedicated day.
+
+---
+
+**See also:** `ideas-m7-living-npcs.md` — the M7 vision (living NPCs:
+continuity of existence, external memory/personality/world state,
+gossip, Old Man Rowan test, engine-first Pyrite64 architecture).
+Supersedes the scale-focused framing of several entries above.
