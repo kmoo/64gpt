@@ -29,8 +29,9 @@ static int64_t rshift_round(int64_t x, int s)
 
 /* M5: the hot loops run int32 — a 64-bit multiply is a different, slower
  * instruction on the R4300i, and ref_impl documents that int32 suffices
- * at these dims (H<=128, V<=96: |acc| < 2^30). Bit-identical to the
- * int64 path for every in-range value; the goldens are the proof. */
+ * at these dims (H<=256, V<=96: a row sum stays < 2^30, sum + bias
+ * inside int32). Bit-identical to the int64 path for every in-range
+ * value; the goldens are the proof. */
 static int32_t rshift_round32(int32_t x, int s)
 {
   return (x + ((int32_t)1 << (s - 1))) >> s;

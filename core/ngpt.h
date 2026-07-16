@@ -43,9 +43,13 @@ enum {
 };
 
 /* Static caps: ngpt_ctx carries the hidden state inline (no heap), so the
- * dims a blob may declare are bounded at load time. M2 ships H=32; M4's
- * ~100K-param model needs H<=128, V<=96. */
-#define NGPT_GRU_MAX_HIDDEN 128
+ * dims a blob may declare are bounded at load time. M2 shipped H=32, M4's
+ * ~100K-param model H=128; M6.1 raises the cap to 256 — the headroom the
+ * RSP path buys is for the H=256+/~500K-param generative model (the M7
+ * "magic zone"). The int32 hot-loop bound still holds at H=256: a row sum
+ * is at most 256 * 127 * 32767 < 2^30, so sum + bias stays inside int32
+ * (revalidate against ref_impl when the H=256 blob actually ships). */
+#define NGPT_GRU_MAX_HIDDEN 256
 #define NGPT_GRU_MAX_VOCAB  96
 
 /* GRU payload view (model type 1): pointers into the blob, set up once by
