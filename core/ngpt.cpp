@@ -51,11 +51,24 @@ void ngpt_reset(ngpt_ctx *ctx, const ngpt_model *m, const char *prompt)
   ctx->finished = 0;
   ctx->cur = 0; /* GRU: generation starts from the EOS token... */
   for (uint32_t j = 0; j < NGPT_GRU_MAX_HIDDEN; ++j) ctx->h[j] = 0; /* ...and h = 0 */
+  ctx->sample_on = 0; /* greedy unless ngpt_set_sampler is called after */
+  ctx->inv_t_q8 = 256;
+  ctx->top_k = 1;
+  ctx->rng = 1;
 
   /* M3 conditioning: prime the GRU on the prompt (h-updates only, no
    * emission). The canned model ignores prompts. */
   if (m && m->model_type == NGPT_MODEL_GRU && prompt && prompt[0])
     ngpt_gru_prime(ctx, prompt);
+}
+
+void ngpt_set_sampler(ngpt_ctx *ctx, uint32_t seed, uint16_t inv_t_q8,
+                      uint16_t top_k)
+{
+  ctx->sample_on = 1;
+  ctx->inv_t_q8 = inv_t_q8;
+  ctx->top_k = top_k > 0 ? top_k : 1;
+  ctx->rng = seed != 0 ? seed : 1; /* 0 is xorshift32's fixed point */
 }
 
 int ngpt_step(ngpt_ctx *ctx)

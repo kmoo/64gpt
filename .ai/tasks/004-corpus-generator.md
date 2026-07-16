@@ -59,9 +59,100 @@ Exact import lines for the test file (use verbatim):
 ## COMPLETION
 
 ```yaml
-status: pending
+status: done (escalated)
+contract_amendment: >
+  The original acceptance criteria were internally inconsistent: 12
+  combos x 400 pairs x <=120-char responses caps at ~734K chars, below
+  the required 1M. Amended: default per_combo=1200 (the >=200-distinct
+  criterion still holds at per_combo=400 and is tested there).
+summary: >
+  qwen-worker made 3 attempts, all failed verification: fixed
+  whole-sentence templates (6 distinct per combo, no filler slots),
+  mixed-case text, newline joins, and it reimplemented prompt_for
+  instead of importing. Lead rewrote both files: opener/body/closer
+  grammar with 2-slot bodies, mood-modulated punctuation, per-NPC
+  voices. Shipped: 1,503,198 chars at default seed, charset 34,
+  762-1129 distinct responses per combo.
+verification: scripts/verify.sh — host 4/4, trainer 34 passed, PASS
+lesson: >
+  Multi-constraint generative-grammar contracts exceed the local
+  model's ceiling even at 14b: it satisfies the API shape and drops
+  the combinatorial requirements. Contracts must also be checked for
+  arithmetic consistency BEFORE dispatch — an unsatisfiable criterion
+  burns all retries.
 ```
 
 ## METRICS
 
-- dispatches / retries / escalated: 0 / 0 / no
+- dispatches / retries / escalated: 3 / 2 / yes
+
+## WORKER RESULT (qwen-worker)
+
+- status: escalated
+- attempt: verification FAIL
+- attempt: verification FAIL
+- attempt: verification FAIL
+- verification tail:
+
+```
+$ scripts/verify.sh
+# Review package — 2026-07-15, HEAD 4f7202c
+
+## Working tree
+?? docs/milestones/m4.md
+?? trainer/ngpt_trainer/corpus_gen.py
+?? trainer/tests/test_corpus_gen.py
+
+## Host tests (core/ integer engine)
+Test project ~/GitHub/64gpt/build
+    Start 1: test_blob_parser
+1/4 Test #1: test_blob_parser .................   Passed    0.23 sec
+    Start 2: test_canned_model
+2/4 Test #2: test_canned_model ................   Passed    0.11 sec
+    Start 3: test_gru_model
+3/4 Test #3: test_gru_model ...................   Passed    0.11 sec
+    Start 4: test_prompted_model
+4/4 Test #4: test_prompted_model ..............   Passed    0.14 sec
+
+100% tests passed out of 4
+
+Total Test time (real) =   0.60 sec
+HOST TESTS: PASS
+
+## Trainer tests (pytest via uv)
+F..F............................                                         [100%]
+=================================== FAILURES ===================================
+________________________ TestCorpusGen.test_corpus_text ________________________
+
+self = <test_corpus_gen.TestCorpusGen testMethod=test_corpus_text>
+
+    def test_corpus_text(self):
+        text = corpus_text()
+>       self.assertTrue(all(32 <= ord(c) <= 126 for c in text))
+E       AssertionError: False is not true
+
+tests/test_corpus_gen.py:34: AssertionError
+____________________ TestCorpusGen.test_distinct_responses _____________________
+
+self = <test_corpus_gen.TestCorpusGen testMethod=test_distinct_responses>
+
+    def test_distinct_responses(self):
+        seed = 42
+        per_combo = 400
+        pairs = generate_pairs(seed, per_combo)
+        for npc in NPCS:
+            for mood in MOODS:
+                for event in EVENTS:
+                    combo_pairs = [pair for pair in pairs if pair[0].startswith(f"NPC={npc} MOOD={mood} EV={event}|")]
+>                   self.assertGreaterEqual(len(set(pair[1] for pair in combo_pairs)), 200)
+E                   AssertionError: 6 not greater than or equal to 200
+
+tests/test_corpus_gen.py:30: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_corpus_gen.py::TestCorpusGen::test_corpus_text - AssertionE...
+FAILED tests/test_corpus_gen.py::TestCorpusGen::test_distinct_responses - Ass...
+2 failed, 30 passed, 3 deselected in 3.63s
+TRAINER TESTS: FAIL
+
+VERDICT: FAIL
+```

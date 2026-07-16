@@ -83,6 +83,12 @@ typedef struct ngpt_ctx {
   /* GRU state (model type 1) */
   int16_t h[NGPT_GRU_MAX_HIDDEN];  /* hidden state, Q14 */
   uint16_t cur;                    /* last emitted token id (0 = EOS) */
+  /* M4 sampler config — sample_on == 0 (the ngpt_reset default) keeps
+   * the M2/M3 greedy-argmax behavior exactly. */
+  uint8_t sample_on;
+  uint16_t inv_t_q8;               /* round(256 / temperature)          */
+  uint16_t top_k;
+  uint32_t rng;                    /* xorshift32 state, never 0         */
 } ngpt_ctx;
 
 /* Byte-oriented big-endian readers — the reason the blob parses
@@ -102,3 +108,10 @@ void ngpt_reset(ngpt_ctx *ctx, const ngpt_model *m, const char *prompt);
  * generation is complete. After EOS it keeps returning NGPT_EOS until
  * the next ngpt_reset. */
 int ngpt_step(ngpt_ctx *ctx);
+
+/* M4: enable temperature/top-k sampling for this generation (additive —
+ * never calling this keeps greedy argmax). Call AFTER ngpt_reset, which
+ * turns sampling off. seed 0 is remapped to 1 (xorshift32 fixed point);
+ * design + fixed-point formats: docs/milestones/m4.md. */
+void ngpt_set_sampler(ngpt_ctx *ctx, uint32_t seed, uint16_t inv_t_q8,
+                      uint16_t top_k);

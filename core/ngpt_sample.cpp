@@ -1,0 +1,82 @@
+/**
+ * Temperature/top-k sampling, integer-only — mirrors
+ * ref_impl.sample_from_logits step for step (same shifts, same rounding,
+ * same tie-breaks), so seeded generations are bit-identical between the
+ * trainer, the host tests, and the N64.
+ *
+ * NGPT_LUT_EXP2 comes from the generated header (trainer/make_m4_blob.py
+ * emits the identical table into ngpt_trainer/sampler_lut.py — one
+ * source, no drift).
+ */
+#include "ngpt_sample.h"
+#include "ngpt_sampler_lut.h"
+
+static int64_t rshift_round(int64_t x, int s)
+{
+  return (x + ((int64_t)1 << (s - 1))) >> s;
+}
+
+static uint32_t xorshift32(uint32_t x)
+{
+  x ^= x << 13;
+  x ^= x >> 17;
+  x ^= x << 5;
+  return x;
+}
+
+/* exp2 LUT over [-16, 0) in Q10, 64-unit buckets; the domain is
+ * negative (inputs are logit diffs from the max), so 0 clamps DOWN into
+ * the top bucket — mirrors sampler_lut.lut_exp2_lookup. */
+static uint32_t lut_exp2(int64_t x_q10)
+{
+  if (x_q10 < -16384) x_q10 = -16384;
+  if (x_q10 > -1) x_q10 = -1;
+  return NGPT_LUT_EXP2[(uint32_t)((x_q10 + 16384) >> 6)];
+}
+
+uint32_t ngpt_sample_pick(ngpt_ctx *ctx, const int64_t *logits, uint32_t V)
+{
+  /* scratch is static, not stack: N64 game threads run on small stacks
+   * (the M2 lesson) */
+  static uint32_t order[NGPT_GRU_MAX_VOCAB];
+  static uint32_t weights[NGPT_GRU_MAX_VOCAB];
+  static uint8_t used[NGPT_GRU_MAX_VOCAB];
+
+  uint32_t k = ctx->top_k < V ? ctx->top_k : V;
+
+  /* top-k indices, ties toward the lowest id (k selection passes) */
+  for (uint32_t v = 0; v < V; ++v) used[v] = 0;
+  for (uint32_t n = 0; n < k; ++n) {
+    uint32_t best = 0;
+    int64_t best_v = 0;
+    int have = 0;
+    for (uint32_t v = 0; v < V; ++v) {
+      if (used[v]) continue;
+      if (!have || logits[v] > best_v) { best = v; best_v = logits[v]; have = 1; }
+    }
+    used[best] = 1;
+    order[n] = best;
+  }
+
+  /* temperature, then exp2 weights on the Q10 diff from the max */
+  const int s = ctx->model->gru.k_out + 4; /* 2^(k_out+14) -> Q10 */
+  const int64_t top = rshift_round(logits[order[0]] * ctx->inv_t_q8, 8);
+  uint32_t total = 0;
+  for (uint32_t n = 0; n < k; ++n) {
+    int64_t scaled = rshift_round(logits[order[n]] * ctx->inv_t_q8, 8);
+    weights[n] = lut_exp2(rshift_round(scaled - top, s));
+    total += weights[n];
+  }
+
+  /* the RNG advances exactly once per step, even on the greedy path */
+  ctx->rng = xorshift32(ctx->rng);
+  if (k == 1 || total == 0) return order[0];
+
+  uint32_t draw = ctx->rng % total;
+  uint32_t cum = 0;
+  for (uint32_t n = 0; n < k; ++n) {
+    cum += weights[n];
+    if (cum > draw) return order[n];
+  }
+  return order[k - 1]; /* unreachable; belt and suspenders */
+}

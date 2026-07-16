@@ -115,6 +115,91 @@ def overfit_corpus(pairs: list[tuple[str, str]], vocab, hidden: int = 64,
     return model
 
 
+def _batchify(seqs: list[list[int]], vocab_size: int, pad_target: int = -100):
+    """Pad a list of id-sequences into (inputs [B,T,V] one-hot, targets
+    [B,T] with pad_target on padding). Sequence k is EOS+ids -> ids+EOS
+    teacher forcing, like everywhere else in this project."""
+    B = len(seqs)
+    T = max(len(s) + 1 for s in seqs)
+    inputs = torch.zeros(B, T, vocab_size, dtype=torch.float32)
+    targets = torch.full((B, T), pad_target, dtype=torch.long)
+    for b, ids in enumerate(seqs):
+        eos_first = [0] + ids  # vocab.eos_id is 0 by construction
+        for pos, i in enumerate(eos_first):
+            inputs[b, pos, i] = 1.0
+        targets[b, : len(ids) + 1] = torch.tensor(ids + [0], dtype=torch.long)
+    return inputs, targets
+
+
+def train_corpus(pairs: list[tuple[str, str]], vocab, hidden: int = 128,
+                 seed: int = 0, lr: float = 3e-3, batch_size: int = 64,
+                 max_epochs: int = 60, patience: int = 5,
+                 device: str | None = None) -> CharGRU:
+    """M4 training: mini-batches over a generated corpus with a held-out
+    validation split (every 10th pair — the corpus is combo-interleaved,
+    so the split covers every condition). Unlike overfit_corpus the goal
+    is GENERALIZATION: early-stop on best val loss, restore that model.
+
+    Float training is throwaway scaffolding (device may be MPS; numerics
+    need not be reproducible) — what ships is the quantized integer
+    replay, and the acceptance gate (val loss + int-vs-float top-1
+    agreement) runs downstream in make_m4_blob.py."""
+    if device is None:
+        device = "mps" if torch.backends.mps.is_available() else "cpu"
+    torch.manual_seed(seed)
+    model = CharGRU(vocab_size=len(vocab), hidden=hidden).to(device)
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=-100)
+
+    encoded = [vocab.encode(p) + vocab.encode(r) for p, r in pairs]
+    assert vocab.eos_id == 0
+    val = encoded[9::10]
+    train = [s for i, s in enumerate(encoded) if i % 10 != 9]
+
+    def val_loss() -> float:
+        model.eval()
+        total, count = 0.0, 0
+        with torch.no_grad():
+            for i in range(0, len(val), batch_size):
+                inputs, targets = _batchify(val[i:i + batch_size], len(vocab))
+                logits, _ = model(inputs.to(device))
+                n = (targets != -100).sum().item()
+                total += loss_fn(logits.reshape(-1, len(vocab)),
+                                 targets.reshape(-1).to(device)).item() * n
+                count += n
+        model.train()
+        return total / count
+
+    rng = torch.Generator().manual_seed(seed)
+    best, best_state, since_best = float("inf"), None, 0
+    for epoch in range(max_epochs):
+        order = torch.randperm(len(train), generator=rng).tolist()
+        for i in range(0, len(order), batch_size):
+            batch = [train[j] for j in order[i:i + batch_size]]
+            inputs, targets = _batchify(batch, len(vocab))
+            opt.zero_grad()
+            logits, _ = model(inputs.to(device))
+            loss = loss_fn(logits.reshape(-1, len(vocab)),
+                           targets.reshape(-1).to(device))
+            loss.backward()
+            opt.step()
+        v = val_loss()
+        print(f"epoch {epoch}: val loss {v:.4f}", flush=True)
+        if v < best:
+            best, since_best = v, 0
+            best_state = {k: t.detach().cpu().clone()
+                          for k, t in model.state_dict().items()}
+        else:
+            since_best += 1
+            if since_best >= patience:
+                break
+
+    model.load_state_dict(best_state)
+    model = model.to("cpu").eval()
+    model.final_loss = best
+    return model
+
+
 def generate_greedy_prompted(model: CharGRU, vocab, prompt: str,
                              max_len: int = 256) -> str:
     """Prime ONCE on EOS+prompt (the last position's logits are the first

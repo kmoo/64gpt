@@ -91,6 +91,37 @@ without touching the pipeline's shape:
   Training-heavy tests are marked `slow` and skipped by default;
   milestone gates run `pytest -m ''` for the full suite.
 
+## M4: the generalization stage
+
+M4 is where the pipeline stops memorizing and starts *learning*. Two new
+stages, everything else keeps its shape:
+
+- **Generated corpus** (`corpus_gen.py`): a deterministic template
+  grammar — per-NPC sentence skeletons with filler slots, mood-modulated
+  punctuation and closers — yields 14,400 pairs (~1.5 MB), 762–1129
+  *distinct* responses per condition. One `random.Random(seed)` in a
+  fixed draw order makes the whole corpus reproducible byte-for-byte.
+  Why a grammar and not scraped text? A rigid format is the mitigation
+  for a ~70K-param model: it only has to learn voice + slots, not
+  language.
+- **Real training** (`model.train_corpus`): mini-batches with padding
+  masks, a 90/10 train/val split taken along the corpus interleave (so
+  every condition appears in both), early stopping on val loss with the
+  best checkpoint restored. Float training remains throwaway
+  scaffolding; nothing downstream depends on its numerics.
+- **Sampling** (`ref_impl.sample_from_logits`, C twin
+  `core/ngpt_sample.cpp`): temperature/top-k over the integer logits.
+  Weights come from a 256-entry exp2 LUT (generated header — fixed math,
+  not blob data), randomness from xorshift32. Seeded, so "random" output
+  is still bit-exact: the goldens pin seed+params, and the ROM self-test
+  replays them. Base-2 exponentials make "temperature" a base-2 knob
+  (≈0.69× the natural-log convention) — documented, deliberate.
+- **Acceptance** (`make_m4_blob.py` gates before emitting): int8-vs-float
+  top-1 agreement ≥95% teacher-forced on held-out sequences — the metric
+  that says quantization preserved the *decisions*, not just the values —
+  plus non-degenerate seeded goldens per condition, printed for the
+  human eyeball check.
+
 ## Downstream: how the C side consumes this
 
 `tests/test_gru_model.cpp` loads `m2_gru.bin`, generates, and compares

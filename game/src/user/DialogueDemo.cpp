@@ -55,19 +55,30 @@ namespace
              SELFTEST_NPCS[npcIdx], SELFTEST_MOODS[moodIdx], SELFTEST_EVENTS[evIdx]);
   }
 
+  uint32_t frameCount{}; // demo sampling seed: varies per regenerate
+
   void restartGeneration()
   {
     textLen = 0;
     generating = loaded;
     buildPrompt();
-    if(loaded)ngpt_reset(&ctx, &model, prompt);
+    if(loaded) {
+      ngpt_reset(&ctx, &model, prompt);
+      /* M4: sampled generation. The seed comes from the frame counter,
+       * so every regenerate (even of the same prompt) speaks a fresh
+       * line; the self-test below uses the pinned seed instead. */
+      ngpt_set_sampler(&ctx, frameCount, SELFTEST_INV_T_Q8, SELFTEST_TOP_K);
+    }
   }
 
   bool runSelfTest()
   {
-    // Replay all 12 prompted generations against the committed goldens.
+    // Replay all 12 seeded sampled generations against the committed
+    // goldens (same seed/params the trainer used to make them).
     for(uint32_t p = 0; p < SELFTEST_COUNT; ++p) {
       ngpt_reset(&ctx, &model, SELFTEST_PROMPTS[p]);
+      ngpt_set_sampler(&ctx, SELFTEST_SAMPLE_SEED, SELFTEST_INV_T_Q8,
+                       SELFTEST_TOP_K);
       const char *want = SELFTEST_GOLDEN[p];
       uint32_t i = 0;
       int c;
@@ -117,6 +128,7 @@ namespace P64::Script::C64D1A106DE00001
 
   void update(Object& obj, Data *data, float deltaTime)
   {
+    ++frameCount;
     auto pressed = joypad_get_buttons_pressed(JOYPAD_PORT_1);
     bool changed = false;
     if(pressed.d_up)   { npcIdx  = cycle(npcIdx,  +1, SELFTEST_NPC_COUNT);   changed = true; }
@@ -174,7 +186,7 @@ namespace P64::Script::C64D1A106DE00001
       Debug::printStart();
 
       Debug::print(24, 24, selftestPass ? "SELFTEST PASS" : "SELFTEST FAIL");
-      Debug::print(24, 40, "64GPT V0.3 - PROMPTED GRU");
+      Debug::print(24, 40, "64GPT V0.9 - SAMPLED GRU");
       Debug::print(24, 60, prompt);
 
       // dialogue box: wrap the streamed text into rows

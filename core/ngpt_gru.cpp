@@ -12,6 +12,7 @@
  * rounding shifts below depend on that (and NumPy matches it).
  */
 #include "ngpt_gru.h"
+#include "ngpt_sample.h"
 
 #define Q14_ONE 16384
 
@@ -138,15 +139,24 @@ int ngpt_gru_step(ngpt_ctx *ctx)
 
   gru_h_update(ctx, ctx->cur);
 
-  /* logits + argmax; ties break toward the lowest id (matches np.argmax) */
-  uint32_t best = 0;
-  int64_t best_v = 0;
+  /* logits (static scratch — small N64 thread stacks, the M2 lesson) */
+  static int64_t logits[NGPT_GRU_MAX_VOCAB];
   for (uint32_t v = 0; v < V; ++v) {
     int64_t sum = 0;
     const uint8_t *row = g->w_out + v * H;
     for (uint32_t j = 0; j < H; ++j) sum += (int64_t)(int8_t)row[j] * ctx->h[j];
-    sum += read_i32be(g->b_out + 4 * v);
-    if (v == 0 || sum > best_v) { best = v; best_v = sum; }
+    logits[v] = sum + read_i32be(g->b_out + 4 * v);
+  }
+
+  /* pick the next token: M4 sampler when enabled, else argmax with ties
+   * toward the lowest id (matches np.argmax) */
+  uint32_t best = 0;
+  if (ctx->sample_on) {
+    best = ngpt_sample_pick(ctx, logits, V);
+  } else {
+    for (uint32_t v = 1; v < V; ++v) {
+      if (logits[v] > logits[best]) best = v;
+    }
   }
 
   ctx->cur = (uint16_t)best;
