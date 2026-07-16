@@ -32,7 +32,9 @@ The on-console proof is re-verified continuously:
       the final streaming API; parser + generation tests green; boots in
       Ares with SELFTEST PASS + streaming dialogue box
       (`docs/milestones/m1.md`)
-- [ ] **M2** — ROM v0.2: real GRU overfit on ONE line (first neural net on N64)
+- [x] **M2** — ROM v0.2: real GRU overfit on ONE line — first neural net
+      on N64: int8 weights, integer-only inference, bit-identical to the
+      Python trainer (`docs/milestones/m2.md`)
 - [ ] **M3** — ROM v0.3: conditioning on a dozen hand-written lines
 - [ ] **M4** — ROM v0.9: full generated corpus + temperature/top-k sampling
 - [ ] **M5** — ROM v1.0-rc: performance pass, ≥30 chars/sec
@@ -83,7 +85,10 @@ embedded ML — start at 00 and read in order, or jump in:
 - [01 — Toolchain & Pyrite64](docs/01-toolchain-and-pyrite64.md)
 - [02 — Pyrite64 scripting: DialogueDemo explained](docs/02-pyrite64-scripting.md)
 - [03 — The NGPT model blob format](docs/03-blob-format.md)
-- Milestone notes: [m0](docs/milestones/m0.md) · [m1](docs/milestones/m1.md)
+- [04 — Fixed-point inference](docs/04-fixed-point-inference.md)
+- [05 — A GRU on a napkin](docs/05-gru-on-a-napkin.md)
+- [06 — The training pipeline](docs/06-training-pipeline.md)
+- Milestone notes: [m0](docs/milestones/m0.md) · [m1](docs/milestones/m1.md) · [m2](docs/milestones/m2.md)
 
 ## Pinned versions
 

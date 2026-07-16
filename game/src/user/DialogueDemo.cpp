@@ -96,7 +96,7 @@ namespace P64::Script::C64D1A106DE00001
       Debug::printStart();
 
       Debug::print(24, 24, selftestPass ? "SELFTEST PASS" : "SELFTEST FAIL");
-      Debug::print(24, 40, "64GPT V0.1 - CANNED MODEL");
+      Debug::print(24, 40, "64GPT V0.2 - GRU ON SILICON");
 
       // dialogue box: wrap the streamed text into rows
       char row[WRAP_COLS + 1];

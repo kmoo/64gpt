@@ -81,9 +81,13 @@ int ngpt_gru_step(ngpt_ctx *ctx)
 
   /* One-hot input in Q14 is a single 16384, so the input-side "matvec"
    * is column ctx->cur of W_ih, shifted left 14 — plus the bias that the
-   * trainer already scaled into the accumulator domain. */
-  int64_t acc_i[3 * NGPT_GRU_MAX_HIDDEN];
-  int64_t acc_h[3 * NGPT_GRU_MAX_HIDDEN];
+   * trainer already scaled into the accumulator domain.
+   * Scratch buffers are static, NOT stack: ~6.5 KB of locals overflows
+   * the small stack Pyrite64 runs object-script callbacks on (symptom:
+   * memory corruption -> engine bad_function_call at the next frame
+   * swap). The engine is single-threaded, so statics are safe. */
+  static int64_t acc_i[3 * NGPT_GRU_MAX_HIDDEN];
+  static int64_t acc_h[3 * NGPT_GRU_MAX_HIDDEN];
   for (uint32_t i = 0; i < 3 * H; ++i) {
     int64_t w = (int8_t)g->w_ih[i * V + ctx->cur];
     acc_i[i] = (w << 14) + read_i32be(g->b_ih + 4 * i);
@@ -94,7 +98,7 @@ int ngpt_gru_step(ngpt_ctx *ctx)
     acc_h[i] = sum + read_i32be(g->b_hh + 4 * i);
   }
 
-  int16_t h_next[NGPT_GRU_MAX_HIDDEN];
+  static int16_t h_next[NGPT_GRU_MAX_HIDDEN];
   for (uint32_t j = 0; j < H; ++j) {
     int64_t r = lut_lookup(g->lut_sig, rshift_round(acc_i[j] + acc_h[j], s));
     int64_t z = lut_lookup(g->lut_sig, rshift_round(acc_i[H + j] + acc_h[H + j], s));
