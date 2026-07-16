@@ -49,6 +49,11 @@ The on-console proof is re-verified continuously:
       102 chars/sec, sustained 60 at a held 60 VPS — 2× the ≥30 gate
       (`docs/milestones/m5.md`, `docs/07-performance.md`)
 - [ ] **M6** — ROM v1.0: running on a real N64 via EverDrive
+- [x] **M6.1** — ROM v1.1: RSP-powered inference — the hot matvec runs
+      on the graphics coprocessor, bit-exact (boot self-test + on-screen
+      CPU-vs-RSP cross-check), 10.3ms → 4.8ms per char with the CPU
+      freed; engine cap raised to H=256 for the M7-scale model
+      (`docs/milestones/m6.1.md`)
 
 ## Quickstart
 
@@ -100,7 +105,7 @@ embedded ML — start at 00 and read in order, or jump in:
 - [05 — A GRU on a napkin](docs/05-gru-on-a-napkin.md)
 - [06 — The training pipeline](docs/06-training-pipeline.md)
 - [07 — Performance](docs/07-performance.md)
-- Milestone notes: [m0](docs/milestones/m0.md) · [m1](docs/milestones/m1.md) · [m2](docs/milestones/m2.md) · [m3](docs/milestones/m3.md) · [m4](docs/milestones/m4.md) · [m5](docs/milestones/m5.md)
+- Milestone notes: [m0](docs/milestones/m0.md) · [m1](docs/milestones/m1.md) · [m2](docs/milestones/m2.md) · [m3](docs/milestones/m3.md) · [m4](docs/milestones/m4.md) · [m5](docs/milestones/m5.md) · [m6](docs/milestones/m6.md) · [m6.1](docs/milestones/m6.1.md)
 
 ## Pinned versions
 

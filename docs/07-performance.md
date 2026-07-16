@@ -68,3 +68,47 @@ but blows the 16.6ms frame budget and judders; not worth it.)
 The ROM self-test replays ~1,000 characters before the first frame, so
 step time is also boot time: 16.6ms/step ≈ 17s of black screen at
 baseline, ~10s after M5. Worth remembering when the self-test grows.
+
+## M6.1 addendum — the matvec moves to the RSP
+
+M5 ended with the CPU maxed out: ~9.8ms/char, all of it inference. M6.1
+moves the W_hh matvec (3H×H = 384×128 int8×int16 MACs, ~80% of a step)
+onto the **RSP** — the graphics coprocessor's 8-lane × 16-bit vector
+unit, which does 8 multiply-accumulates per cycle where the R4300i does
+one multiply in ~5.
+
+Measured on the shipping demo (Ares, same M4 blob and goldens):
+
+| step (one character) | µs/char | raw ch/s |
+|---|---|---|
+| M5 all-CPU path (measured at boot for the on-screen comparison) | ~10,300 | ~97 |
+| M6.1 RSP matvec + CPU gates/LUTs/logits/sampler | **~4,800** | **~208** |
+
+The win is exactly the matvec's share: the kernel replaces ~8.6ms of
+CPU MACs with ~3.0ms of RSP time (DMA-tiled, dispatch included), and
+the surrounding step is unchanged. Two things matter more than the 2.1×:
+
+- **The CPU is idle during those 3ms.** M7's world simulation runs
+  there for free.
+- **Headroom is the point, not speed.** At H=256 (~500K params — the
+  M7 "magic zone") the matvec grows 4×; on the CPU that's a ~36ms step
+  (unplayable), on the RSP path it lands back at roughly today's M5
+  numbers — playable. The engine cap is already raised to 256.
+
+How it stays bit-exact (the non-negotiable): the ucode accumulates
+S16×S16 products into the RSP's 48-bit per-lane accumulators with no
+clamp and no rounding anywhere (peak < 2^42), and the engine still adds
+biases and runs every nonlinearity on the CPU — so the RSP path
+produces the *same integers* and the M4 goldens replay byte-identically
+through it. The boot sequence proves it on screen every single boot:
+`SELFTEST PASS` (12 goldens through the RSP) plus an explicit CPU-vs-RSP
+cross-check of one full generation (bytes + final hidden state).
+
+The known further headroom (pre-shuffled weights in the blob, double-
+buffered tile DMA — see `docs/spikes/rsp-matvec.md`) is untouched;
+realistic target is 5×+ on the matvec when a bigger model needs it.
+
+One structural change fell out: the self-test can no longer run before
+the first frame (blocking on the RSP inside `initDelete` hangs the boot
+— spike bug #1), so it now runs *on screen* over the first frames. Side
+effect: the ~10s black-screen boot of the m4/m5 ROMs is gone.
