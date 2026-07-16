@@ -4,8 +4,8 @@ Tiny neural NPC dialogue brain (char-level GRU, ~100K params, int8) running
 on a real Nintendo 64 via the Pyrite64 engine. Full plan, verified engine
 facts, and current status: **`docs/plan.md`** — read it before starting any
 milestone work. Per-milestone status and remaining checklists:
-`docs/milestones/mN.md` — **`m6.md` is the current one and doubles as the
-session-resume brief.** Forward-looking material: `docs/ideas.md`,
+`docs/milestones/mN.md` — **`m6.md` doubles as the session-resume brief; `m6.1.md` is the
+active build task (RSP-powered inference).** Forward-looking material: `docs/ideas.md`,
 `docs/ideas-m7-living-npcs.md` (recorded vision), and `docs/spikes/`
 (RSP matvec: proven bit-exact at 2.8x CPU, branch `spike/rsp-matvec`).
 
