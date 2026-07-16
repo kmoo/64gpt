@@ -109,6 +109,22 @@ void ngpt_reset(ngpt_ctx *ctx, const ngpt_model *m, const char *prompt);
  * the next ngpt_reset. */
 int ngpt_step(ngpt_ctx *ctx);
 
+/* M6.1: optional accelerated matvec backend (additive — the frozen
+ * 4-call streaming API is untouched). The engine's hot loop is the
+ * W_hh matvec: rows x cols int8 weights (row-major, straight from the
+ * blob, no alignment guarantee) dotted with the int16 hidden state.
+ * A registered callback must write the raw row.h sum for every row to
+ * out[0..rows-1] — exactly sum((int8)row[j] * h[j]), no biases (the
+ * engine adds those). NULL (the default) keeps the pure-CPU path, so
+ * the host test suite stays the bit-exactness referee. On the N64 the
+ * game registers an RSP-backed callback; the engine is single-threaded,
+ * so the hook is a plain global. Dims come from the blob — a backend
+ * must check rows/cols and fall back to a CPU loop for shapes it
+ * cannot handle (that is what keeps this working at H=256+). */
+typedef void (*ngpt_matvec_fn)(const uint8_t *w_rows, uint32_t rows,
+                               uint32_t cols, const int16_t *h, int32_t *out);
+void ngpt_set_matvec(ngpt_matvec_fn fn);
+
 /* M4: enable temperature/top-k sampling for this generation (additive —
  * never calling this keeps greedy argmax). Call AFTER ngpt_reset, which
  * turns sampling off. seed 0 is remapped to 1 (xorshift32 fixed point);

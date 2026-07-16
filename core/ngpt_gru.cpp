@@ -16,6 +16,12 @@
 
 #define Q14_ONE 16384
 
+/* M6.1: optional accelerated W_hh matvec (RSP on the N64). NULL keeps
+ * the pure-CPU loop below — the path every host test runs. */
+static ngpt_matvec_fn ngpt_matvec_hook = 0;
+
+void ngpt_set_matvec(ngpt_matvec_fn fn) { ngpt_matvec_hook = fn; }
+
 static int64_t rshift_round(int64_t x, int s)
 {
   return (x + ((int64_t)1 << (s - 1))) >> s;
@@ -103,12 +109,22 @@ static void gru_h_update(ngpt_ctx *ctx, uint32_t x_id)
   for (uint32_t i = 0; i < 3 * H; ++i) {
     int32_t w = (int8_t)g->w_ih[i * V + x_id];
     acc_i[i] = (w << 14) + read_i32be(g->b_ih + 4 * i);
-
-    int32_t sum = 0;
-    const uint8_t *row = g->w_hh + i * H;
-    for (uint32_t j = 0; j < H; ++j) sum += (int32_t)(int8_t)row[j] * ctx->h[j];
-    acc_h[i] = sum + read_i32be(g->b_hh + 4 * i);
   }
+
+  /* W_hh matvec (~80% of a step's MACs): the one place the M6.1 hook
+   * replaces. The callback writes raw row.h sums; biases are added here
+   * either way, so both paths compute bit-identical acc_h. */
+  if (ngpt_matvec_hook) {
+    ngpt_matvec_hook(g->w_hh, 3 * H, H, ctx->h, acc_h);
+  } else {
+    for (uint32_t i = 0; i < 3 * H; ++i) {
+      int32_t sum = 0;
+      const uint8_t *row = g->w_hh + i * H;
+      for (uint32_t j = 0; j < H; ++j) sum += (int32_t)(int8_t)row[j] * ctx->h[j];
+      acc_h[i] = sum;
+    }
+  }
+  for (uint32_t i = 0; i < 3 * H; ++i) acc_h[i] += read_i32be(g->b_hh + 4 * i);
 
   static int16_t h_next[NGPT_GRU_MAX_HIDDEN];
   for (uint32_t j = 0; j < H; ++j) {
