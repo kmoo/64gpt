@@ -8,6 +8,6 @@
 #include "ngpt.h"
 
 /* Advance ctx->rng one xorshift32 step and pick a token id from the
- * logits (int64, length V, in scale 2^(k_out+14)). k=1 or an all-zero
+ * logits (int32, length V, in scale 2^(k_out+14)). k=1 or an all-zero
  * weight row degrades to argmax with ties toward the lowest id. */
-uint32_t ngpt_sample_pick(ngpt_ctx *ctx, const int64_t *logits, uint32_t V);
+uint32_t ngpt_sample_pick(ngpt_ctx *ctx, const int32_t *logits, uint32_t V);

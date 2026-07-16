@@ -34,7 +34,7 @@ static uint32_t lut_exp2(int64_t x_q10)
   return NGPT_LUT_EXP2[(uint32_t)((x_q10 + 16384) >> 6)];
 }
 
-uint32_t ngpt_sample_pick(ngpt_ctx *ctx, const int64_t *logits, uint32_t V)
+uint32_t ngpt_sample_pick(ngpt_ctx *ctx, const int32_t *logits, uint32_t V)
 {
   /* scratch is static, not stack: N64 game threads run on small stacks
    * (the M2 lesson) */
@@ -48,7 +48,7 @@ uint32_t ngpt_sample_pick(ngpt_ctx *ctx, const int64_t *logits, uint32_t V)
   for (uint32_t v = 0; v < V; ++v) used[v] = 0;
   for (uint32_t n = 0; n < k; ++n) {
     uint32_t best = 0;
-    int64_t best_v = 0;
+    int32_t best_v = 0;
     int have = 0;
     for (uint32_t v = 0; v < V; ++v) {
       if (used[v]) continue;
@@ -58,12 +58,14 @@ uint32_t ngpt_sample_pick(ngpt_ctx *ctx, const int64_t *logits, uint32_t V)
     order[n] = best;
   }
 
-  /* temperature, then exp2 weights on the Q10 diff from the max */
+  /* temperature, then exp2 weights on the Q10 diff from the max — the
+   * inv_t product exceeds 32 bits (2^30 x 2^16), so this cold path
+   * (k multiplies per emitted char) stays int64 */
   const int s = ctx->model->gru.k_out + 4; /* 2^(k_out+14) -> Q10 */
-  const int64_t top = rshift_round(logits[order[0]] * ctx->inv_t_q8, 8);
+  const int64_t top = rshift_round((int64_t)logits[order[0]] * ctx->inv_t_q8, 8);
   uint32_t total = 0;
   for (uint32_t n = 0; n < k; ++n) {
-    int64_t scaled = rshift_round(logits[order[n]] * ctx->inv_t_q8, 8);
+    int64_t scaled = rshift_round((int64_t)logits[order[n]] * ctx->inv_t_q8, 8);
     weights[n] = lut_exp2(rshift_round(scaled - top, s));
     total += weights[n];
   }

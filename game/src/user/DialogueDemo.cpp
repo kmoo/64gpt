@@ -19,7 +19,10 @@
 
 namespace
 {
-  constexpr int CHARS_PER_FRAME = 2; // slow enough to see the streaming
+  // M5: one step (~9.9ms at H=128, int32 + -O3) fits a 60fps frame; one
+  // char/frame streams a sustained 60 chars/sec with VPS held at 60.
+  // Two would exceed the 16.6ms budget and judder the frame rate.
+  constexpr int CHARS_PER_FRAME = 1;
   constexpr int WRAP_COLS = 34;      // 7px glyph advance, ~240px text area
 
   // One demo instance per scene; shared state keeps P64_DATA trivial.
@@ -56,6 +59,11 @@ namespace
   }
 
   uint32_t frameCount{}; // demo sampling seed: varies per regenerate
+
+  // M5 perf instrumentation: EMA of CPU ticks per ngpt_step, shown on
+  // screen as us/step + the raw chars/sec the engine could sustain.
+  uint64_t stepTicksEma{};
+  bool stepMeasured{};
 
   void restartGeneration()
   {
@@ -171,7 +179,11 @@ namespace P64::Script::C64D1A106DE00001
     // ---- TEMP ATTRACT MODE (END) --------------------------------------
 
     for(int i = 0; i < CHARS_PER_FRAME && generating; ++i) {
+      uint64_t t0 = get_ticks();
       int c = ngpt_step(&ctx);
+      uint64_t dt = get_ticks() - t0;
+      stepTicksEma = stepMeasured ? (stepTicksEma * 7 + dt) / 8 : dt;
+      stepMeasured = true;
       if(c == NGPT_EOS) {
         generating = false;
         break;
@@ -188,6 +200,14 @@ namespace P64::Script::C64D1A106DE00001
       Debug::print(24, 24, selftestPass ? "SELFTEST PASS" : "SELFTEST FAIL");
       Debug::print(24, 40, "64GPT V0.9 - SAMPLED GRU");
       Debug::print(24, 60, prompt);
+
+      if(stepMeasured) {
+        uint32_t us = (uint32_t)TICKS_TO_US(stepTicksEma);
+        char perf[48];
+        snprintf(perf, sizeof(perf), "STEP %lu US  RAW %lu CH/S",
+                 (unsigned long)us, (unsigned long)(us ? 1000000u / us : 0));
+        Debug::print(24, 80, perf);
+      }
 
       // dialogue box: wrap the streamed text into rows
       char row[WRAP_COLS + 1];

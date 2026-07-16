@@ -21,6 +21,15 @@ static int64_t rshift_round(int64_t x, int s)
   return (x + ((int64_t)1 << (s - 1))) >> s;
 }
 
+/* M5: the hot loops run int32 — a 64-bit multiply is a different, slower
+ * instruction on the R4300i, and ref_impl documents that int32 suffices
+ * at these dims (H<=128, V<=96: |acc| < 2^30). Bit-identical to the
+ * int64 path for every in-range value; the goldens are the proof. */
+static int32_t rshift_round32(int32_t x, int s)
+{
+  return (x + ((int32_t)1 << (s - 1))) >> s;
+}
+
 static int16_t sat16(int64_t x)
 {
   if (x > 32767) return 32767;
@@ -32,7 +41,7 @@ static int16_t read_i16be(const uint8_t *p) { return (int16_t)ngpt_read_u16be(p)
 static int32_t read_i32be(const uint8_t *p) { return (int32_t)ngpt_read_u32be(p); }
 
 /* 256-entry LUT over [-8, 8) in Q11: index = (clamped + 16384) >> 7 */
-static int64_t lut_lookup(const uint8_t *lut, int64_t x_q11)
+static int32_t lut_lookup(const uint8_t *lut, int32_t x_q11)
 {
   if (x_q11 < -16384) x_q11 = -16384;
   if (x_q11 > 16383) x_q11 = 16383;
@@ -89,27 +98,29 @@ static void gru_h_update(ngpt_ctx *ctx, uint32_t x_id)
    * the small stack Pyrite64 runs object-script callbacks on (symptom:
    * memory corruption -> engine bad_function_call at the next frame
    * swap). The engine is single-threaded, so statics are safe. */
-  static int64_t acc_i[3 * NGPT_GRU_MAX_HIDDEN];
-  static int64_t acc_h[3 * NGPT_GRU_MAX_HIDDEN];
+  static int32_t acc_i[3 * NGPT_GRU_MAX_HIDDEN];
+  static int32_t acc_h[3 * NGPT_GRU_MAX_HIDDEN];
   for (uint32_t i = 0; i < 3 * H; ++i) {
-    int64_t w = (int8_t)g->w_ih[i * V + x_id];
+    int32_t w = (int8_t)g->w_ih[i * V + x_id];
     acc_i[i] = (w << 14) + read_i32be(g->b_ih + 4 * i);
 
-    int64_t sum = 0;
+    int32_t sum = 0;
     const uint8_t *row = g->w_hh + i * H;
-    for (uint32_t j = 0; j < H; ++j) sum += (int64_t)(int8_t)row[j] * ctx->h[j];
+    for (uint32_t j = 0; j < H; ++j) sum += (int32_t)(int8_t)row[j] * ctx->h[j];
     acc_h[i] = sum + read_i32be(g->b_hh + 4 * i);
   }
 
   static int16_t h_next[NGPT_GRU_MAX_HIDDEN];
   for (uint32_t j = 0; j < H; ++j) {
-    int64_t r = lut_lookup(g->lut_sig, rshift_round(acc_i[j] + acc_h[j], s));
-    int64_t z = lut_lookup(g->lut_sig, rshift_round(acc_i[H + j] + acc_h[H + j], s));
-    /* n-gate: r (Q14) gates the hidden-side accumulator only */
-    int64_t n_acc = acc_i[2 * H + j] + rshift_round(r * acc_h[2 * H + j], 14);
-    int64_t n = lut_lookup(g->lut_tanh, rshift_round(n_acc, s));
-    h_next[j] = sat16(rshift_round((Q14_ONE - z) * n, 14) +
-                      rshift_round(z * (int64_t)ctx->h[j], 14));
+    int32_t r = lut_lookup(g->lut_sig, rshift_round32(acc_i[j] + acc_h[j], s));
+    int32_t z = lut_lookup(g->lut_sig, rshift_round32(acc_i[H + j] + acc_h[H + j], s));
+    /* n-gate: r (Q14) gates the hidden-side accumulator only. The one
+     * product that genuinely needs 64 bits: r (2^14) x acc (2^30). */
+    int32_t n_acc = acc_i[2 * H + j] +
+                    (int32_t)rshift_round((int64_t)r * acc_h[2 * H + j], 14);
+    int32_t n = lut_lookup(g->lut_tanh, rshift_round32(n_acc, s));
+    h_next[j] = sat16(rshift_round32((Q14_ONE - z) * n, 14) +
+                      rshift_round32(z * (int32_t)ctx->h[j], 14));
   }
   for (uint32_t j = 0; j < H; ++j) ctx->h[j] = h_next[j];
 }
@@ -140,11 +151,11 @@ int ngpt_gru_step(ngpt_ctx *ctx)
   gru_h_update(ctx, ctx->cur);
 
   /* logits (static scratch — small N64 thread stacks, the M2 lesson) */
-  static int64_t logits[NGPT_GRU_MAX_VOCAB];
+  static int32_t logits[NGPT_GRU_MAX_VOCAB];
   for (uint32_t v = 0; v < V; ++v) {
-    int64_t sum = 0;
+    int32_t sum = 0;
     const uint8_t *row = g->w_out + v * H;
-    for (uint32_t j = 0; j < H; ++j) sum += (int64_t)(int8_t)row[j] * ctx->h[j];
+    for (uint32_t j = 0; j < H; ++j) sum += (int32_t)(int8_t)row[j] * ctx->h[j];
     logits[v] = sum + read_i32be(g->b_out + 4 * v);
   }
 

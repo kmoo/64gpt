@@ -11,3 +11,7 @@ filesystem/model.bin: rawfs/model.bin
 	@mkdir -p $(dir $@)
 	@echo "    [64GPT] $@"
 	cp $< $@
+
+# M5: the inference engine wants speed (hot int matvec loops); everything
+# else in the ROM keeps the project-wide -Os. Appended flags win in GCC.
+$(BUILD_DIR)/src/user/../../../core/%.o: N64_CXXFLAGS += -O3 -funroll-loops
