@@ -54,12 +54,14 @@ CACHE = Path(__file__).resolve().parent / ".m8_model.pt"
 SEED = 0
 HIDDEN = 256
 PER_COMBO = 300            # Selena's corpus density, unchanged from M7
-GUARD_PER_COMBO = 12       # bumped from 3 (2026-07-17): at 3, guard was ~1.7% of
-                           # the combined corpus (540 of ~32K pairs) against Selena's
-                           # dominant 30K -- gates passed numerically but 3 of 4 guard
-                           # greeting goldens came out garbled on eyeball inspection.
-                           # 12 brings guard's share to ~6.7% (2160 pairs); see
-                           # docs/milestones/m8.md's Evaluation Protocol note
+GUARD_PER_COMBO = 24       # bumped 3->12->24 (2026-07-17): 3 gave 1/4 clean
+                           # goldens (whole-line collapse), 12 gave 2/4 clean
+                           # (remaining failures shrank to tail-end garbling,
+                           # not full collapse) -- real but incomplete progress,
+                           # so pushing density once more. 24 brings guard's
+                           # share of the combined corpus to ~12.6% (4320 of
+                           # ~34K pairs); see docs/milestones/m8.md's
+                           # Evaluation Protocol note
 HOLDOUT_COMBOS = 20        # of Selena's 120, combo-level holdout (unchanged from M7)
 SAMPLE_SEED = 0xC0FFEE
 INV_T_Q8 = 384
