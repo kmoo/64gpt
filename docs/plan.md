@@ -21,6 +21,32 @@ live in `docs/milestones/`.
   in `CLAUDE.md`. Tagged `m1`.
 - **M2–M6** — not started; specified below.
 
+## Known follow-ups (carried forward — check this list before starting any new milestone)
+
+A milestone documenting a known gap is not the same as the gap getting
+closed. This list exists so a solved-then-regressed capability (an
+optimization that stopped covering the current scope, a deferred metric,
+a "worth revisiting" note) stays visible instead of quietly becoming
+permanent — read it at the start of every milestone, not just when it
+was written. Move an item to "Closed" (with the milestone that closed it)
+rather than deleting it, so the record of what regressed and for how
+long survives.
+
+**Open:**
+- **RSP fast path is H=128-only; M7 doubled the model to H=256 and lost
+  it.** M6.1 shipped a 2.1x speedup (10,303us -> 4,809us/step) via RSP
+  matvec, proven and hardcoded for 128 columns
+  (`docs/spikes/rsp-matvec.md`). M7's H=256 model doesn't fit that kernel,
+  so M7 runs CPU-only (~208 ch/s -> ~25 ch/s; full arithmetic in
+  `docs/milestones/m7.md` "Performance: the RSP fast path does not (yet)
+  cover H=256"). Generalizing the kernel to 256-wide tiles would recover
+  roughly half the lost speed. Not required for any milestone's DoD yet,
+  but don't let two or three more milestones pass with this still open by
+  default — re-evaluate explicitly at M9 (boss encounters, the milestone
+  most likely to need the headroom) if not sooner.
+
+**Closed:** (none yet)
+
 ## Context
 
 Goal (non-negotiable): a character-level GRU (~100K params, int8) generating short NPC dialogue **on a real N64** at the end, integrated via the Pyrite64 engine. Text-only demo: a dialogue box streams AI-generated text; buttons cycle conditioning (`NPC=guard / Mood=angry / Event=stole_sword`).
@@ -158,10 +184,68 @@ Entire ML pipeline lands; verification is trivial: GRU overfit on one line must 
 
 ## Verification (every milestone, one loop)
 1. `cd trainer && uv run pytest` (from M2 on)
-2. `cmake -B build tests && ctest` — byte-identical golden generation, ASan/UBSan
-3. `pyrite64 --cli --cmd build game/project.p64proj` → boot `.z64` in Ares → **SELFTEST PASS on screen**
-4. Manual demo check.
-5. Write/update the milestone's docs (concept guides + `milestones/mN.md`, screenshot of the running ROM); update README checklist; commit + tag `mN`. **A milestone without its docs is not done.**
+2. **Model I/O testing, host-side, before any ROM build** (established M7,
+   applies to every milestone from here on — see below).
+3. `cmake -B build tests && ctest` — byte-identical golden generation, ASan/UBSan
+4. `pyrite64 --cli --cmd build game/project.p64proj` → boot `.z64` in Ares → **SELFTEST PASS on screen**
+5. Manual demo check.
+6. Write/update the milestone's docs (concept guides + `milestones/mN.md`, screenshot of the running ROM); update README checklist; commit + tag `mN`. **A milestone without its docs is not done.**
+
+### Model I/O testing (every milestone that trains/retrains a model)
+
+Two questions, answered by measurement, on the host, **before** paying for
+a ROM build — the whole reason M7's acceptance gates
+(`trainer/make_m7_blob.py`) live in the trainer, not the ROM: it's the
+same check, minutes faster to iterate on.
+
+1. **Does each identity/NPC/condition actually sound distinct, and in
+   character?** Conditioning-ablation divergence per axis (identity,
+   mood, trust, context, ... whatever axes the milestone adds) —
+   `trainer/ngpt_trainer/divergence.py`. A new axis (M8's per-archetype
+   *instances*, say) gets its own row in this table, not a reused one.
+2. **Does it feel generative, not like a vending machine?** Effective
+   diversity (`effective_diversity.py`: trigram coverage, unique-line
+   ratio — catches a corpus/model that's technically varied but
+   low-entropy) + repetition self-similarity (multiple sampled draws of
+   the *same* prompt should diverge from each other, not just from other
+   prompts).
+
+Both rely on **sampling, not greedy decoding** — greedy always picks the
+single most-likely next character and collapses to one output per
+prompt, which reads as zero diversity even when the model is fine (M7's
+spike false-start: `docs/spikes/identity-conditioning.md`). "Sampling"
+here means: pick the next character from a probability distribution
+instead of always taking the top one, controlled by two knobs plus a
+random seed —
+- **temperature** — flattens (higher) or sharpens (lower) the
+  distribution before picking; this project uses *inverse* temperature
+  in fixed-point (`inv_t_q8`), so a bigger number means less randomness.
+- **top-k** — only the k most-likely candidates are eligible at all,
+  keeping "random" from meaning "occasionally nonsense."
+- **seed** — the actual source of variety: a per-call random number that
+  drives which eligible candidate gets picked each step. Same prompt,
+  different seed, different (but still plausible) line — this is the
+  "random salt" a data scientist would call **stochastic sampling** (as
+  opposed to deterministic/greedy decoding).
+
+Already implemented and frozen: `ngpt_set_sampler(ctx, seed, inv_t_q8,
+top_k)`. The demo's own regenerate button feeds it a fresh seed
+(`frameCount`) every press — same mechanism, just interactive instead of
+a batch eval script.
+
+### Performance, every milestone that changes model size or the inference path
+
+Never let a chars/sec change go unexplained. If a milestone changes
+hidden size, quantization, or the matvec backend, measure raw chars/sec
+against the *previous* milestone's recorded number and account for the
+delta before calling it done — same discipline that turned M7's
+~208->~25 ch/s drop from a scary regression into a fully-predicted,
+fully-explained outcome (H² scaling + the RSP kernel not yet covering
+the new hidden size — `docs/milestones/m7.md`, "Performance: the RSP
+fast path does not (yet) cover H=256"). A silent, undocumented slowdown
+is a bug; a measured and explained one is just the cost of a scope
+decision — but only if someone actually did the arithmetic instead of
+shrugging.
 
 ## Risks / notes
 - Pyrite64 is early-dev with breaking changes; the mac fork lags upstream (v0.4.0 vs v0.7.0). Pin the fork tag, vendor the version in README, don't chase upstream mid-project. If a needed upstream feature is missing from the fork, the jam25 dialog pattern is plain libdragon `rdpq_*` and works on any version.

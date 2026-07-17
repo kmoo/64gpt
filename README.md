@@ -56,6 +56,13 @@ The on-console proof is re-verified continuously:
       CPU-vs-RSP cross-check), 10.3ms → 4.8ms per char with the CPU
       freed; engine cap raised to H=256 for the M7-scale model
       (`docs/milestones/m6.1.md`)
+- [x] **M7** — ROM v1.2: first living NPC, Selena — Event Bus + Shared
+      World State + NPC Database + Context Builder replace hardcoded demo
+      conditioning; H=256 (~500K+ params) trained on a schema-conditioned,
+      120-combo corpus with prefix-loss masking and a combo-level holdout
+      split; identity-conditioning proven at scale (per-axis divergence
+      table, identity 0.94 ≥ mood 0.92); int8-vs-float agreement 99.25%;
+      SELFTEST PASS in Ares (`docs/milestones/m7.md`)
 
 ## Quickstart
 

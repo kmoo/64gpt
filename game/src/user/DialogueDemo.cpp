@@ -12,7 +12,9 @@
  *             the RSP path (one golden per frame, progress on screen) —
  *             then streams a few characters per frame. Controls:
  *             D-pad up/down = NPC, left/right = MOOD, C-left/right = EV,
- *             A = regenerate with the current prompt.
+ *             A = regenerate with the current prompt, B = show more of
+ *             the current line once it overflows one page (companion
+ *             lines routinely run longer than the 7-row dialogue box).
  * draw      : prompt line + dialogue box + SELFTEST PASS/FAIL banner,
  *             drawn with the engine's builtin debug font (uppercase only).
  */
@@ -98,6 +100,14 @@ namespace
   // in M5); one char/frame streams 60 chars/sec with VPS held at 60.
   constexpr int CHARS_PER_FRAME = 1;
   constexpr int WRAP_COLS = 34;      // 7px glyph advance, ~240px text area
+  constexpr int TEXT_ROW_Y0 = 120;
+  constexpr int TEXT_ROW_DY = 10;
+  constexpr int TEXT_ROWS_PER_PAGE = 7;  // (190-120)/10: fits above the controls row
+  // Companion opener+body+closer lines (M7) routinely exceed one page —
+  // this used to just stop drawing at the bottom of the box and silently
+  // drop the rest of the generated text. text[]/textLen still hold the
+  // FULL line either way; pageStart only windows what draw() shows.
+  constexpr int TEXT_CHARS_PER_PAGE = WRAP_COLS * TEXT_ROWS_PER_PAGE;
 
   // One demo instance per scene; shared state keeps P64_DATA trivial.
   uint8_t *blobData{};
@@ -106,6 +116,7 @@ namespace
   char text[512]{};
   char prompt[64]{};
   uint32_t textLen{};
+  uint32_t pageStart{};  // draw() windows text[pageStart..] one page at a time
   int trustTier{}, moodIdx{}, contextIdx{};
   bool generating{};
   bool loaded{};
@@ -169,6 +180,7 @@ namespace
   void restartGeneration()
   {
     textLen = 0;
+    pageStart = 0;
     generating = loaded;
     buildPrompt();
     if(loaded) {
@@ -322,6 +334,10 @@ namespace P64::Script::C64D1A106DE00001
     if(pressed.c_right){ contextIdx = cycle(contextIdx, +1, NPCDatabase::CONTEXT_COUNT); changed = true; }
     if(pressed.c_left) { contextIdx = cycle(contextIdx, -1, NPCDatabase::CONTEXT_COUNT); changed = true; }
     if(pressed.a || changed)restartGeneration();
+    if(pressed.b) {
+      uint32_t next = pageStart + TEXT_CHARS_PER_PAGE;
+      if(next < textLen)pageStart = next;
+    }
 
     // ---- TEMP ATTRACT MODE (BEGIN) ------------------------------------
     #if NGPT_ATTRACT_MODE
@@ -403,25 +419,31 @@ namespace P64::Script::C64D1A106DE00001
         Debug::print(24, 96, line);
       }
 
-      // dialogue box: wrap the streamed text into rows
+      // dialogue box: wrap one page of the streamed text into rows. The
+      // full line always lives in text[0..textLen); pageStart only picks
+      // where this page starts, so paging never drops any generated text.
       char row[WRAP_COLS + 1];
-      uint32_t pos = 0;
-      int y = 120;
-      while(pos < textLen && y < 190) {
+      uint32_t pos = pageStart;
+      int y = TEXT_ROW_Y0;
+      int rowsDrawn = 0;
+      while(pos < textLen && rowsDrawn < TEXT_ROWS_PER_PAGE) {
         uint32_t n = 0;
         while(n < WRAP_COLS && pos < textLen)row[n++] = text[pos++];
         row[n] = '\0';
         Debug::print(36, y, row);
-        y += 10;
+        y += TEXT_ROW_DY;
+        ++rowsDrawn;
       }
-      if(generating)Debug::print(36, y, ">"); // cursor while streaming
+      bool moreText = pos < textLen;
+      if(moreText)Debug::print(36, y, "MORE - PRESS B");
+      else if(generating)Debug::print(36, y, ">"); // cursor while streaming
 
       // ---- TEMP ATTRACT MODE (BEGIN/END: one line) ----------------------
       #if NGPT_ATTRACT_MODE
       Debug::print(24, 200, attract ? "AUTO CYCLE - PRESS ANY BUTTON"
-                                    : "DPAD TRUST/MOOD  C CTX  A REGEN");
+                                    : "DPAD TRUST/MOOD  C CTX  A REGEN  B MORE");
       #else
-      Debug::print(24, 200, "DPAD TRUST/MOOD  C CTX  A REGEN");
+      Debug::print(24, 200, "DPAD TRUST/MOOD  C CTX  A REGEN  B MORE");
       #endif
     DrawLayer::useDefault();
   }

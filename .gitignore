@@ -30,3 +30,4 @@ __pycache__/
 .ai/lead-mode
 .ai/tasks/*.log
 .m4_model.pt
+.m7_model.pt

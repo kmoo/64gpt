@@ -25,6 +25,13 @@ later". Milestone definition of done, in order:
 Docs audience: a good software engineer with zero game-dev / zero embedded-ML
 background. Explain why, not just what.
 
+Never let a solved problem quietly regress. `docs/plan.md`'s "Known
+follow-ups" list is the standing record of anything a milestone knowingly
+left worse than a prior milestone had it (an optimization that stopped
+covering new scope, a deferred metric) — check it before starting a new
+milestone, add to it when you knowingly leave a gap, close items rather
+than let them age out silently.
+
 ## Commands
 
 ```sh
@@ -43,6 +50,13 @@ python3 trainer/make_canned_blob.py
 # (0-byte generated game/Makefile → "make: No targets"). Any CWD works.
 "$HOME/GitHub/Pyrite64-v0.4.0/Pyrite64.app/Contents/MacOS/pyrite64" \
   --cli --cmd build "$PWD/game/project.p64proj"   # → game/64gpt.z64, boot in Ares
+
+# verify SELFTEST PASS in Ares (GUI-only emulator, no headless/text mode —
+# screenshot is the only way to check). Boot time scales with golden count:
+# ~7s per golden line on the RSP path, so a 14-golden self-test needs ~90-120s.
+open -a ares "$PWD/game/64gpt.z64"
+sleep 90   # then screencapture again if still mid-run (screen shows "N/14")
+screencapture -x /tmp/ares_boot.png   # Read the image, look for "SELFTEST PASS"
 ```
 
 ## Public repo
@@ -72,6 +86,18 @@ config (that goes in git-ignored `CLAUDE.local.md`). Check `git diff
   `game/Makefile` (use `game/Makefile.custom`), `game/project.p64proj` only
   via the editor.
 - Pin pyrite64-mac to its tagged release (see README); don't chase upstream.
+
+## Local compute contention (one GPU, shared with qwen)
+
+- `trainer/` PyTorch scripts must train with `device="cpu"`, never MPS —
+  MPS competes with qwen's MLX server for the same unified memory and
+  OOM-crashes both (`kIOGPUCommandBufferCallbackErrorOutOfMemory`) if a
+  training run and a qwen dispatch land at once. CPU is slower but safe
+  to run alongside qwen.
+- Before starting a heavy local-model or training session, run
+  `claude agents --json --cwd $PWD` — a live background Claude session
+  already in this repo is a second agent that can hit the GPU at the same
+  time as you, which is what causes the crash above.
 
 ## Toolchain notes
 
