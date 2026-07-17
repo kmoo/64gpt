@@ -47,3 +47,20 @@ ngpt_test(test_gru_model)
 ngpt_test(test_prompted_model)
 ngpt_test(test_sampled_model)
 ngpt_test(test_matvec_hook)
+
+# M7 game-side subsystem (EventBus/WorldState/NPCDatabase/ContextBuilder):
+# pure portable C++, no libdragon — compiles standalone, not against
+# ngpt_core, and not part of the ROM-shipped game/src/user glob (that's
+# built by Pyrite64's own generated Makefile).
+set(NGPT_GAME_USER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../game/src/user)
+add_executable(test_context_builder
+  test_context_builder.cpp
+  ${NGPT_GAME_USER_DIR}/EventBus.cpp
+  ${NGPT_GAME_USER_DIR}/WorldState.cpp
+  ${NGPT_GAME_USER_DIR}/NPCDatabase.cpp
+  ${NGPT_GAME_USER_DIR}/ContextBuilder.cpp
+)
+target_include_directories(test_context_builder PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_context_builder PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_context_builder PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_context_builder COMMAND test_context_builder)
