@@ -200,6 +200,104 @@ def train_corpus(pairs: list[tuple[str, str]], vocab, hidden: int = 128,
     return model
 
 
+def _batchify_masked(seqs: list[list[int]], prompt_lens: list[int], vocab_size: int,
+                     pad_target: int = -100):
+    """Like _batchify, but ALSO masks every target position covering the
+    primed prompt (docs/milestones/m7.md: "mask the loss over the primed
+    prefix... otherwise the model spends capacity learning to echo the
+    schema tags instead of learning voice"). Position i's target is
+    ids[i], predicted from input up to position i; the prompt occupies
+    ids[0:prompt_len), so only positions >= prompt_len (the response body
+    + trailing EOS) are scored. M4 never needed this (flat 3-field
+    prompts, no schema to accidentally memorize) — kept as a separate
+    function so M4's own training path stays byte-for-byte unchanged."""
+    B = len(seqs)
+    T = max(len(s) + 1 for s in seqs)
+    inputs = torch.zeros(B, T, vocab_size, dtype=torch.float32)
+    targets = torch.full((B, T), pad_target, dtype=torch.long)
+    for b, (ids, plen) in enumerate(zip(seqs, prompt_lens)):
+        eos_first = [0] + ids
+        for pos, i in enumerate(eos_first):
+            inputs[b, pos, i] = 1.0
+        full_targets = ids + [0]
+        for pos in range(plen, len(full_targets)):
+            targets[b, pos] = full_targets[pos]
+    return inputs, targets
+
+
+def train_corpus_conditioned(train_pairs: list[tuple[str, str]],
+                             val_pairs: list[tuple[str, str]], vocab,
+                             hidden: int = 256, seed: int = 0, lr: float = 3e-3,
+                             batch_size: int = 64, max_epochs: int = 60,
+                             patience: int = 5, device: str | None = None) -> CharGRU:
+    """M7 training: prefix-loss masking (above) + an explicit combo-level
+    train/val split supplied by the caller (m7.md: hold out whole
+    conditioning combos, not just lines within seen combos — the actual
+    test of generalizing, not memorizing). Otherwise identical to M4's
+    train_corpus (early-stop on best val loss, restore that model)."""
+    if device is None:
+        device = "mps" if torch.backends.mps.is_available() else "cpu"
+    torch.manual_seed(seed)
+    model = CharGRU(vocab_size=len(vocab), hidden=hidden).to(device)
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=-100)
+
+    def encode_split(pairs):
+        ids = [vocab.encode(p) + vocab.encode(r) for p, r in pairs]
+        plens = [len(vocab.encode(p)) for p, _ in pairs]
+        return ids, plens
+
+    train_ids, train_plens = encode_split(train_pairs)
+    val_ids, val_plens = encode_split(val_pairs)
+    assert vocab.eos_id == 0
+
+    def val_loss() -> float:
+        model.eval()
+        total, count = 0.0, 0
+        with torch.no_grad():
+            for i in range(0, len(val_ids), batch_size):
+                inputs, targets = _batchify_masked(
+                    val_ids[i:i + batch_size], val_plens[i:i + batch_size], len(vocab))
+                logits, _ = model(inputs.to(device))
+                n = (targets != -100).sum().item()
+                total += loss_fn(logits.reshape(-1, len(vocab)),
+                                 targets.reshape(-1).to(device)).item() * n
+                count += n
+        model.train()
+        return total / count if count else float("inf")
+
+    rng = torch.Generator().manual_seed(seed)
+    best, best_state, since_best = float("inf"), None, 0
+    for epoch in range(max_epochs):
+        order = torch.randperm(len(train_ids), generator=rng).tolist()
+        for i in range(0, len(order), batch_size):
+            idx = order[i:i + batch_size]
+            batch_ids = [train_ids[j] for j in idx]
+            batch_plens = [train_plens[j] for j in idx]
+            inputs, targets = _batchify_masked(batch_ids, batch_plens, len(vocab))
+            opt.zero_grad()
+            logits, _ = model(inputs.to(device))
+            loss = loss_fn(logits.reshape(-1, len(vocab)),
+                           targets.reshape(-1).to(device))
+            loss.backward()
+            opt.step()
+        v = val_loss()
+        print(f"epoch {epoch}: val loss {v:.4f}", flush=True)
+        if v < best:
+            best, since_best = v, 0
+            best_state = {k: t.detach().cpu().clone()
+                          for k, t in model.state_dict().items()}
+        else:
+            since_best += 1
+            if since_best >= patience:
+                break
+
+    model.load_state_dict(best_state)
+    model = model.to("cpu").eval()
+    model.final_loss = best
+    return model
+
+
 def generate_greedy_prompted(model: CharGRU, vocab, prompt: str,
                              max_len: int = 256) -> str:
     """Prime ONCE on EOS+prompt (the last position's logits are the first

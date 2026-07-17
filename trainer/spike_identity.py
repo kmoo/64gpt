@@ -29,6 +29,7 @@ from pathlib import Path
 
 import torch
 
+from ngpt_trainer.divergence import cross_set_divergence, jaccard_distance
 from ngpt_trainer.model import CharGRU, one_hot, train_corpus
 from ngpt_trainer.vocab import Vocab
 
@@ -131,34 +132,18 @@ def corpus_text(seed: int = 0, per_combo: int = 30) -> str:
     return "".join(p + r for p, r in generate_pairs(seed, per_combo))
 
 
-def trigrams(s: str) -> set:
-    return {s[i:i + 3] for i in range(len(s) - 2)} if len(s) >= 3 else {s}
-
-
-def jaccard_distance(a: str, b: str) -> float:
-    ta, tb = trigrams(a), trigrams(b)
-    if not ta and not tb:
-        return 0.0
-    union = ta | tb
-    if not union:
-        return 0.0
-    return 1.0 - len(ta & tb) / len(union)
-
-
 SAMPLES_PER_CONDITION = 5
 TEMPERATURE = 0.7
 
 
-def cross_set_divergence(model, vocab, prompt_a: str, prompt_b: str, base_seed: int) -> float:
-    """Mean pairwise trigram divergence between K samples drawn under
-    prompt_a and K samples drawn under prompt_b — robust to a single
-    greedy string landing on either side's mode by chance."""
+def draw_and_diverge(model, vocab, prompt_a: str, prompt_b: str, base_seed: int):
+    """K samples per side (robust to one string landing on either side's
+    mode by chance), divergence via the shared trigram-Jaccard metric."""
     samples_a = [generate_sampled_prompted(model, vocab, prompt_a, base_seed + i, TEMPERATURE)
                  for i in range(SAMPLES_PER_CONDITION)]
     samples_b = [generate_sampled_prompted(model, vocab, prompt_b, base_seed + 1000 + i, TEMPERATURE)
                  for i in range(SAMPLES_PER_CONDITION)]
-    divs = [jaccard_distance(a, b) for a in samples_a for b in samples_b]
-    return sum(divs) / len(divs), samples_a, samples_b
+    return cross_set_divergence(samples_a, samples_b), samples_a, samples_b
 
 
 def main() -> None:
@@ -176,8 +161,8 @@ def main() -> None:
     identity_divs = []
     identity_samples = []
     for mood, context in itertools.product(MOODS, CONTEXTS):
-        d, sa, sb = cross_set_divergence(model, vocab, prompt_for("ID_A", mood, context),
-                                         prompt_for("ID_B", mood, context), base_seed=0xC0FFEE)
+        d, sa, sb = draw_and_diverge(model, vocab, prompt_for("ID_A", mood, context),
+                                     prompt_for("ID_B", mood, context), base_seed=0xC0FFEE)
         identity_divs.append(d)
         identity_samples.append((mood, context, sa, sb, d))
         print(f"  [identity swap] M={mood} C={context}: div={d:.3f}")
@@ -189,8 +174,8 @@ def main() -> None:
     mood_samples = []
     for identity, context in itertools.product(IDENTITIES, CONTEXTS):
         for m1, m2 in itertools.combinations(MOODS, 2):
-            d, sa, sb = cross_set_divergence(model, vocab, prompt_for(identity, m1, context),
-                                             prompt_for(identity, m2, context), base_seed=0xBEEF)
+            d, sa, sb = draw_and_diverge(model, vocab, prompt_for(identity, m1, context),
+                                         prompt_for(identity, m2, context), base_seed=0xBEEF)
             mood_divs.append(d)
             mood_samples.append((identity, context, m1, m2, sa, sb, d))
             print(f"  [mood swap] N={identity} C={context}: {m1} vs {m2}: div={d:.3f}")

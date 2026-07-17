@@ -25,6 +25,10 @@
 #include "debug/debugDraw.h"
 #include "n64gpt/ngpt.h"
 #include "selftestGolden.h"
+#include "EventBus.h"
+#include "WorldState.h"
+#include "NPCDatabase.h"
+#include "ContextBuilder.h"
 
 // ---- M6.1 RSP MATVEC BACKEND -------------------------------------------
 // The engine's ngpt_set_matvec hook, backed by the rsp_ngpt overlay
@@ -102,7 +106,7 @@ namespace
   char text[512]{};
   char prompt[64]{};
   uint32_t textLen{};
-  int npcIdx{}, moodIdx{}, evIdx{};
+  int trustTier{}, moodIdx{}, contextIdx{};
   bool generating{};
   bool loaded{};
   bool selftestPass{};
@@ -138,10 +142,20 @@ namespace
   #endif
   // ---- TEMP ATTRACT MODE (END) ----------------------------------------
 
+  // M7: the demo's own trust/mood/context cycling drives the Context
+  // Builder, which emits the schema string the frozen ngpt_reset(prompt)
+  // API primes on (docs/milestones/m7.md "conditioning contract"). The
+  // event field stays "none" for interactive cycling — the trained
+  // model's per-axis behavior on identity/mood/trust/context is what the
+  // trainer's acceptance gates (make_m7_blob.py) actually measure; this
+  // scene exists to show the live mechanism working, not to re-run eval.
   void buildPrompt()
   {
-    snprintf(prompt, sizeof(prompt), "NPC=%s MOOD=%s EV=%s|",
-             SELFTEST_NPCS[npcIdx], SELFTEST_MOODS[moodIdx], SELFTEST_EVENTS[evIdx]);
+    NPCDatabase::selena.trustTier = trustTier;
+    NPCDatabase::selena.moodIdx = moodIdx;
+    WorldState::setContext(NPCDatabase::CONTEXTS[contextIdx]);
+    ContextBuilder::build(prompt, sizeof(prompt), NPCDatabase::selena,
+                          WorldState::currentContext(), EventBus::lastTag());
   }
 
   uint32_t frameCount{}; // demo sampling seed: varies per regenerate
@@ -301,12 +315,12 @@ namespace P64::Script::C64D1A106DE00001
     }
     auto pressed = joypad_get_buttons_pressed(JOYPAD_PORT_1);
     bool changed = false;
-    if(pressed.d_up)   { npcIdx  = cycle(npcIdx,  +1, SELFTEST_NPC_COUNT);   changed = true; }
-    if(pressed.d_down) { npcIdx  = cycle(npcIdx,  -1, SELFTEST_NPC_COUNT);   changed = true; }
-    if(pressed.d_right){ moodIdx = cycle(moodIdx, +1, SELFTEST_MOOD_COUNT);  changed = true; }
-    if(pressed.d_left) { moodIdx = cycle(moodIdx, -1, SELFTEST_MOOD_COUNT);  changed = true; }
-    if(pressed.c_right){ evIdx   = cycle(evIdx,   +1, SELFTEST_EVENT_COUNT); changed = true; }
-    if(pressed.c_left) { evIdx   = cycle(evIdx,   -1, SELFTEST_EVENT_COUNT); changed = true; }
+    if(pressed.d_up)   { trustTier  = cycle(trustTier,  +1, 3); changed = true; }
+    if(pressed.d_down) { trustTier  = cycle(trustTier,  -1, 3); changed = true; }
+    if(pressed.d_right){ moodIdx    = cycle(moodIdx, +1, NPCDatabase::MOOD_COUNT); changed = true; }
+    if(pressed.d_left) { moodIdx    = cycle(moodIdx, -1, NPCDatabase::MOOD_COUNT); changed = true; }
+    if(pressed.c_right){ contextIdx = cycle(contextIdx, +1, NPCDatabase::CONTEXT_COUNT); changed = true; }
+    if(pressed.c_left) { contextIdx = cycle(contextIdx, -1, NPCDatabase::CONTEXT_COUNT); changed = true; }
     if(pressed.a || changed)restartGeneration();
 
     // ---- TEMP ATTRACT MODE (BEGIN) ------------------------------------
@@ -328,11 +342,11 @@ namespace P64::Script::C64D1A106DE00001
       attractTimer += deltaTime;
       if(attractTimer >= IDLE_STEP) {
         attractTimer = 0.0f;
-        /* nested odometer: EV fastest, then MOOD, then NPC */
-        evIdx = cycle(evIdx, +1, SELFTEST_EVENT_COUNT);
-        if(evIdx == 0) {
-          moodIdx = cycle(moodIdx, +1, SELFTEST_MOOD_COUNT);
-          if(moodIdx == 0)npcIdx = cycle(npcIdx, +1, SELFTEST_NPC_COUNT);
+        /* nested odometer: CONTEXT fastest, then MOOD, then TRUST TIER */
+        contextIdx = cycle(contextIdx, +1, NPCDatabase::CONTEXT_COUNT);
+        if(contextIdx == 0) {
+          moodIdx = cycle(moodIdx, +1, NPCDatabase::MOOD_COUNT);
+          if(moodIdx == 0)trustTier = cycle(trustTier, +1, 3);
         }
         restartGeneration();
       }
@@ -372,7 +386,7 @@ namespace P64::Script::C64D1A106DE00001
       } else {
         Debug::print(24, 24, selftestPass ? "SELFTEST PASS" : "SELFTEST FAIL");
       }
-      Debug::print(24, 40, "64GPT V1.1 - RSP INFERENCE");
+      Debug::print(24, 40, "64GPT V1.2 - SELENA (M7)");
       Debug::print(24, 60, prompt);
 
       if(stepMeasured) {
@@ -405,9 +419,9 @@ namespace P64::Script::C64D1A106DE00001
       // ---- TEMP ATTRACT MODE (BEGIN/END: one line) ----------------------
       #if NGPT_ATTRACT_MODE
       Debug::print(24, 200, attract ? "AUTO CYCLE - PRESS ANY BUTTON"
-                                    : "DPAD NPC/MOOD  C EV  A REGEN");
+                                    : "DPAD TRUST/MOOD  C CTX  A REGEN");
       #else
-      Debug::print(24, 200, "DPAD NPC/MOOD  C EV  A REGEN");
+      Debug::print(24, 200, "DPAD TRUST/MOOD  C CTX  A REGEN");
       #endif
     DrawLayer::useDefault();
   }
