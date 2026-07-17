@@ -83,4 +83,12 @@ namespace NPCDatabase
 
     return npc;
   }
+
+  NPC guardInstances[GUARD_INSTANCE_COUNT]{};
+
+  void initGuardInstances()
+  {
+    for(int i = 0; i < GUARD_INSTANCE_COUNT; ++i)
+      guardInstances[i] = spawnInstance(GUARD_ARCHETYPE, GUARD_SEEDS[i]);
+  }
 }

@@ -132,6 +132,32 @@ static void test_archetype_instance()
   CHECK_EQ_INT((int)a.memorySlot, 0);
 }
 
+// M8 task #11: the fixed guard instance registry, checked against ground
+// truth pulled from the real compiled spawnInstance() (same values
+// trainer/tests/test_guard_instances.py cross-checks the Python port
+// against — see that file's EXPECTED dict for provenance).
+void test_guard_instance_registry()
+{
+  NPCDatabase::initGuardInstances();
+  CHECK_EQ_INT(NPCDatabase::GUARD_INSTANCE_COUNT, 4);
+
+  struct Want { const char *id; const char *name; int p[5]; };
+  const Want want[4] = {
+    {"guard#1001", "BRAM",   {43, 5, 35, 72, 73}},
+    {"guard#1002", "EDRIC",  {42, 24, 16, 60, 80}},
+    {"guard#1003", "EDRIC",  {33, 7, 19, 72, 56}},
+    {"guard#1004", "IVOR",   {32, 18, 24, 84, 76}},
+  };
+  for(int i = 0; i < 4; ++i)
+  {
+    const NPCDatabase::NPC &npc = NPCDatabase::guardInstances[i];
+    CHECK(strcmp(npc.id, want[i].id) == 0);
+    CHECK(strcmp(npc.name, want[i].name) == 0);
+    for(int t = 0; t < NPCDatabase::TRAIT_COUNT; ++t)
+      CHECK_EQ_INT(npc.personality[t], want[i].p[t]);
+  }
+}
+
 int main()
 {
   test_event_bus();
@@ -139,5 +165,6 @@ int main()
   test_npc_database();
   test_context_builder();
   test_archetype_instance();
+  test_guard_instance_registry();
   return test_summary("test_context_builder");
 }

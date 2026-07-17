@@ -62,6 +62,19 @@ namespace NPCDatabase
 
   extern const Archetype GUARD_ARCHETYPE;
 
+  // M8 task #11: the fixed set of guard instances the demo/game actually
+  // ships with (guard_corpus.py's GUARD_IDS — the model was only ever
+  // trained on these 4 seeds, per M8's "fixed-set, not runtime-generalizing"
+  // design). guardInstances[] starts default-constructed (id[0]=='\0');
+  // initGuardInstances() must run once (e.g. from initDelete) before any
+  // code reads it.
+  constexpr int GUARD_INSTANCE_COUNT = 4;
+  constexpr uint32_t GUARD_SEEDS[GUARD_INSTANCE_COUNT] = {
+    0x1001, 0x1002, 0x1003, 0x1004,
+  };
+  extern NPC guardInstances[GUARD_INSTANCE_COUNT];
+  void initGuardInstances();
+
   // Deterministically resolves archetype+seed into a concrete instance:
   // xorshift32 jitter per trait (same RNG discipline as core/'s sampler,
   // see core/ngpt_sample.cpp), a name drawn from the archetype's pool,

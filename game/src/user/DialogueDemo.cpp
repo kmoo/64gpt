@@ -11,10 +11,12 @@
  *             RSP cross-check, then the 12-golden self-test through
  *             the RSP path (one golden per frame, progress on screen) —
  *             then streams a few characters per frame. Controls:
- *             D-pad up/down = NPC, left/right = MOOD, C-left/right = EV,
- *             A = regenerate with the current prompt, B = show more of
- *             the current line once it overflows one page (companion
- *             lines routinely run longer than the 7-row dialogue box).
+ *             D-pad up/down = TRUST, left/right = MOOD, C-left/right = EV,
+ *             START = switch NPC (Selena, then the 4 guard archetype
+ *             instances, M8 task #11), A = regenerate with the current
+ *             prompt, B = show more of the current line once it
+ *             overflows one page (companion lines routinely run longer
+ *             than the 7-row dialogue box).
  * draw      : prompt line + dialogue box + SELFTEST PASS/FAIL banner,
  *             drawn with the engine's builtin debug font (uppercase only).
  */
@@ -162,6 +164,22 @@ namespace
   #endif
   // ---- TEMP ATTRACT MODE (END) ----------------------------------------
 
+  // M8 task #11: which NPC the demo is currently talking to. 0 = Selena
+  // (full character, M7), 1..GUARD_INSTANCE_COUNT = guardInstances[n-1]
+  // (archetype instances, M8) — cycled with START. Context cycling (below)
+  // stays universal across all 8 CONTEXTS regardless of NPC: guard's own
+  // corpus only trained 3 of them (guard_corpus.py's GUARD_CONTEXTS), so
+  // an untrained combo on a guard is an honest demonstration of the
+  // archetype's limits, not a bug to special-case away — this demo exists
+  // to show the mechanism working, not to re-run the trainer's eval.
+  int currentNpc{};
+
+  NPCDatabase::NPC &activeNpc()
+  {
+    return currentNpc == 0 ? NPCDatabase::selena
+                           : NPCDatabase::guardInstances[currentNpc - 1];
+  }
+
   // M7: the demo's own trust/mood/context cycling drives the Context
   // Builder, which emits the schema string the frozen ngpt_reset(prompt)
   // API primes on (docs/milestones/m7.md "conditioning contract"). The
@@ -171,10 +189,11 @@ namespace
   // scene exists to show the live mechanism working, not to re-run eval.
   void buildPrompt()
   {
-    NPCDatabase::selena.trustTier = trustTier;
-    NPCDatabase::selena.moodIdx = moodIdx;
+    NPCDatabase::NPC &npc = activeNpc();
+    npc.trustTier = trustTier;
+    npc.moodIdx = moodIdx;
     WorldState::setContext(NPCDatabase::CONTEXTS[contextIdx]);
-    ContextBuilder::build(prompt, sizeof(prompt), NPCDatabase::selena,
+    ContextBuilder::build(prompt, sizeof(prompt), npc,
                           WorldState::currentContext(), EventBus::lastTag());
   }
 
@@ -321,6 +340,8 @@ namespace P64::Script::C64D1A106DE00001
       return;
     }
 
+    NPCDatabase::initGuardInstances(); // M8 task #11: fixed set, cheap, no ROM/model dependency
+
     int blobSize = 0;
     blobData = (uint8_t*)asset_load("rom:/model.bin", &blobSize);
     loaded = blobData && ngpt_load(&model, blobData, (uint32_t)blobSize) == NGPT_OK;
@@ -351,6 +372,7 @@ namespace P64::Script::C64D1A106DE00001
     if(pressed.d_left) { moodIdx    = cycle(moodIdx, -1, NPCDatabase::MOOD_COUNT); changed = true; }
     if(pressed.c_right){ contextIdx = cycle(contextIdx, +1, NPCDatabase::CONTEXT_COUNT); changed = true; }
     if(pressed.c_left) { contextIdx = cycle(contextIdx, -1, NPCDatabase::CONTEXT_COUNT); changed = true; }
+    if(pressed.start) { currentNpc = cycle(currentNpc, +1, 1 + NPCDatabase::GUARD_INSTANCE_COUNT); changed = true; }
     if(pressed.a || changed)restartGeneration();
     if(pressed.b) {
       uint32_t next = pageStart + TEXT_CHARS_PER_PAGE;
@@ -429,7 +451,15 @@ namespace P64::Script::C64D1A106DE00001
       } else {
         Debug::print(24, 24, selftestPass ? "SELFTEST PASS" : "SELFTEST FAIL");
       }
-      Debug::print(24, 40, "64GPT V1.2 - SELENA (M7)");
+      {
+        char npcLine[40];
+        if(currentNpc == 0)
+          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - SELENA (M7)");
+        else
+          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M8 GUARD)",
+                   activeNpc().name);
+        Debug::print(24, 40, npcLine);
+      }
 
       // prompt/seed line: wrap across up to 2 rows so a long schema string
       // (e.g. a long context/event name) doesn't silently run off the
@@ -487,9 +517,9 @@ namespace P64::Script::C64D1A106DE00001
       // ---- TEMP ATTRACT MODE (BEGIN/END: one line) ----------------------
       #if NGPT_ATTRACT_MODE
       Debug::print(24, 200, attract ? "AUTO CYCLE - PRESS ANY BUTTON"
-                                    : "DPAD TRUST/MOOD  C CTX  A REGEN  B MORE");
+                                    : "DPAD TR/MOOD C CTX START:NPC A:REGEN B:MORE");
       #else
-      Debug::print(24, 200, "DPAD TRUST/MOOD  C CTX  A REGEN  B MORE");
+      Debug::print(24, 200, "DPAD TR/MOOD C CTX START:NPC A:REGEN B:MORE");
       #endif
     DrawLayer::useDefault();
   }
