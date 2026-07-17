@@ -21,6 +21,12 @@ later". Milestone definition of done, in order:
 3. docs written (concept guides + `docs/milestones/mN.md`) — **a milestone
    without its docs is not done**
 4. README status checklist updated → commit → tag `mN`
+5. **Copy the FINAL `.z64` into `versions/mN_64gpt.z64`** (+ a row in
+   `versions/README.md`) — every milestone from M2 has one except M7,
+   which got missed because this step lived only as an unwritten
+   convention, not a checklist item. Do this LAST, after any fixes found
+   during Ares verification (pagination/seed/etc. bugs caught by actually
+   watching the demo run) — not the first boot that merely passes.
 
 Docs audience: a good software engineer with zero game-dev / zero embedded-ML
 background. Explain why, not just what.

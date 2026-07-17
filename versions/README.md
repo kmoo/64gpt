@@ -14,6 +14,7 @@ in cartridge form. All boot with an on-screen SELFTEST verdict; expect
 | `m5_64gpt.z64` | `m5` | performance pass (v1.0-rc) — 9.8ms/char, sustained 60 chars/sec at 60 VPS, perf overlay on screen |
 | `rsp_spike_64gpt.z64` | branch `spike/rsp-matvec` | the GRU matvec on the RSP: prints `RSP: G1+G2+G3 ALL PASS` + RSP-vs-CPU timings |
 | `m6_1_64gpt.z64` | `m6.1` | RSP inference (v1.1) — the hot matvec on the RSP in the shipping demo: SELFTEST + CPU-vs-RSP cross-check on screen, ~4.8ms/step vs 10.3ms all-CPU; boots straight to the scene (self-test runs on screen, no black-screen wait) |
+| `m7_64gpt.z64` | `m7` | Selena, the first living NPC (v1.2) — H=256, all acceptance gates green, SELFTEST + XCHK on screen; RSP falls back to CPU-only at this hidden size (`docs/milestones/m7.md` "Performance" section — known, tracked in `docs/plan.md`'s Known follow-ups). Includes the dialogue-box pagination, prompt-wrap, completion-paced attract mode, and higher-entropy sampler seed fixes found during this milestone's own verification pass |
 
 Rebuild any of them from source: check out the tag/branch, purge
 `game/build/` and `game/filesystem/`, then the ROM build command in the
