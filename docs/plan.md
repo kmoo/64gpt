@@ -32,7 +32,23 @@ was written. Move an item to "Closed" (with the milestone that closed it)
 rather than deleting it, so the record of what regressed and for how
 long survives.
 
-**Open:** (none currently)
+**Open:**
+- **Archetype instance spawning has no seed-source strategy yet — M8
+  trains 4 fixed guard seeds (`0x1001`-`0x1004`, hand-picked), but
+  nothing decides which seed gets placed where in the game world.**
+  `NPCDatabase::spawnInstance(archetype, seed)` is intentionally a pure
+  function (same seed -> same guard forever, so a save file only needs
+  to store a seed, not a character record) — that determinism is
+  correct and shouldn't change. What's missing is the *spawn-time*
+  logic that picks *which* seed to use per dungeon level / spawn slot,
+  so the world doesn't always place the same 4 guards in the same
+  order. Also note: this only covers *choosing among the trained set* —
+  generalizing to arbitrary *untrained* seeds (true unlimited procedural
+  variety) is a separate, harder, unproven capability, explicitly out of
+  scope until M9/M10's procedural spawning work. Raised 2026-07-17
+  during M8 corpus work; not required for M8's own DoD (3-4 named
+  instances in one demo scene), but M9 shouldn't start procedural
+  spawning without addressing it.
 
 **Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost
