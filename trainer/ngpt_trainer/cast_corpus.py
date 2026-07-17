@@ -9,10 +9,13 @@ Design: almost every phrase bank is SHARED across characters, keyed by
 an axis (mood, personality descriptor, context, occupation, relationship
 tier) rather than by character name -- the actual test of whether the
 compositional mechanism generalizes, not just four relabeled fixed
-voices. The only per-character content is a small catchphrase bank
-(Fergus's Irish-flavored lines). Reuses selena_corpus.py's mood-keyed
-OPENERS and context-keyed BODIES directly rather than re-authoring them
--- "sassy" openers work for any sassy character, not just Selena.
+voices. The only per-character content is a small catchphrase bank per
+character (Fergus's Irish-flavored lines, M9; Kragan's menacing lines,
+M9.2 -- docs/milestones/m9.2.md, targeting the coherence gap M9's own
+DoD flagged live on hardware for Kragan specifically). Reuses
+selena_corpus.py's mood-keyed OPENERS and context-keyed BODIES directly
+rather than re-authoring them -- "sassy" openers work for any sassy
+character, not just Selena.
 
 Deliberate axis-crossing: a fraction of each character's lines use a
 DIFFERENT descriptor's tic bank than their own -- without this, OCC:
@@ -114,7 +117,12 @@ _OCCUPATION_FLAVOR = {
     ),
 }
 
-# ---- Fergus's catchphrases (the ONLY per-character bank, kept small) ---
+# ---- per-character catchphrase banks (the only per-character content) --
+# Fergus's Irish-flavored lines (M9). Kragan's added M9.2, targeting the
+# specific coherence gap M9's own DoD flagged live on real hardware
+# ("GOTTAND", "RECAND", "NONDS") -- see docs/milestones/m9.2.md. Both
+# banks are deliberately small so they reinforce rather than dominate the
+# shared-bank repetition budget the compositional mechanism relies on.
 
 _FERGUS_CATCHPHRASES = (
     "AH, GO ON NOW, DON'T BE SHY.", "THAT'S GRAND, THAT IS.",
@@ -122,6 +130,15 @@ _FERGUS_CATCHPHRASES = (
     "A ROUND FOR THE HOUSE, WHY NOT.", "GOOD FOOD AND GOOD COMPANY, THAT'S THE LIFE.",
     "GRAND DAY FOR IT, ISN'T IT.", "COME IN FROM THE COLD, GO ON.",
 )
+
+_KRAGAN_CATCHPHRASES = (
+    "MY BLADE DOESN'T MISS.", "THIS PASS BELONGS TO ME NOW.",
+    "NOBODY LEAVES WITHOUT PAYING.", "I'VE BURIED BETTER THAN YOU.",
+    "SPEAK FAST, MY PATIENCE IS SHORT.", "THE SHADOWS ARE MY ONLY FRIENDS.",
+    "CROSS ME ONCE, REGRET IT FOREVER.", "GOLD OR BLOOD, YOUR CHOICE.",
+)
+
+_CATCHPHRASES = {"fergus": _FERGUS_CATCHPHRASES, "kragan": _KRAGAN_CATCHPHRASES}
 
 # ---- relationship-tier closers (shared/reusable) ------------------------
 
@@ -172,8 +189,8 @@ def _response(rng: random.Random, name: str, descriptor: str, occupation: str,
     parts.append(body)
     if occupation in _OCCUPATION_FLAVOR and rng.random() < 0.4:
         parts.append(rng.choice(_OCCUPATION_FLAVOR[occupation]))
-    if name == "fergus" and rng.random() < 0.3:
-        parts.append(rng.choice(_FERGUS_CATCHPHRASES))
+    if name in _CATCHPHRASES and rng.random() < 0.3:
+        parts.append(rng.choice(_CATCHPHRASES[name]))
     if rng.random() < 0.35:
         parts.append(rng.choice(_TIER_CLOSERS[tier]))
     return " ".join(parts)

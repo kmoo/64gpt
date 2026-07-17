@@ -7,7 +7,10 @@ import pytest
 from ngpt_trainer.cast_corpus import (
     CHARACTERS,
     HOLDOUT_COMBOS,
+    _CATCHPHRASES,
     _DESCRIPTOR_TICS,
+    _FERGUS_CATCHPHRASES,
+    _KRAGAN_CATCHPHRASES,
     assert_no_holdout_leak,
     combo_key,
     corpus_text,
@@ -138,6 +141,21 @@ def test_assert_no_holdout_leak_raises_when_leaked():
     fake_pairs = [(f"P:man D:{d} OCC:{occ} R:friend M:cheerful C:greeting EV:none|", "HI.")]
     with pytest.raises(AssertionError, match="leaked"):
         assert_no_holdout_leak(fake_pairs)
+
+
+def test_kragan_catchphrases_appear_in_generated_corpus():
+    # M9.2: Kragan gets his own small catchphrase bank, same mechanism as
+    # Fergus's (docs/milestones/m9.2.md) -- targets the coherence gap M9
+    # flagged live on hardware for Kragan specifically.
+    pairs = generate_pairs(seed=0)
+    kragan_responses = [r for p, r in pairs if "OCC:bandit" in p]
+    assert any(any(cp in r for cp in _KRAGAN_CATCHPHRASES) for r in kragan_responses), (
+        "no Kragan catchphrase found across the generated corpus")
+
+
+def test_catchphrase_banks_are_disjoint_per_character():
+    assert set(_FERGUS_CATCHPHRASES).isdisjoint(_KRAGAN_CATCHPHRASES)
+    assert set(_CATCHPHRASES) == {"fergus", "kragan"}
 
 
 def test_holdout_pairs_returns_sorted_list():
