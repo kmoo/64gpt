@@ -74,7 +74,20 @@ long survives.
   assume M9's mechanism produces reliably coherent text without
   addressing this first. Raised 2026-07-17 during M9;
   `docs/milestones/m9.md` section 4 and DoD have the full investigation
-  history.
+  history. **M9.2 update (2026-07-17):** tried one narrow, targeted
+  mitigation — a Kragan-specific catchphrase bank, same mechanism as
+  Fergus's existing one, prompted by reviewing an external project's
+  heavier per-persona reinforcement approach. Measured **inconclusive**
+  (cast-alone A/B: val loss delta 0.0006, noise; eyeball read mixed in
+  both directions, `docs/milestones/m9.2.md`) — does not close this item.
+  The literal catchphrase content reproduces correctly when it appears,
+  but surrounding text stays garbled at similar rates either way,
+  evidence this specific lever isn't strong enough to move the underlying
+  density problem. Kept in the shipped corpus regardless (harmless,
+  tested, consistent with Fergus's precedent) but not claimed as a fix.
+  No ROM built/booted this session (no Mac toolchain/Ares available) —
+  the real test (production-mix retrain + live hardware boot) is still
+  open.
 
 **Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost
