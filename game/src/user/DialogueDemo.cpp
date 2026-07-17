@@ -175,7 +175,7 @@ namespace
                           WorldState::currentContext(), EventBus::lastTag());
   }
 
-  uint32_t frameCount{}; // demo sampling seed: varies per regenerate
+  uint32_t frameCount{}; // boot-settle gate (BOOT_WAIT) + secondary seed mix-in
 
   // Perf instrumentation: EMA of CPU ticks per ngpt_step during live
   // streaming (with the RSP path enabled this IS the RSP number), shown
@@ -191,10 +191,19 @@ namespace
     buildPrompt();
     if(loaded) {
       ngpt_reset(&ctx, &model, prompt);
-      /* M4: sampled generation. The seed comes from the frame counter,
-       * so every regenerate (even of the same prompt) speaks a fresh
-       * line; the self-test below uses the pinned seed instead. */
-      ngpt_set_sampler(&ctx, frameCount, SELFTEST_INV_T_Q8, SELFTEST_TOP_K);
+      /* M4: sampled generation, one fresh seed per LINE (not per
+       * character -- ngpt_step()'s own PRNG advances internally after
+       * this). frameCount alone (M4-era choice) is too coarse a seed:
+       * it only ticks once per ~16.7ms frame, so two regenerates in the
+       * same frame -- or attract mode's fixed-interval auto-cycling --
+       * could land on identical or near-identical seeds. get_ticks() is
+       * libdragon's free-running hardware counter at ~46.875 MHz (half
+       * the CPU clock), so the exact tick when a real human presses A is
+       * effectively unpredictable even within one frame; frameCount is
+       * XORed in too as a cheap second mix-in, harmless either way. The
+       * self-test below uses the pinned seed instead, unaffected. */
+      ngpt_set_sampler(&ctx, (uint32_t)get_ticks() ^ frameCount,
+                       SELFTEST_INV_T_Q8, SELFTEST_TOP_K);
     }
   }
 
