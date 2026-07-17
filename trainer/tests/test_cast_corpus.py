@@ -98,6 +98,26 @@ def test_zero_cross_fraction_never_crosses():
             assert d == canon
 
 
+def test_combo_count_narrows_to_a_seeded_subset():
+    # m9.1 density-structure experiment: combo_count should restrict each
+    # character to that many DISTINCT combos (repeated per_combo times
+    # each), not just cap total pairs.
+    pairs = generate_pairs(seed=0, combo_count=10, per_combo=5)
+    by_char: dict[str, set] = {}
+    for prompt, _ in pairs:
+        occ = prompt.split("OCC:")[1].split(" ")[0]
+        tier, mood, ctx = combo_key(prompt)[3:]
+        by_char.setdefault(occ, set()).add((tier, mood, ctx))
+    for occ, combos in by_char.items():
+        assert len(combos) == 10, f"{occ}: expected 10 distinct combos, got {len(combos)}"
+
+
+def test_combo_count_deterministic_with_same_seed():
+    a = generate_pairs(seed=0, combo_count=10, per_combo=5)
+    b = generate_pairs(seed=0, combo_count=10, per_combo=5)
+    assert a == b
+
+
 def test_corpus_text_matches_generate_pairs():
     pairs = generate_pairs(seed=0, per_combo=1)
     text = corpus_text(seed=0, per_combo=1)

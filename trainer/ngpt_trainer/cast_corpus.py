@@ -212,7 +212,8 @@ def assert_no_holdout_leak(pairs: list[tuple[str, str]]) -> None:
 
 
 def generate_pairs(seed: int = 0, per_combo: int = 3,
-                   cross_fraction: float = 0.2) -> list[tuple[str, str]]:
+                   cross_fraction: float = 0.2,
+                   combo_count: int | None = None) -> list[tuple[str, str]]:
     """per_combo pairs for each character x tier x mood x context combo
     (6 tiers x 5 moods x 8 contexts = 240 combos/character -- per_combo=3
     lands at ~125-146K chars/character, matching guard's own proven
@@ -220,6 +221,17 @@ def generate_pairs(seed: int = 0, per_combo: int = 3,
     repetition comes from the shared phrase banks (~10-15 items each)
     getting reused across all 240 combos, not from repeating one exact
     combo many times the way Selena's single-character corpus does.
+
+    combo_count (m9.1 density-structure experiment, docs/milestones/
+    m9.1.md): if set, uses only this many combos per character (a seeded
+    random subset of the 240) instead of all of them -- guard's own
+    corpus hits its ~123K/instance density via a SMALL combo space
+    repeated MANY times (GUARD_PER_COMBO=24 across ~45 combos/instance),
+    not cast_corpus's default of many combos repeated few times. This
+    isolates which structure actually drives coherence: total character
+    volume, or how many times the exact same combo repeats. Caller
+    should raise per_combo to hold total volume roughly constant when
+    narrowing combo_count.
 
     cross_fraction of draws use a DIFFERENT descriptor's tic bank than the
     character's own, with D: relabeled to match -- deliberate axis-crossing
@@ -236,6 +248,14 @@ def generate_pairs(seed: int = 0, per_combo: int = 3,
         occupation = profile["occupation"]
         combos = [(t, m, c) for t in _TIER_MIDPOINT for m in sc.MOODS
                  for c in sc.CONTEXTS]
+        if combo_count is not None:
+            # Python's hash() on strings is randomized per-process by
+            # default -- must not be used where a reproducible seed is
+            # required (same lesson as make_m9_blob.py's generalization_
+            # check()). A trivial deterministic checksum instead.
+            name_checksum = sum(ord(c) for c in name)
+            subset_rng = random.Random(seed + name_checksum)
+            combos = subset_rng.sample(combos, min(combo_count, len(combos)))
         for _ in range(per_combo):
             for tier, mood, context in combos:
                 crossed = None
