@@ -45,10 +45,11 @@ long survives.
   order. Also note: this only covers *choosing among the trained set* —
   generalizing to arbitrary *untrained* seeds (true unlimited procedural
   variety) is a separate, harder, unproven capability, explicitly out of
-  scope until M9/M10's procedural spawning work. Raised 2026-07-17
-  during M8 corpus work; not required for M8's own DoD (3-4 named
-  instances in one demo scene), but M9 shouldn't start procedural
-  spawning without addressing it.
+  scope until M10's procedural spawning work (renumbered 2026-07-17 when
+  compositional conditioning became M9 — see `docs/milestones/m9.md`).
+  Raised 2026-07-17 during M8 corpus work; not required for M8's own DoD
+  (3-4 named instances in one demo scene), but M10 shouldn't start
+  procedural spawning without addressing it.
 
 **Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost

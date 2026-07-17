@@ -57,11 +57,18 @@ Game-side (`DialogueDemo.cpp`): `rspWhh`/`rspHShuf`/`rspMvOut` buffer
 sizes and the CPU-side h-shuffle loop scale with H (`3*256*256`,
 `256`, `768`); `rspBackendInit()`'s guard moved from `H != 128` to
 `H != 256` — same shape, not a redesign. Deliberately **not** a
-variable/dual-H kernel: nothing in M7 or the planned M8-M10 roadmap
-needs H=128 anymore (H=256 is the established floor going forward), and
-runtime branching on H would cost real DMEM/IMEM and add exactly the
-kind of surface the original spike's bug log warns about, for a case
-with no forward use.
+variable/dual-H kernel: nothing in M7 or the M8-M11 roadmap as it stood
+at the time needed H=128 anymore (H=256 is the established floor going
+forward), and runtime branching on H would cost real DMEM/IMEM and add
+exactly the kind of surface the original spike's bug log warns about,
+for a case with no forward use.
+
+**Revisited 2026-07-17, M9:** this decision is being reconsidered, not
+reversed here — M9 needs H≈320 for real capacity headroom and derives a
+general `DMEM(H)` formula from this spike's own `.bss` numbers rather
+than hand-deriving a third hardcode. Still not *runtime* branching (a
+build-time constant per target H, decided once per model, same
+"deliberately not variable" spirit) — see `docs/milestones/m9.md` §6.
 
 ## Adoption
 

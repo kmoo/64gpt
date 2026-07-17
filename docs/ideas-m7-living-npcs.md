@@ -390,3 +390,73 @@ memory) generalized from one-off flags to continuous decaying state —
 not yet designed, would need its own spike before committing corpus
 budget to it, same discipline as every other conditioning-mechanism
 change on this project.
+
+### Part 3, refined — compositional conditioning, not opaque identity
+tags (Luke, 2026-07-17, later the same session)
+
+Correction to an earlier claim in this same conversation that the
+translation layer below "already exists" as `ContextBuilder`. True of
+the *mechanism* (compile rich state down into the small discrete
+vocabulary the frozen `ngpt_reset` API primes on) — wrong about the
+*content*. Today's `N:` field is an **opaque per-character identity
+tag** (`N:selena`, `N:guard#1001`): the model has to learn a dedicated,
+non-transferable association between each raw tag string and a voice.
+That's exactly why M8's density table (`docs/milestones/m8.md`, Data
+Science Review) shows guard density and Selena's val loss moving in
+*opposite* directions — every new identity tag competes for its own
+slice of the same shared capacity, because nothing about the tags
+themselves is shared or reusable.
+
+The refined idea: replace the opaque tag with a small set of
+**reusable, compositional descriptive features** instead — e.g. `girl,
+age:12, sassy, VILLAGER` for the profile layer, `1.0 (best friend)` for
+the relationship layer — rather than a raw id. A second sassy
+12-year-old girl NPC would then condition on nearly the same tokens
+Selena already does, and the model learns feature→voice associations
+that *generalize* across characters instead of per-id memorization that
+only grows. This is the actual structural fix for the capacity-dilution
+problem M8 measured — not just fewer buckets (the mitigation path
+originally noted above), but a different kind of encoding where shared
+traits share capacity instead of competing for it.
+
+**Occupation belongs in the feature set, and M8 already validated it as
+one** (Luke, same discussion): `guard` isn't just an archetype id, it's
+occupation acting as a single coarse compositional feature — M8's whole
+result (4 guard instances, distinguishable from each other *and* from
+Selena, sharing one corpus slice) is evidence that occupation alone
+already produces a coherent, reusable voice signal. The refined scheme
+just makes that explicit and combines it with the other dimensions
+(age/gender/personality/relationship-tier) instead of occupation being
+the *only* axis a character gets, the way today's flat archetype-vs-
+character split forces it to be.
+
+What this changes structurally:
+
+- The C-side translation service (game code, not `core/`) computes this
+  compositional tuple from NPC Profile + Relationship State + World
+  Context. The model still only ever sees a short discrete string
+  through the frozen `ngpt_reset` API — no `core/` changes, same as
+  every mitigation path considered so far.
+- `npc.id` (e.g. `"guard#1001"`) stays as an internal game-engine lookup
+  key — `NPCDatabase` indexing, save state, `memorySlot` — it does
+  **not** need to be what's fed into the conditioning string anymore.
+- Corpus authoring shifts from "one voice pool per character id"
+  (today's `selena_corpus.py`/`guard_corpus.py` shape) to "voice
+  content organized by feature combination" — a sassy-12-year-old-girl
+  OPENER pool any matching NPC draws from, authored once, reused by
+  every character with those features. That's a real methodology
+  change, and it's the same territory M8.1 (LLM-generated corpus vs.
+  template grammar, `docs/milestones/m8.1.md`) already flagged as worth
+  testing — generating rich per-feature-combination lines at scale is
+  arguably a better fit for LLM generation than the current
+  per-archetype isolated-dispatch pattern M8 used.
+
+**Open question, not yet answered:** how many feature dimensions, and
+how many values each can take, before the combo grid blows up again —
+the same combinatorial concern as before, just moved from "5
+relationship axes" to "however many profile+relationship feature
+dimensions get declared." Worth a small spike (a handful of features,
+a handful of values each, measured with the same divergence methodology
+M7/M8 already use) before committing real corpus budget to it — same
+discipline as every other conditioning-mechanism change on this
+project.

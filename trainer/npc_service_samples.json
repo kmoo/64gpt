@@ -1,0 +1,7202 @@
+[
+  {
+    "profile_seed": 4170923632,
+    "relationship_seed": 1979402906,
+    "profile": {
+      "occupation": "merchant",
+      "age": 51,
+      "gender": "female",
+      "traits": {
+        "warmth": 89,
+        "humor": 96,
+        "impulsivity": 41,
+        "bravery": 28,
+        "focus": 37
+      }
+    },
+    "relationship": {
+      "familiarity": 0.625,
+      "affection": 0.419,
+      "trust": 0.429,
+      "respect": 0.488,
+      "fear": 0.147
+    },
+    "features": "woman age:51 gentle MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 2309528846,
+    "relationship_seed": 3677032778,
+    "profile": {
+      "occupation": "merchant",
+      "age": 16,
+      "gender": "female",
+      "traits": {
+        "warmth": 41,
+        "humor": 28,
+        "impulsivity": 37,
+        "bravery": 21,
+        "focus": 87
+      }
+    },
+    "relationship": {
+      "familiarity": 0.429,
+      "affection": 0.488,
+      "trust": 0.147,
+      "respect": 0.752,
+      "fear": 0.485
+    },
+    "features": "girl age:16 stoic MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 2571351211,
+    "relationship_seed": 352504640,
+    "profile": {
+      "occupation": "noble",
+      "age": 58,
+      "gender": "male",
+      "traits": {
+        "warmth": 37,
+        "humor": 21,
+        "impulsivity": 87,
+        "bravery": 11,
+        "focus": 2
+      }
+    },
+    "relationship": {
+      "familiarity": 0.147,
+      "affection": 0.752,
+      "trust": 0.485,
+      "respect": 0.675,
+      "fear": 0.463
+    },
+    "features": "man age:58 anxious NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 3241624533,
+    "relationship_seed": 15931667,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 80,
+      "gender": "female",
+      "traits": {
+        "warmth": 87,
+        "humor": 11,
+        "impulsivity": 2,
+        "bravery": 99,
+        "focus": 18
+      }
+    },
+    "relationship": {
+      "familiarity": 0.485,
+      "affection": 0.675,
+      "trust": 0.463,
+      "respect": 0.461,
+      "fear": 0.656
+    },
+    "features": "elderly woman age:80 bold INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 435705755,
+    "relationship_seed": 1919745502,
+    "profile": {
+      "occupation": "farmer",
+      "age": 58,
+      "gender": "male",
+      "traits": {
+        "warmth": 2,
+        "humor": 99,
+        "impulsivity": 18,
+        "bravery": 84,
+        "focus": 85
+      }
+    },
+    "relationship": {
+      "familiarity": 0.463,
+      "affection": 0.461,
+      "trust": 0.656,
+      "respect": 0.994,
+      "fear": 0.831
+    },
+    "features": "man age:58 gruff FARMER R:friend"
+  },
+  {
+    "profile_seed": 1463692693,
+    "relationship_seed": 3272892083,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 39,
+      "gender": "male",
+      "traits": {
+        "warmth": 18,
+        "humor": 84,
+        "impulsivity": 85,
+        "bravery": 32,
+        "focus": 33
+      }
+    },
+    "relationship": {
+      "familiarity": 0.656,
+      "affection": 0.994,
+      "trust": 0.831,
+      "respect": 0.809,
+      "fear": 0.696
+    },
+    "features": "man age:39 sassy INNKEEPER R:close_friend"
+  },
+  {
+    "profile_seed": 1350647954,
+    "relationship_seed": 1794418619,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 63,
+      "gender": "male",
+      "traits": {
+        "warmth": 85,
+        "humor": 32,
+        "impulsivity": 33,
+        "bravery": 89,
+        "focus": 42
+      }
+    },
+    "relationship": {
+      "familiarity": 0.831,
+      "affection": 0.809,
+      "trust": 0.696,
+      "respect": 0.619,
+      "fear": 0.1
+    },
+    "features": "elderly man age:63 bold INNKEEPER R:friend"
+  },
+  {
+    "profile_seed": 1047834618,
+    "relationship_seed": 3674013151,
+    "profile": {
+      "occupation": "healer",
+      "age": 17,
+      "gender": "male",
+      "traits": {
+        "warmth": 33,
+        "humor": 89,
+        "impulsivity": 42,
+        "bravery": 90,
+        "focus": 36
+      }
+    },
+    "relationship": {
+      "familiarity": 0.696,
+      "affection": 0.619,
+      "trust": 0.1,
+      "respect": 0.481,
+      "fear": 0.599
+    },
+    "features": "boy age:17 gruff HEALER R:neutral"
+  },
+  {
+    "profile_seed": 3986739452,
+    "relationship_seed": 5918531,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 63,
+      "gender": "female",
+      "traits": {
+        "warmth": 42,
+        "humor": 90,
+        "impulsivity": 36,
+        "bravery": 19,
+        "focus": 43
+      }
+    },
+    "relationship": {
+      "familiarity": 0.1,
+      "affection": 0.481,
+      "trust": 0.599,
+      "respect": 0.355,
+      "fear": 0.223
+    },
+    "features": "elderly woman age:63 playful INNKEEPER R:acquaintance"
+  },
+  {
+    "profile_seed": 2146662618,
+    "relationship_seed": 233710958,
+    "profile": {
+      "occupation": "merchant",
+      "age": 52,
+      "gender": "female",
+      "traits": {
+        "warmth": 36,
+        "humor": 19,
+        "impulsivity": 43,
+        "bravery": 65,
+        "focus": 49
+      }
+    },
+    "relationship": {
+      "familiarity": 0.599,
+      "affection": 0.355,
+      "trust": 0.223,
+      "respect": 0.986,
+      "fear": 0.993
+    },
+    "features": "woman age:52 serious MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 3778263087,
+    "relationship_seed": 1358198196,
+    "profile": {
+      "occupation": "villager",
+      "age": 42,
+      "gender": "female",
+      "traits": {
+        "warmth": 43,
+        "humor": 65,
+        "impulsivity": 49,
+        "bravery": 49,
+        "focus": 49
+      }
+    },
+    "relationship": {
+      "familiarity": 0.223,
+      "affection": 0.986,
+      "trust": 0.993,
+      "respect": 0.292,
+      "fear": 0.047
+    },
+    "features": "woman age:42 playful VILLAGER R:friend"
+  },
+  {
+    "profile_seed": 370264117,
+    "relationship_seed": 3455617150,
+    "profile": {
+      "occupation": "farmer",
+      "age": 10,
+      "gender": "female",
+      "traits": {
+        "warmth": 49,
+        "humor": 49,
+        "impulsivity": 49,
+        "bravery": 81,
+        "focus": 63
+      }
+    },
+    "relationship": {
+      "familiarity": 0.993,
+      "affection": 0.292,
+      "trust": 0.047,
+      "respect": 0.842,
+      "fear": 0.936
+    },
+    "features": "girl age:10 bold FARMER R:neutral"
+  },
+  {
+    "profile_seed": 1108600485,
+    "relationship_seed": 3861668102,
+    "profile": {
+      "occupation": "merchant",
+      "age": 21,
+      "gender": "male",
+      "traits": {
+        "warmth": 49,
+        "humor": 81,
+        "impulsivity": 63,
+        "bravery": 61,
+        "focus": 5
+      }
+    },
+    "relationship": {
+      "familiarity": 0.047,
+      "affection": 0.842,
+      "trust": 0.936,
+      "respect": 0.255,
+      "fear": 0.414
+    },
+    "features": "man age:21 sassy MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 731780096,
+    "relationship_seed": 3402789231,
+    "profile": {
+      "occupation": "wizard",
+      "age": 5,
+      "gender": "male",
+      "traits": {
+        "warmth": 63,
+        "humor": 61,
+        "impulsivity": 5,
+        "bravery": 3,
+        "focus": 6
+      }
+    },
+    "relationship": {
+      "familiarity": 0.936,
+      "affection": 0.255,
+      "trust": 0.414,
+      "respect": 0.497,
+      "fear": 0.68
+    },
+    "features": "boy age:5 anxious WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 453357840,
+    "relationship_seed": 165353443,
+    "profile": {
+      "occupation": "healer",
+      "age": 21,
+      "gender": "female",
+      "traits": {
+        "warmth": 5,
+        "humor": 3,
+        "impulsivity": 6,
+        "bravery": 70,
+        "focus": 73
+      }
+    },
+    "relationship": {
+      "familiarity": 0.414,
+      "affection": 0.497,
+      "trust": 0.68,
+      "respect": 0.07,
+      "fear": 0.866
+    },
+    "features": "woman age:21 gruff HEALER R:neutral"
+  },
+  {
+    "profile_seed": 265227376,
+    "relationship_seed": 644747600,
+    "profile": {
+      "occupation": "noble",
+      "age": 71,
+      "gender": "male",
+      "traits": {
+        "warmth": 6,
+        "humor": 70,
+        "impulsivity": 73,
+        "bravery": 78,
+        "focus": 21
+      }
+    },
+    "relationship": {
+      "familiarity": 0.68,
+      "affection": 0.07,
+      "trust": 0.866,
+      "respect": 0.461,
+      "fear": 0.627
+    },
+    "features": "elderly man age:71 sassy NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 1825049906,
+    "relationship_seed": 3231779621,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 60,
+      "gender": "female",
+      "traits": {
+        "warmth": 73,
+        "humor": 78,
+        "impulsivity": 21,
+        "bravery": 71,
+        "focus": 79
+      }
+    },
+    "relationship": {
+      "familiarity": 0.866,
+      "affection": 0.461,
+      "trust": 0.627,
+      "respect": 0.491,
+      "fear": 0.694
+    },
+    "features": "elderly woman age:60 cheerful PUB_PATRON R:friend"
+  },
+  {
+    "profile_seed": 3648955175,
+    "relationship_seed": 2924671210,
+    "profile": {
+      "occupation": "farmer",
+      "age": 34,
+      "gender": "female",
+      "traits": {
+        "warmth": 21,
+        "humor": 71,
+        "impulsivity": 79,
+        "bravery": 6,
+        "focus": 0
+      }
+    },
+    "relationship": {
+      "familiarity": 0.627,
+      "affection": 0.491,
+      "trust": 0.694,
+      "respect": 0.644,
+      "fear": 0.822
+    },
+    "features": "woman age:34 sassy FARMER R:friend"
+  },
+  {
+    "profile_seed": 4189507949,
+    "relationship_seed": 1358394528,
+    "profile": {
+      "occupation": "villager",
+      "age": 6,
+      "gender": "male",
+      "traits": {
+        "warmth": 79,
+        "humor": 6,
+        "impulsivity": 0,
+        "bravery": 90,
+        "focus": 92
+      }
+    },
+    "relationship": {
+      "familiarity": 0.694,
+      "affection": 0.644,
+      "trust": 0.822,
+      "respect": 0.665,
+      "fear": 0.423
+    },
+    "features": "boy age:6 measured VILLAGER R:friend"
+  },
+  {
+    "profile_seed": 1913018801,
+    "relationship_seed": 2671017993,
+    "profile": {
+      "occupation": "bandit",
+      "age": 40,
+      "gender": "female",
+      "traits": {
+        "warmth": 0,
+        "humor": 90,
+        "impulsivity": 92,
+        "bravery": 99,
+        "focus": 92
+      }
+    },
+    "relationship": {
+      "familiarity": 0.822,
+      "affection": 0.665,
+      "trust": 0.423,
+      "respect": 0.449,
+      "fear": 0.583
+    },
+    "features": "woman age:40 sassy BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 3917567475,
+    "relationship_seed": 2765478380,
+    "profile": {
+      "occupation": "noble",
+      "age": 45,
+      "gender": "female",
+      "traits": {
+        "warmth": 92,
+        "humor": 99,
+        "impulsivity": 92,
+        "bravery": 42,
+        "focus": 100
+      }
+    },
+    "relationship": {
+      "familiarity": 0.423,
+      "affection": 0.449,
+      "trust": 0.583,
+      "respect": 0.604,
+      "fear": 0.25
+    },
+    "features": "woman age:45 sassy NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 3806500120,
+    "relationship_seed": 3094899256,
+    "profile": {
+      "occupation": "damsel",
+      "age": 12,
+      "gender": "male",
+      "traits": {
+        "warmth": 92,
+        "humor": 42,
+        "impulsivity": 100,
+        "bravery": 67,
+        "focus": 57
+      }
+    },
+    "relationship": {
+      "familiarity": 0.583,
+      "affection": 0.604,
+      "trust": 0.25,
+      "respect": 0.951,
+      "fear": 0.391
+    },
+    "features": "boy age:12 impulsive DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 316220487,
+    "relationship_seed": 4234818191,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 7,
+      "gender": "female",
+      "traits": {
+        "warmth": 100,
+        "humor": 67,
+        "impulsivity": 57,
+        "bravery": 77,
+        "focus": 77
+      }
+    },
+    "relationship": {
+      "familiarity": 0.25,
+      "affection": 0.951,
+      "trust": 0.391,
+      "respect": 0.187,
+      "fear": 0.018
+    },
+    "features": "girl age:7 cheerful INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 4249517522,
+    "relationship_seed": 3975999978,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 47,
+      "gender": "female",
+      "traits": {
+        "warmth": 57,
+        "humor": 77,
+        "impulsivity": 77,
+        "bravery": 74,
+        "focus": 21
+      }
+    },
+    "relationship": {
+      "familiarity": 0.391,
+      "affection": 0.187,
+      "trust": 0.018,
+      "respect": 1.0,
+      "fear": 0.906
+    },
+    "features": "woman age:47 sassy BLACKSMITH R:acquaintance"
+  },
+  {
+    "profile_seed": 720411082,
+    "relationship_seed": 15818990,
+    "profile": {
+      "occupation": "merchant",
+      "age": 77,
+      "gender": "female",
+      "traits": {
+        "warmth": 77,
+        "humor": 74,
+        "impulsivity": 21,
+        "bravery": 41,
+        "focus": 54
+      }
+    },
+    "relationship": {
+      "familiarity": 0.018,
+      "affection": 1.0,
+      "trust": 0.906,
+      "respect": 0.508,
+      "fear": 0.366
+    },
+    "features": "elderly woman age:77 gentle MERCHANT R:friend"
+  },
+  {
+    "profile_seed": 2977588632,
+    "relationship_seed": 1156216060,
+    "profile": {
+      "occupation": "damsel",
+      "age": 43,
+      "gender": "male",
+      "traits": {
+        "warmth": 21,
+        "humor": 41,
+        "impulsivity": 54,
+        "bravery": 58,
+        "focus": 26
+      }
+    },
+    "relationship": {
+      "familiarity": 0.906,
+      "affection": 0.508,
+      "trust": 0.366,
+      "respect": 0.791,
+      "fear": 0.368
+    },
+    "features": "man age:43 cold DAMSEL R:friend"
+  },
+  {
+    "profile_seed": 1154205958,
+    "relationship_seed": 2156521875,
+    "profile": {
+      "occupation": "wizard",
+      "age": 67,
+      "gender": "female",
+      "traits": {
+        "warmth": 54,
+        "humor": 58,
+        "impulsivity": 26,
+        "bravery": 6,
+        "focus": 67
+      }
+    },
+    "relationship": {
+      "familiarity": 0.366,
+      "affection": 0.791,
+      "trust": 0.368,
+      "respect": 0.931,
+      "fear": 0.704
+    },
+    "features": "elderly woman age:67 measured WIZARD R:friend"
+  },
+  {
+    "profile_seed": 180436622,
+    "relationship_seed": 2400053446,
+    "profile": {
+      "occupation": "farmer",
+      "age": 65,
+      "gender": "male",
+      "traits": {
+        "warmth": 26,
+        "humor": 6,
+        "impulsivity": 67,
+        "bravery": 34,
+        "focus": 0
+      }
+    },
+    "relationship": {
+      "familiarity": 0.368,
+      "affection": 0.931,
+      "trust": 0.704,
+      "respect": 0.569,
+      "fear": 0.162
+    },
+    "features": "elderly man age:65 anxious FARMER R:friend"
+  },
+  {
+    "profile_seed": 1890781260,
+    "relationship_seed": 652907185,
+    "profile": {
+      "occupation": "guard",
+      "age": 36,
+      "gender": "male",
+      "traits": {
+        "warmth": 67,
+        "humor": 34,
+        "impulsivity": 0,
+        "bravery": 13,
+        "focus": 84
+      }
+    },
+    "relationship": {
+      "familiarity": 0.704,
+      "affection": 0.569,
+      "trust": 0.162,
+      "respect": 0.773,
+      "fear": 0.255
+    },
+    "features": "man age:36 measured GUARD R:neutral"
+  },
+  {
+    "profile_seed": 3811415311,
+    "relationship_seed": 1611130089,
+    "profile": {
+      "occupation": "bandit",
+      "age": 41,
+      "gender": "male",
+      "traits": {
+        "warmth": 0,
+        "humor": 13,
+        "impulsivity": 84,
+        "bravery": 54,
+        "focus": 100
+      }
+    },
+    "relationship": {
+      "familiarity": 0.162,
+      "affection": 0.773,
+      "trust": 0.255,
+      "respect": 0.454,
+      "fear": 0.501
+    },
+    "features": "man age:41 stoic BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 265018916,
+    "relationship_seed": 4125352003,
+    "profile": {
+      "occupation": "healer",
+      "age": 27,
+      "gender": "female",
+      "traits": {
+        "warmth": 84,
+        "humor": 54,
+        "impulsivity": 100,
+        "bravery": 84,
+        "focus": 86
+      }
+    },
+    "relationship": {
+      "familiarity": 0.255,
+      "affection": 0.454,
+      "trust": 0.501,
+      "respect": 0.142,
+      "fear": 0.726
+    },
+    "features": "woman age:27 reckless HEALER R:acquaintance"
+  },
+  {
+    "profile_seed": 3029553782,
+    "relationship_seed": 90332696,
+    "profile": {
+      "occupation": "noble",
+      "age": 13,
+      "gender": "male",
+      "traits": {
+        "warmth": 100,
+        "humor": 84,
+        "impulsivity": 86,
+        "bravery": 84,
+        "focus": 30
+      }
+    },
+    "relationship": {
+      "familiarity": 0.501,
+      "affection": 0.142,
+      "trust": 0.726,
+      "respect": 0.485,
+      "fear": 0.163
+    },
+    "features": "boy age:13 sassy NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 2593017928,
+    "relationship_seed": 1080588651,
+    "profile": {
+      "occupation": "wizard",
+      "age": 62,
+      "gender": "female",
+      "traits": {
+        "warmth": 86,
+        "humor": 84,
+        "impulsivity": 30,
+        "bravery": 70,
+        "focus": 98
+      }
+    },
+    "relationship": {
+      "familiarity": 0.726,
+      "affection": 0.485,
+      "trust": 0.163,
+      "respect": 0.945,
+      "fear": 0.626
+    },
+    "features": "elderly woman age:62 cheerful WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 2816665577,
+    "relationship_seed": 2565404326,
+    "profile": {
+      "occupation": "farmer",
+      "age": 61,
+      "gender": "female",
+      "traits": {
+        "warmth": 30,
+        "humor": 70,
+        "impulsivity": 98,
+        "bravery": 44,
+        "focus": 90
+      }
+    },
+    "relationship": {
+      "familiarity": 0.163,
+      "affection": 0.945,
+      "trust": 0.626,
+      "respect": 0.133,
+      "fear": 0.276
+    },
+    "features": "elderly woman age:61 sassy FARMER R:neutral"
+  },
+  {
+    "profile_seed": 1102234296,
+    "relationship_seed": 626788106,
+    "profile": {
+      "occupation": "merchant",
+      "age": 73,
+      "gender": "female",
+      "traits": {
+        "warmth": 98,
+        "humor": 44,
+        "impulsivity": 90,
+        "bravery": 68,
+        "focus": 26
+      }
+    },
+    "relationship": {
+      "familiarity": 0.626,
+      "affection": 0.133,
+      "trust": 0.276,
+      "respect": 0.059,
+      "fear": 0.894
+    },
+    "features": "elderly woman age:73 warm MERCHANT R:acquaintance"
+  },
+  {
+    "profile_seed": 304066388,
+    "relationship_seed": 425642350,
+    "profile": {
+      "occupation": "farmer",
+      "age": 76,
+      "gender": "male",
+      "traits": {
+        "warmth": 90,
+        "humor": 68,
+        "impulsivity": 26,
+        "bravery": 30,
+        "focus": 93
+      }
+    },
+    "relationship": {
+      "familiarity": 0.276,
+      "affection": 0.059,
+      "trust": 0.894,
+      "respect": 0.999,
+      "fear": 0.378
+    },
+    "features": "elderly man age:76 gentle FARMER R:neutral"
+  },
+  {
+    "profile_seed": 3458089911,
+    "relationship_seed": 3413946595,
+    "profile": {
+      "occupation": "healer",
+      "age": 56,
+      "gender": "male",
+      "traits": {
+        "warmth": 26,
+        "humor": 30,
+        "impulsivity": 93,
+        "bravery": 62,
+        "focus": 41
+      }
+    },
+    "relationship": {
+      "familiarity": 0.894,
+      "affection": 0.999,
+      "trust": 0.378,
+      "respect": 0.091,
+      "fear": 0.831
+    },
+    "features": "man age:56 cold HEALER R:neutral"
+  },
+  {
+    "profile_seed": 4051645491,
+    "relationship_seed": 3906119215,
+    "profile": {
+      "occupation": "healer",
+      "age": 73,
+      "gender": "female",
+      "traits": {
+        "warmth": 93,
+        "humor": 62,
+        "impulsivity": 41,
+        "bravery": 53,
+        "focus": 11
+      }
+    },
+    "relationship": {
+      "familiarity": 0.378,
+      "affection": 0.091,
+      "trust": 0.831,
+      "respect": 0.311,
+      "fear": 0.325
+    },
+    "features": "elderly woman age:73 cheerful HEALER R:neutral"
+  },
+  {
+    "profile_seed": 1056185508,
+    "relationship_seed": 293109908,
+    "profile": {
+      "occupation": "noble",
+      "age": 6,
+      "gender": "female",
+      "traits": {
+        "warmth": 41,
+        "humor": 53,
+        "impulsivity": 11,
+        "bravery": 77,
+        "focus": 70
+      }
+    },
+    "relationship": {
+      "familiarity": 0.831,
+      "affection": 0.311,
+      "trust": 0.325,
+      "respect": 0.716,
+      "fear": 0.711
+    },
+    "features": "girl age:6 gruff NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 740951041,
+    "relationship_seed": 4192753876,
+    "profile": {
+      "occupation": "damsel",
+      "age": 34,
+      "gender": "female",
+      "traits": {
+        "warmth": 11,
+        "humor": 77,
+        "impulsivity": 70,
+        "bravery": 96,
+        "focus": 3
+      }
+    },
+    "relationship": {
+      "familiarity": 0.325,
+      "affection": 0.716,
+      "trust": 0.711,
+      "respect": 0.63,
+      "fear": 0.797
+    },
+    "features": "woman age:34 sassy DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 2896598029,
+    "relationship_seed": 3133565150,
+    "profile": {
+      "occupation": "merchant",
+      "age": 69,
+      "gender": "female",
+      "traits": {
+        "warmth": 70,
+        "humor": 96,
+        "impulsivity": 3,
+        "bravery": 69,
+        "focus": 66
+      }
+    },
+    "relationship": {
+      "familiarity": 0.711,
+      "affection": 0.63,
+      "trust": 0.797,
+      "respect": 0.376,
+      "fear": 0.01
+    },
+    "features": "elderly woman age:69 cheerful MERCHANT R:friend"
+  },
+  {
+    "profile_seed": 2356147504,
+    "relationship_seed": 737167060,
+    "profile": {
+      "occupation": "damsel",
+      "age": 22,
+      "gender": "male",
+      "traits": {
+        "warmth": 3,
+        "humor": 69,
+        "impulsivity": 66,
+        "bravery": 58,
+        "focus": 90
+      }
+    },
+    "relationship": {
+      "familiarity": 0.797,
+      "affection": 0.376,
+      "trust": 0.01,
+      "respect": 0.088,
+      "fear": 0.813
+    },
+    "features": "man age:22 stoic DAMSEL R:acquaintance"
+  },
+  {
+    "profile_seed": 1181761377,
+    "relationship_seed": 1914423887,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 59,
+      "gender": "male",
+      "traits": {
+        "warmth": 66,
+        "humor": 58,
+        "impulsivity": 90,
+        "bravery": 17,
+        "focus": 79
+      }
+    },
+    "relationship": {
+      "familiarity": 0.01,
+      "affection": 0.088,
+      "trust": 0.813,
+      "respect": 0.695,
+      "fear": 0.811
+    },
+    "features": "man age:59 impulsive INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 1628951334,
+    "relationship_seed": 4112027007,
+    "profile": {
+      "occupation": "wizard",
+      "age": 73,
+      "gender": "female",
+      "traits": {
+        "warmth": 90,
+        "humor": 17,
+        "impulsivity": 79,
+        "bravery": 67,
+        "focus": 96
+      }
+    },
+    "relationship": {
+      "familiarity": 0.813,
+      "affection": 0.695,
+      "trust": 0.811,
+      "respect": 0.905,
+      "fear": 0.707
+    },
+    "features": "elderly woman age:73 focused WIZARD R:close_friend"
+  },
+  {
+    "profile_seed": 1918172068,
+    "relationship_seed": 1226943412,
+    "profile": {
+      "occupation": "damsel",
+      "age": 20,
+      "gender": "female",
+      "traits": {
+        "warmth": 79,
+        "humor": 67,
+        "impulsivity": 96,
+        "bravery": 48,
+        "focus": 96
+      }
+    },
+    "relationship": {
+      "familiarity": 0.811,
+      "affection": 0.905,
+      "trust": 0.707,
+      "respect": 0.767,
+      "fear": 0.423
+    },
+    "features": "woman age:20 cheerful DAMSEL R:friend"
+  },
+  {
+    "profile_seed": 4139099775,
+    "relationship_seed": 221679362,
+    "profile": {
+      "occupation": "merchant",
+      "age": 30,
+      "gender": "female",
+      "traits": {
+        "warmth": 96,
+        "humor": 48,
+        "impulsivity": 96,
+        "bravery": 59,
+        "focus": 50
+      }
+    },
+    "relationship": {
+      "familiarity": 0.707,
+      "affection": 0.767,
+      "trust": 0.423,
+      "respect": 0.413,
+      "fear": 0.317
+    },
+    "features": "woman age:30 warm MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 1174572105,
+    "relationship_seed": 3875493388,
+    "profile": {
+      "occupation": "damsel",
+      "age": 72,
+      "gender": "female",
+      "traits": {
+        "warmth": 96,
+        "humor": 59,
+        "impulsivity": 50,
+        "bravery": 65,
+        "focus": 23
+      }
+    },
+    "relationship": {
+      "familiarity": 0.423,
+      "affection": 0.413,
+      "trust": 0.317,
+      "respect": 0.637,
+      "fear": 0.191
+    },
+    "features": "elderly woman age:72 warm DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 2347029107,
+    "relationship_seed": 620621414,
+    "profile": {
+      "occupation": "merchant",
+      "age": 83,
+      "gender": "male",
+      "traits": {
+        "warmth": 50,
+        "humor": 65,
+        "impulsivity": 23,
+        "bravery": 98,
+        "focus": 60
+      }
+    },
+    "relationship": {
+      "familiarity": 0.317,
+      "affection": 0.637,
+      "trust": 0.191,
+      "respect": 0.409,
+      "fear": 0.563
+    },
+    "features": "elderly man age:83 measured MERCHANT R:acquaintance"
+  },
+  {
+    "profile_seed": 3206364478,
+    "relationship_seed": 266657027,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 6,
+      "gender": "female",
+      "traits": {
+        "warmth": 23,
+        "humor": 98,
+        "impulsivity": 60,
+        "bravery": 2,
+        "focus": 94
+      }
+    },
+    "relationship": {
+      "familiarity": 0.191,
+      "affection": 0.409,
+      "trust": 0.563,
+      "respect": 0.439,
+      "fear": 0.495
+    },
+    "features": "girl age:6 sassy INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 484053761,
+    "relationship_seed": 2314835932,
+    "profile": {
+      "occupation": "damsel",
+      "age": 18,
+      "gender": "male",
+      "traits": {
+        "warmth": 60,
+        "humor": 2,
+        "impulsivity": 94,
+        "bravery": 81,
+        "focus": 53
+      }
+    },
+    "relationship": {
+      "familiarity": 0.563,
+      "affection": 0.439,
+      "trust": 0.495,
+      "respect": 0.503,
+      "fear": 0.031
+    },
+    "features": "boy age:18 reckless DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 3679126013,
+    "relationship_seed": 3588977831,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 29,
+      "gender": "female",
+      "traits": {
+        "warmth": 94,
+        "humor": 81,
+        "impulsivity": 53,
+        "bravery": 56,
+        "focus": 73
+      }
+    },
+    "relationship": {
+      "familiarity": 0.495,
+      "affection": 0.503,
+      "trust": 0.031,
+      "respect": 0.392,
+      "fear": 0.002
+    },
+    "features": "woman age:29 cheerful INNKEEPER R:acquaintance"
+  },
+  {
+    "profile_seed": 3565611544,
+    "relationship_seed": 829960634,
+    "profile": {
+      "occupation": "merchant",
+      "age": 34,
+      "gender": "male",
+      "traits": {
+        "warmth": 53,
+        "humor": 56,
+        "impulsivity": 73,
+        "bravery": 34,
+        "focus": 66
+      }
+    },
+    "relationship": {
+      "familiarity": 0.031,
+      "affection": 0.392,
+      "trust": 0.002,
+      "respect": 0.562,
+      "fear": 0.416
+    },
+    "features": "man age:34 impulsive MERCHANT R:acquaintance"
+  },
+  {
+    "profile_seed": 3735169469,
+    "relationship_seed": 3912059543,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 77,
+      "gender": "male",
+      "traits": {
+        "warmth": 73,
+        "humor": 34,
+        "impulsivity": 66,
+        "bravery": 9,
+        "focus": 70
+      }
+    },
+    "relationship": {
+      "familiarity": 0.002,
+      "affection": 0.562,
+      "trust": 0.416,
+      "respect": 0.383,
+      "fear": 0.806
+    },
+    "features": "elderly man age:77 gentle INNKEEPER R:acquaintance"
+  },
+  {
+    "profile_seed": 1334763432,
+    "relationship_seed": 453584693,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 55,
+      "gender": "female",
+      "traits": {
+        "warmth": 66,
+        "humor": 9,
+        "impulsivity": 70,
+        "bravery": 69,
+        "focus": 42
+      }
+    },
+    "relationship": {
+      "familiarity": 0.416,
+      "affection": 0.383,
+      "trust": 0.806,
+      "respect": 0.336,
+      "fear": 0.457
+    },
+    "features": "woman age:55 serious PUB_PATRON R:neutral"
+  },
+  {
+    "profile_seed": 3256647810,
+    "relationship_seed": 328325380,
+    "profile": {
+      "occupation": "damsel",
+      "age": 49,
+      "gender": "male",
+      "traits": {
+        "warmth": 70,
+        "humor": 69,
+        "impulsivity": 42,
+        "bravery": 39,
+        "focus": 24
+      }
+    },
+    "relationship": {
+      "familiarity": 0.806,
+      "affection": 0.336,
+      "trust": 0.457,
+      "respect": 0.043,
+      "fear": 0.736
+    },
+    "features": "man age:49 gentle DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 1050207964,
+    "relationship_seed": 1781368925,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 35,
+      "gender": "male",
+      "traits": {
+        "warmth": 42,
+        "humor": 39,
+        "impulsivity": 24,
+        "bravery": 9,
+        "focus": 24
+      }
+    },
+    "relationship": {
+      "familiarity": 0.457,
+      "affection": 0.043,
+      "trust": 0.736,
+      "respect": 0.25,
+      "fear": 0.676
+    },
+    "features": "man age:35 anxious PUB_PATRON R:acquaintance"
+  },
+  {
+    "profile_seed": 3220110350,
+    "relationship_seed": 1838058265,
+    "profile": {
+      "occupation": "guard",
+      "age": 52,
+      "gender": "female",
+      "traits": {
+        "warmth": 24,
+        "humor": 9,
+        "impulsivity": 24,
+        "bravery": 64,
+        "focus": 41
+      }
+    },
+    "relationship": {
+      "familiarity": 0.736,
+      "affection": 0.25,
+      "trust": 0.676,
+      "respect": 0.136,
+      "fear": 0.853
+    },
+    "features": "woman age:52 cold GUARD R:neutral"
+  },
+  {
+    "profile_seed": 559110287,
+    "relationship_seed": 34678894,
+    "profile": {
+      "occupation": "farmer",
+      "age": 21,
+      "gender": "male",
+      "traits": {
+        "warmth": 24,
+        "humor": 64,
+        "impulsivity": 41,
+        "bravery": 80,
+        "focus": 66
+      }
+    },
+    "relationship": {
+      "familiarity": 0.676,
+      "affection": 0.136,
+      "trust": 0.853,
+      "respect": 0.624,
+      "fear": 0.575
+    },
+    "features": "man age:21 gruff FARMER R:neutral"
+  },
+  {
+    "profile_seed": 3296954336,
+    "relationship_seed": 998532671,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 35,
+      "gender": "male",
+      "traits": {
+        "warmth": 41,
+        "humor": 80,
+        "impulsivity": 66,
+        "bravery": 100,
+        "focus": 0
+      }
+    },
+    "relationship": {
+      "familiarity": 0.853,
+      "affection": 0.624,
+      "trust": 0.575,
+      "respect": 0.878,
+      "fear": 0.902
+    },
+    "features": "man age:35 sassy INNKEEPER R:friend"
+  },
+  {
+    "profile_seed": 1597533790,
+    "relationship_seed": 209937351,
+    "profile": {
+      "occupation": "wizard",
+      "age": 79,
+      "gender": "male",
+      "traits": {
+        "warmth": 66,
+        "humor": 100,
+        "impulsivity": 0,
+        "bravery": 93,
+        "focus": 24
+      }
+    },
+    "relationship": {
+      "familiarity": 0.575,
+      "affection": 0.878,
+      "trust": 0.902,
+      "respect": 0.004,
+      "fear": 0.646
+    },
+    "features": "elderly man age:79 playful WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 2139997434,
+    "relationship_seed": 625871123,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 74,
+      "gender": "female",
+      "traits": {
+        "warmth": 0,
+        "humor": 93,
+        "impulsivity": 24,
+        "bravery": 30,
+        "focus": 16
+      }
+    },
+    "relationship": {
+      "familiarity": 0.902,
+      "affection": 0.004,
+      "trust": 0.646,
+      "respect": 0.212,
+      "fear": 0.908
+    },
+    "features": "elderly woman age:74 anxious INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 1777303429,
+    "relationship_seed": 1173097930,
+    "profile": {
+      "occupation": "farmer",
+      "age": 53,
+      "gender": "female",
+      "traits": {
+        "warmth": 24,
+        "humor": 30,
+        "impulsivity": 16,
+        "bravery": 51,
+        "focus": 81
+      }
+    },
+    "relationship": {
+      "familiarity": 0.646,
+      "affection": 0.212,
+      "trust": 0.908,
+      "respect": 0.477,
+      "fear": 0.639
+    },
+    "features": "woman age:53 stoic FARMER R:neutral"
+  },
+  {
+    "profile_seed": 1324405728,
+    "relationship_seed": 3306409318,
+    "profile": {
+      "occupation": "farmer",
+      "age": 30,
+      "gender": "female",
+      "traits": {
+        "warmth": 16,
+        "humor": 51,
+        "impulsivity": 81,
+        "bravery": 39,
+        "focus": 58
+      }
+    },
+    "relationship": {
+      "familiarity": 0.908,
+      "affection": 0.477,
+      "trust": 0.639,
+      "respect": 0.789,
+      "fear": 0.306
+    },
+    "features": "woman age:30 cold FARMER R:friend"
+  },
+  {
+    "profile_seed": 727004185,
+    "relationship_seed": 924585138,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 44,
+      "gender": "female",
+      "traits": {
+        "warmth": 81,
+        "humor": 39,
+        "impulsivity": 58,
+        "bravery": 66,
+        "focus": 48
+      }
+    },
+    "relationship": {
+      "familiarity": 0.639,
+      "affection": 0.789,
+      "trust": 0.306,
+      "respect": 0.408,
+      "fear": 0.141
+    },
+    "features": "woman age:44 warm BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 1741220119,
+    "relationship_seed": 665630754,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 59,
+      "gender": "male",
+      "traits": {
+        "warmth": 58,
+        "humor": 66,
+        "impulsivity": 48,
+        "bravery": 4,
+        "focus": 95
+      }
+    },
+    "relationship": {
+      "familiarity": 0.306,
+      "affection": 0.408,
+      "trust": 0.141,
+      "respect": 0.185,
+      "fear": 0.922
+    },
+    "features": "man age:59 timid BLACKSMITH R:acquaintance"
+  },
+  {
+    "profile_seed": 2780606134,
+    "relationship_seed": 1025812195,
+    "profile": {
+      "occupation": "healer",
+      "age": 68,
+      "gender": "male",
+      "traits": {
+        "warmth": 48,
+        "humor": 4,
+        "impulsivity": 95,
+        "bravery": 41,
+        "focus": 31
+      }
+    },
+    "relationship": {
+      "familiarity": 0.141,
+      "affection": 0.185,
+      "trust": 0.922,
+      "respect": 0.118,
+      "fear": 0.978
+    },
+    "features": "elderly man age:68 serious HEALER R:acquaintance"
+  },
+  {
+    "profile_seed": 2531971583,
+    "relationship_seed": 1451205941,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 46,
+      "gender": "male",
+      "traits": {
+        "warmth": 95,
+        "humor": 41,
+        "impulsivity": 31,
+        "bravery": 9,
+        "focus": 66
+      }
+    },
+    "relationship": {
+      "familiarity": 0.922,
+      "affection": 0.118,
+      "trust": 0.978,
+      "respect": 0.527,
+      "fear": 0.195
+    },
+    "features": "man age:46 gentle PUB_PATRON R:friend"
+  },
+  {
+    "profile_seed": 4193509241,
+    "relationship_seed": 3247141015,
+    "profile": {
+      "occupation": "healer",
+      "age": 16,
+      "gender": "female",
+      "traits": {
+        "warmth": 31,
+        "humor": 9,
+        "impulsivity": 66,
+        "bravery": 67,
+        "focus": 4
+      }
+    },
+    "relationship": {
+      "familiarity": 0.978,
+      "affection": 0.527,
+      "trust": 0.195,
+      "respect": 0.448,
+      "fear": 0.135
+    },
+    "features": "girl age:16 cold HEALER R:neutral"
+  },
+  {
+    "profile_seed": 1554066491,
+    "relationship_seed": 1575511464,
+    "profile": {
+      "occupation": "villager",
+      "age": 11,
+      "gender": "female",
+      "traits": {
+        "warmth": 66,
+        "humor": 67,
+        "impulsivity": 4,
+        "bravery": 95,
+        "focus": 72
+      }
+    },
+    "relationship": {
+      "familiarity": 0.195,
+      "affection": 0.448,
+      "trust": 0.135,
+      "respect": 0.905,
+      "fear": 0.286
+    },
+    "features": "girl age:11 measured VILLAGER R:neutral"
+  },
+  {
+    "profile_seed": 2062872006,
+    "relationship_seed": 247960160,
+    "profile": {
+      "occupation": "noble",
+      "age": 42,
+      "gender": "female",
+      "traits": {
+        "warmth": 4,
+        "humor": 95,
+        "impulsivity": 72,
+        "bravery": 57,
+        "focus": 17
+      }
+    },
+    "relationship": {
+      "familiarity": 0.135,
+      "affection": 0.905,
+      "trust": 0.286,
+      "respect": 0.662,
+      "fear": 0.747
+    },
+    "features": "woman age:42 sassy NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 1844865157,
+    "relationship_seed": 3157624374,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 84,
+      "gender": "female",
+      "traits": {
+        "warmth": 72,
+        "humor": 57,
+        "impulsivity": 17,
+        "bravery": 1,
+        "focus": 79
+      }
+    },
+    "relationship": {
+      "familiarity": 0.286,
+      "affection": 0.662,
+      "trust": 0.747,
+      "respect": 0.011,
+      "fear": 0.203
+    },
+    "features": "elderly woman age:84 gentle BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 2459650479,
+    "relationship_seed": 2389990264,
+    "profile": {
+      "occupation": "damsel",
+      "age": 26,
+      "gender": "female",
+      "traits": {
+        "warmth": 17,
+        "humor": 1,
+        "impulsivity": 79,
+        "bravery": 87,
+        "focus": 44
+      }
+    },
+    "relationship": {
+      "familiarity": 0.747,
+      "affection": 0.011,
+      "trust": 0.203,
+      "respect": 0.208,
+      "fear": 0.205
+    },
+    "features": "woman age:26 gruff DAMSEL R:acquaintance"
+  },
+  {
+    "profile_seed": 2792384341,
+    "relationship_seed": 4190687512,
+    "profile": {
+      "occupation": "damsel",
+      "age": 18,
+      "gender": "female",
+      "traits": {
+        "warmth": 79,
+        "humor": 87,
+        "impulsivity": 44,
+        "bravery": 58,
+        "focus": 90
+      }
+    },
+    "relationship": {
+      "familiarity": 0.203,
+      "affection": 0.208,
+      "trust": 0.205,
+      "respect": 0.533,
+      "fear": 0.771
+    },
+    "features": "girl age:18 cheerful DAMSEL R:acquaintance"
+  },
+  {
+    "profile_seed": 2661268813,
+    "relationship_seed": 1341330198,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 19,
+      "gender": "male",
+      "traits": {
+        "warmth": 44,
+        "humor": 58,
+        "impulsivity": 90,
+        "bravery": 5,
+        "focus": 79
+      }
+    },
+    "relationship": {
+      "familiarity": 0.205,
+      "affection": 0.533,
+      "trust": 0.771,
+      "respect": 0.188,
+      "fear": 0.959
+    },
+    "features": "boy age:19 stoic BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 2678685214,
+    "relationship_seed": 3174441803,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 9,
+      "gender": "female",
+      "traits": {
+        "warmth": 90,
+        "humor": 5,
+        "impulsivity": 79,
+        "bravery": 33,
+        "focus": 21
+      }
+    },
+    "relationship": {
+      "familiarity": 0.771,
+      "affection": 0.188,
+      "trust": 0.959,
+      "respect": 0.575,
+      "fear": 0.654
+    },
+    "features": "girl age:9 gentle INNKEEPER R:friend"
+  },
+  {
+    "profile_seed": 1387299684,
+    "relationship_seed": 425222986,
+    "profile": {
+      "occupation": "farmer",
+      "age": 39,
+      "gender": "male",
+      "traits": {
+        "warmth": 79,
+        "humor": 33,
+        "impulsivity": 21,
+        "bravery": 16,
+        "focus": 1
+      }
+    },
+    "relationship": {
+      "familiarity": 0.959,
+      "affection": 0.575,
+      "trust": 0.654,
+      "respect": 0.43,
+      "fear": 0.831
+    },
+    "features": "man age:39 gentle FARMER R:friend"
+  },
+  {
+    "profile_seed": 3004437394,
+    "relationship_seed": 498020097,
+    "profile": {
+      "occupation": "bandit",
+      "age": 75,
+      "gender": "female",
+      "traits": {
+        "warmth": 21,
+        "humor": 16,
+        "impulsivity": 1,
+        "bravery": 89,
+        "focus": 65
+      }
+    },
+    "relationship": {
+      "familiarity": 0.654,
+      "affection": 0.43,
+      "trust": 0.831,
+      "respect": 0.167,
+      "fear": 0.239
+    },
+    "features": "elderly woman age:75 gruff BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 4053866470,
+    "relationship_seed": 3102373704,
+    "profile": {
+      "occupation": "villager",
+      "age": 30,
+      "gender": "female",
+      "traits": {
+        "warmth": 1,
+        "humor": 89,
+        "impulsivity": 65,
+        "bravery": 65,
+        "focus": 74
+      }
+    },
+    "relationship": {
+      "familiarity": 0.831,
+      "affection": 0.167,
+      "trust": 0.239,
+      "respect": 0.208,
+      "fear": 0.651
+    },
+    "features": "woman age:30 sassy VILLAGER R:acquaintance"
+  },
+  {
+    "profile_seed": 912426345,
+    "relationship_seed": 3208468430,
+    "profile": {
+      "occupation": "merchant",
+      "age": 33,
+      "gender": "male",
+      "traits": {
+        "warmth": 65,
+        "humor": 65,
+        "impulsivity": 74,
+        "bravery": 18,
+        "focus": 62
+      }
+    },
+    "relationship": {
+      "familiarity": 0.239,
+      "affection": 0.208,
+      "trust": 0.651,
+      "respect": 0.11,
+      "fear": 0.16
+    },
+    "features": "man age:33 timid MERCHANT R:acquaintance"
+  },
+  {
+    "profile_seed": 2908174508,
+    "relationship_seed": 34679853,
+    "profile": {
+      "occupation": "bandit",
+      "age": 76,
+      "gender": "female",
+      "traits": {
+        "warmth": 74,
+        "humor": 18,
+        "impulsivity": 62,
+        "bravery": 97,
+        "focus": 36
+      }
+    },
+    "relationship": {
+      "familiarity": 0.651,
+      "affection": 0.11,
+      "trust": 0.16,
+      "respect": 0.731,
+      "fear": 0.113
+    },
+    "features": "elderly woman age:76 reckless BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 3574031111,
+    "relationship_seed": 362047796,
+    "profile": {
+      "occupation": "noble",
+      "age": 50,
+      "gender": "female",
+      "traits": {
+        "warmth": 62,
+        "humor": 97,
+        "impulsivity": 36,
+        "bravery": 74,
+        "focus": 40
+      }
+    },
+    "relationship": {
+      "familiarity": 0.16,
+      "affection": 0.731,
+      "trust": 0.113,
+      "respect": 0.191,
+      "fear": 0.617
+    },
+    "features": "woman age:50 playful NOBLE R:acquaintance"
+  },
+  {
+    "profile_seed": 2397440205,
+    "relationship_seed": 2953734514,
+    "profile": {
+      "occupation": "farmer",
+      "age": 23,
+      "gender": "male",
+      "traits": {
+        "warmth": 36,
+        "humor": 74,
+        "impulsivity": 40,
+        "bravery": 20,
+        "focus": 85
+      }
+    },
+    "relationship": {
+      "familiarity": 0.113,
+      "affection": 0.191,
+      "trust": 0.617,
+      "respect": 0.371,
+      "fear": 0.673
+    },
+    "features": "man age:23 stoic FARMER R:acquaintance"
+  },
+  {
+    "profile_seed": 3642944418,
+    "relationship_seed": 244045993,
+    "profile": {
+      "occupation": "guard",
+      "age": 11,
+      "gender": "male",
+      "traits": {
+        "warmth": 40,
+        "humor": 20,
+        "impulsivity": 85,
+        "bravery": 60,
+        "focus": 24
+      }
+    },
+    "relationship": {
+      "familiarity": 0.617,
+      "affection": 0.371,
+      "trust": 0.673,
+      "respect": 0.681,
+      "fear": 0.132
+    },
+    "features": "boy age:11 impulsive GUARD R:neutral"
+  },
+  {
+    "profile_seed": 3326512806,
+    "relationship_seed": 3856328847,
+    "profile": {
+      "occupation": "wizard",
+      "age": 63,
+      "gender": "female",
+      "traits": {
+        "warmth": 85,
+        "humor": 60,
+        "impulsivity": 24,
+        "bravery": 46,
+        "focus": 27
+      }
+    },
+    "relationship": {
+      "familiarity": 0.673,
+      "affection": 0.681,
+      "trust": 0.132,
+      "respect": 0.926,
+      "fear": 0.628
+    },
+    "features": "elderly woman age:63 cheerful WIZARD R:friend"
+  },
+  {
+    "profile_seed": 2711734698,
+    "relationship_seed": 2316073440,
+    "profile": {
+      "occupation": "villager",
+      "age": 61,
+      "gender": "female",
+      "traits": {
+        "warmth": 24,
+        "humor": 46,
+        "impulsivity": 27,
+        "bravery": 89,
+        "focus": 16
+      }
+    },
+    "relationship": {
+      "familiarity": 0.132,
+      "affection": 0.926,
+      "trust": 0.628,
+      "respect": 0.217,
+      "fear": 0.5
+    },
+    "features": "elderly woman age:61 gruff VILLAGER R:neutral"
+  },
+  {
+    "profile_seed": 2738820216,
+    "relationship_seed": 2008457376,
+    "profile": {
+      "occupation": "villager",
+      "age": 6,
+      "gender": "female",
+      "traits": {
+        "warmth": 27,
+        "humor": 89,
+        "impulsivity": 16,
+        "bravery": 68,
+        "focus": 17
+      }
+    },
+    "relationship": {
+      "familiarity": 0.628,
+      "affection": 0.217,
+      "trust": 0.5,
+      "respect": 0.973,
+      "fear": 0.664
+    },
+    "features": "girl age:6 playful VILLAGER R:neutral"
+  },
+  {
+    "profile_seed": 3623673681,
+    "relationship_seed": 3469603354,
+    "profile": {
+      "occupation": "farmer",
+      "age": 18,
+      "gender": "male",
+      "traits": {
+        "warmth": 16,
+        "humor": 68,
+        "impulsivity": 17,
+        "bravery": 12,
+        "focus": 25
+      }
+    },
+    "relationship": {
+      "familiarity": 0.5,
+      "affection": 0.973,
+      "trust": 0.664,
+      "respect": 0.149,
+      "fear": 0.688
+    },
+    "features": "boy age:18 anxious FARMER R:neutral"
+  },
+  {
+    "profile_seed": 1633665533,
+    "relationship_seed": 3043329261,
+    "profile": {
+      "occupation": "bandit",
+      "age": 70,
+      "gender": "female",
+      "traits": {
+        "warmth": 17,
+        "humor": 12,
+        "impulsivity": 25,
+        "bravery": 1,
+        "focus": 95
+      }
+    },
+    "relationship": {
+      "familiarity": 0.664,
+      "affection": 0.149,
+      "trust": 0.688,
+      "respect": 0.483,
+      "fear": 0.389
+    },
+    "features": "elderly woman age:70 stoic BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 3137135665,
+    "relationship_seed": 3911202444,
+    "profile": {
+      "occupation": "villager",
+      "age": 41,
+      "gender": "male",
+      "traits": {
+        "warmth": 25,
+        "humor": 1,
+        "impulsivity": 95,
+        "bravery": 30,
+        "focus": 26
+      }
+    },
+    "relationship": {
+      "familiarity": 0.688,
+      "affection": 0.483,
+      "trust": 0.389,
+      "respect": 0.16,
+      "fear": 0.248
+    },
+    "features": "man age:41 anxious VILLAGER R:neutral"
+  },
+  {
+    "profile_seed": 298446836,
+    "relationship_seed": 2866299919,
+    "profile": {
+      "occupation": "healer",
+      "age": 24,
+      "gender": "female",
+      "traits": {
+        "warmth": 95,
+        "humor": 30,
+        "impulsivity": 26,
+        "bravery": 40,
+        "focus": 91
+      }
+    },
+    "relationship": {
+      "familiarity": 0.389,
+      "affection": 0.16,
+      "trust": 0.248,
+      "respect": 0.79,
+      "fear": 0.757
+    },
+    "features": "woman age:24 gentle HEALER R:acquaintance"
+  },
+  {
+    "profile_seed": 3915862339,
+    "relationship_seed": 1789471844,
+    "profile": {
+      "occupation": "noble",
+      "age": 43,
+      "gender": "male",
+      "traits": {
+        "warmth": 26,
+        "humor": 40,
+        "impulsivity": 91,
+        "bravery": 65,
+        "focus": 41
+      }
+    },
+    "relationship": {
+      "familiarity": 0.248,
+      "affection": 0.79,
+      "trust": 0.757,
+      "respect": 0.67,
+      "fear": 0.72
+    },
+    "features": "man age:43 impulsive NOBLE R:friend"
+  },
+  {
+    "profile_seed": 2878666038,
+    "relationship_seed": 2474105423,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 37,
+      "gender": "female",
+      "traits": {
+        "warmth": 91,
+        "humor": 65,
+        "impulsivity": 41,
+        "bravery": 17,
+        "focus": 20
+      }
+    },
+    "relationship": {
+      "familiarity": 0.757,
+      "affection": 0.67,
+      "trust": 0.72,
+      "respect": 0.813,
+      "fear": 0.847
+    },
+    "features": "woman age:37 gentle INNKEEPER R:friend"
+  },
+  {
+    "profile_seed": 1879032912,
+    "relationship_seed": 2042917546,
+    "profile": {
+      "occupation": "farmer",
+      "age": 39,
+      "gender": "female",
+      "traits": {
+        "warmth": 41,
+        "humor": 17,
+        "impulsivity": 20,
+        "bravery": 10,
+        "focus": 43
+      }
+    },
+    "relationship": {
+      "familiarity": 0.72,
+      "affection": 0.813,
+      "trust": 0.847,
+      "respect": 0.672,
+      "fear": 0.637
+    },
+    "features": "woman age:39 timid FARMER R:friend"
+  },
+  {
+    "profile_seed": 95970594,
+    "relationship_seed": 714609708,
+    "profile": {
+      "occupation": "villager",
+      "age": 71,
+      "gender": "female",
+      "traits": {
+        "warmth": 20,
+        "humor": 10,
+        "impulsivity": 43,
+        "bravery": 11,
+        "focus": 13
+      }
+    },
+    "relationship": {
+      "familiarity": 0.847,
+      "affection": 0.672,
+      "trust": 0.637,
+      "respect": 0.701,
+      "fear": 0.59
+    },
+    "features": "elderly woman age:71 anxious VILLAGER R:friend"
+  },
+  {
+    "profile_seed": 732791906,
+    "relationship_seed": 4279285682,
+    "profile": {
+      "occupation": "merchant",
+      "age": 54,
+      "gender": "female",
+      "traits": {
+        "warmth": 43,
+        "humor": 11,
+        "impulsivity": 13,
+        "bravery": 43,
+        "focus": 40
+      }
+    },
+    "relationship": {
+      "familiarity": 0.637,
+      "affection": 0.701,
+      "trust": 0.59,
+      "respect": 0.969,
+      "fear": 0.72
+    },
+    "features": "woman age:54 serious MERCHANT R:friend"
+  },
+  {
+    "profile_seed": 3577146209,
+    "relationship_seed": 50538188,
+    "profile": {
+      "occupation": "noble",
+      "age": 22,
+      "gender": "male",
+      "traits": {
+        "warmth": 13,
+        "humor": 43,
+        "impulsivity": 40,
+        "bravery": 24,
+        "focus": 100
+      }
+    },
+    "relationship": {
+      "familiarity": 0.59,
+      "affection": 0.969,
+      "trust": 0.72,
+      "respect": 0.531,
+      "fear": 0.058
+    },
+    "features": "man age:22 stoic NOBLE R:friend"
+  },
+  {
+    "profile_seed": 2626171137,
+    "relationship_seed": 3483621109,
+    "profile": {
+      "occupation": "guard",
+      "age": 80,
+      "gender": "male",
+      "traits": {
+        "warmth": 40,
+        "humor": 24,
+        "impulsivity": 100,
+        "bravery": 33,
+        "focus": 17
+      }
+    },
+    "relationship": {
+      "familiarity": 0.72,
+      "affection": 0.531,
+      "trust": 0.058,
+      "respect": 0.436,
+      "fear": 0.472
+    },
+    "features": "elderly man age:80 anxious GUARD R:neutral"
+  },
+  {
+    "profile_seed": 450405675,
+    "relationship_seed": 3250946229,
+    "profile": {
+      "occupation": "bandit",
+      "age": 65,
+      "gender": "male",
+      "traits": {
+        "warmth": 100,
+        "humor": 33,
+        "impulsivity": 17,
+        "bravery": 72,
+        "focus": 19
+      }
+    },
+    "relationship": {
+      "familiarity": 0.058,
+      "affection": 0.436,
+      "trust": 0.472,
+      "respect": 0.908,
+      "fear": 0.672
+    },
+    "features": "elderly man age:65 warm BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 1269830620,
+    "relationship_seed": 1891455001,
+    "profile": {
+      "occupation": "guard",
+      "age": 11,
+      "gender": "female",
+      "traits": {
+        "warmth": 17,
+        "humor": 72,
+        "impulsivity": 19,
+        "bravery": 34,
+        "focus": 9
+      }
+    },
+    "relationship": {
+      "familiarity": 0.472,
+      "affection": 0.908,
+      "trust": 0.672,
+      "respect": 0.724,
+      "fear": 0.387
+    },
+    "features": "girl age:11 anxious GUARD R:friend"
+  },
+  {
+    "profile_seed": 2373825926,
+    "relationship_seed": 1113613408,
+    "profile": {
+      "occupation": "damsel",
+      "age": 59,
+      "gender": "male",
+      "traits": {
+        "warmth": 19,
+        "humor": 34,
+        "impulsivity": 9,
+        "bravery": 84,
+        "focus": 3
+      }
+    },
+    "relationship": {
+      "familiarity": 0.672,
+      "affection": 0.724,
+      "trust": 0.387,
+      "respect": 0.304,
+      "fear": 0.6
+    },
+    "features": "man age:59 gruff DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 2472813014,
+    "relationship_seed": 4236485977,
+    "profile": {
+      "occupation": "guard",
+      "age": 18,
+      "gender": "male",
+      "traits": {
+        "warmth": 9,
+        "humor": 84,
+        "impulsivity": 3,
+        "bravery": 65,
+        "focus": 54
+      }
+    },
+    "relationship": {
+      "familiarity": 0.387,
+      "affection": 0.304,
+      "trust": 0.6,
+      "respect": 0.099,
+      "fear": 0.9
+    },
+    "features": "boy age:18 careful GUARD R:acquaintance"
+  },
+  {
+    "profile_seed": 2368792813,
+    "relationship_seed": 2509053851,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 73,
+      "gender": "male",
+      "traits": {
+        "warmth": 3,
+        "humor": 65,
+        "impulsivity": 54,
+        "bravery": 38,
+        "focus": 50
+      }
+    },
+    "relationship": {
+      "familiarity": 0.6,
+      "affection": 0.099,
+      "trust": 0.9,
+      "respect": 0.442,
+      "fear": 0.663
+    },
+    "features": "elderly man age:73 cold INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 4189253668,
+    "relationship_seed": 1366449183,
+    "profile": {
+      "occupation": "wizard",
+      "age": 44,
+      "gender": "female",
+      "traits": {
+        "warmth": 54,
+        "humor": 38,
+        "impulsivity": 50,
+        "bravery": 50,
+        "focus": 77
+      }
+    },
+    "relationship": {
+      "familiarity": 0.9,
+      "affection": 0.442,
+      "trust": 0.663,
+      "respect": 0.4,
+      "fear": 0.314
+    },
+    "features": "woman age:44 focused WIZARD R:friend"
+  },
+  {
+    "profile_seed": 1153932679,
+    "relationship_seed": 1502863804,
+    "profile": {
+      "occupation": "damsel",
+      "age": 51,
+      "gender": "male",
+      "traits": {
+        "warmth": 50,
+        "humor": 50,
+        "impulsivity": 77,
+        "bravery": 0,
+        "focus": 86
+      }
+    },
+    "relationship": {
+      "familiarity": 0.663,
+      "affection": 0.4,
+      "trust": 0.314,
+      "respect": 0.502,
+      "fear": 0.79
+    },
+    "features": "man age:51 timid DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 2435456686,
+    "relationship_seed": 2366197233,
+    "profile": {
+      "occupation": "bandit",
+      "age": 31,
+      "gender": "female",
+      "traits": {
+        "warmth": 77,
+        "humor": 0,
+        "impulsivity": 86,
+        "bravery": 77,
+        "focus": 50
+      }
+    },
+    "relationship": {
+      "familiarity": 0.314,
+      "affection": 0.502,
+      "trust": 0.79,
+      "respect": 0.254,
+      "fear": 0.312
+    },
+    "features": "woman age:31 reckless BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 844155626,
+    "relationship_seed": 1253995244,
+    "profile": {
+      "occupation": "noble",
+      "age": 82,
+      "gender": "female",
+      "traits": {
+        "warmth": 86,
+        "humor": 77,
+        "impulsivity": 50,
+        "bravery": 13,
+        "focus": 2
+      }
+    },
+    "relationship": {
+      "familiarity": 0.79,
+      "affection": 0.254,
+      "trust": 0.312,
+      "respect": 0.335,
+      "fear": 0.31
+    },
+    "features": "elderly woman age:82 gentle NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 412459837,
+    "relationship_seed": 850984388,
+    "profile": {
+      "occupation": "noble",
+      "age": 73,
+      "gender": "female",
+      "traits": {
+        "warmth": 50,
+        "humor": 13,
+        "impulsivity": 2,
+        "bravery": 33,
+        "focus": 95
+      }
+    },
+    "relationship": {
+      "familiarity": 0.312,
+      "affection": 0.335,
+      "trust": 0.31,
+      "respect": 0.392,
+      "fear": 0.447
+    },
+    "features": "elderly woman age:73 measured NOBLE R:acquaintance"
+  },
+  {
+    "profile_seed": 2366440388,
+    "relationship_seed": 2210871998,
+    "profile": {
+      "occupation": "merchant",
+      "age": 11,
+      "gender": "male",
+      "traits": {
+        "warmth": 2,
+        "humor": 33,
+        "impulsivity": 95,
+        "bravery": 49,
+        "focus": 21
+      }
+    },
+    "relationship": {
+      "familiarity": 0.31,
+      "affection": 0.392,
+      "trust": 0.447,
+      "respect": 0.395,
+      "fear": 0.55
+    },
+    "features": "boy age:11 cold MERCHANT R:acquaintance"
+  },
+  {
+    "profile_seed": 4136228406,
+    "relationship_seed": 1168208433,
+    "profile": {
+      "occupation": "bandit",
+      "age": 23,
+      "gender": "male",
+      "traits": {
+        "warmth": 95,
+        "humor": 49,
+        "impulsivity": 21,
+        "bravery": 93,
+        "focus": 32
+      }
+    },
+    "relationship": {
+      "familiarity": 0.447,
+      "affection": 0.395,
+      "trust": 0.55,
+      "respect": 0.279,
+      "fear": 0.555
+    },
+    "features": "man age:23 warm BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 386637698,
+    "relationship_seed": 4219884063,
+    "profile": {
+      "occupation": "wizard",
+      "age": 34,
+      "gender": "female",
+      "traits": {
+        "warmth": 21,
+        "humor": 93,
+        "impulsivity": 32,
+        "bravery": 17,
+        "focus": 81
+      }
+    },
+    "relationship": {
+      "familiarity": 0.55,
+      "affection": 0.279,
+      "trust": 0.555,
+      "respect": 0.319,
+      "fear": 0.722
+    },
+    "features": "woman age:34 stoic WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 158397789,
+    "relationship_seed": 3970992304,
+    "profile": {
+      "occupation": "damsel",
+      "age": 24,
+      "gender": "male",
+      "traits": {
+        "warmth": 32,
+        "humor": 17,
+        "impulsivity": 81,
+        "bravery": 65,
+        "focus": 8
+      }
+    },
+    "relationship": {
+      "familiarity": 0.555,
+      "affection": 0.319,
+      "trust": 0.722,
+      "respect": 0.036,
+      "fear": 0.005
+    },
+    "features": "man age:24 cold DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 1232615939,
+    "relationship_seed": 2302140159,
+    "profile": {
+      "occupation": "wizard",
+      "age": 80,
+      "gender": "male",
+      "traits": {
+        "warmth": 81,
+        "humor": 65,
+        "impulsivity": 8,
+        "bravery": 55,
+        "focus": 69
+      }
+    },
+    "relationship": {
+      "familiarity": 0.722,
+      "affection": 0.036,
+      "trust": 0.005,
+      "respect": 0.897,
+      "fear": 0.294
+    },
+    "features": "elderly man age:80 cheerful WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 803796715,
+    "relationship_seed": 394543185,
+    "profile": {
+      "occupation": "bandit",
+      "age": 27,
+      "gender": "female",
+      "traits": {
+        "warmth": 8,
+        "humor": 55,
+        "impulsivity": 69,
+        "bravery": 55,
+        "focus": 5
+      }
+    },
+    "relationship": {
+      "familiarity": 0.005,
+      "affection": 0.897,
+      "trust": 0.294,
+      "respect": 0.781,
+      "fear": 0.12
+    },
+    "features": "woman age:27 distracted BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 1850465622,
+    "relationship_seed": 2848187238,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 38,
+      "gender": "male",
+      "traits": {
+        "warmth": 69,
+        "humor": 55,
+        "impulsivity": 5,
+        "bravery": 89,
+        "focus": 9
+      }
+    },
+    "relationship": {
+      "familiarity": 0.294,
+      "affection": 0.781,
+      "trust": 0.12,
+      "respect": 0.563,
+      "fear": 0.52
+    },
+    "features": "man age:38 careful BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 1615232913,
+    "relationship_seed": 1496645931,
+    "profile": {
+      "occupation": "wizard",
+      "age": 72,
+      "gender": "female",
+      "traits": {
+        "warmth": 5,
+        "humor": 89,
+        "impulsivity": 9,
+        "bravery": 83,
+        "focus": 47
+      }
+    },
+    "relationship": {
+      "familiarity": 0.12,
+      "affection": 0.563,
+      "trust": 0.52,
+      "respect": 0.136,
+      "fear": 0.724
+    },
+    "features": "elderly woman age:72 gruff WIZARD R:acquaintance"
+  },
+  {
+    "profile_seed": 3675498947,
+    "relationship_seed": 1800946710,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 64,
+      "gender": "female",
+      "traits": {
+        "warmth": 9,
+        "humor": 83,
+        "impulsivity": 47,
+        "bravery": 43,
+        "focus": 19
+      }
+    },
+    "relationship": {
+      "familiarity": 0.52,
+      "affection": 0.136,
+      "trust": 0.724,
+      "respect": 0.045,
+      "fear": 0.744
+    },
+    "features": "elderly woman age:64 cold BLACKSMITH R:acquaintance"
+  },
+  {
+    "profile_seed": 411830939,
+    "relationship_seed": 2721835252,
+    "profile": {
+      "occupation": "damsel",
+      "age": 43,
+      "gender": "female",
+      "traits": {
+        "warmth": 47,
+        "humor": 43,
+        "impulsivity": 19,
+        "bravery": 26,
+        "focus": 67
+      }
+    },
+    "relationship": {
+      "familiarity": 0.724,
+      "affection": 0.045,
+      "trust": 0.744,
+      "respect": 0.322,
+      "fear": 0.849
+    },
+    "features": "woman age:43 measured DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 998632358,
+    "relationship_seed": 1490842398,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 54,
+      "gender": "male",
+      "traits": {
+        "warmth": 19,
+        "humor": 26,
+        "impulsivity": 67,
+        "bravery": 83,
+        "focus": 1
+      }
+    },
+    "relationship": {
+      "familiarity": 0.744,
+      "affection": 0.322,
+      "trust": 0.849,
+      "respect": 0.984,
+      "fear": 0.33
+    },
+    "features": "man age:54 gruff BLACKSMITH R:friend"
+  },
+  {
+    "profile_seed": 21287009,
+    "relationship_seed": 4066313573,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 33,
+      "gender": "female",
+      "traits": {
+        "warmth": 67,
+        "humor": 83,
+        "impulsivity": 1,
+        "bravery": 20,
+        "focus": 91
+      }
+    },
+    "relationship": {
+      "familiarity": 0.849,
+      "affection": 0.984,
+      "trust": 0.33,
+      "respect": 0.652,
+      "fear": 0.766
+    },
+    "features": "woman age:33 measured PUB_PATRON R:friend"
+  },
+  {
+    "profile_seed": 1283862428,
+    "relationship_seed": 2814939110,
+    "profile": {
+      "occupation": "merchant",
+      "age": 17,
+      "gender": "female",
+      "traits": {
+        "warmth": 1,
+        "humor": 20,
+        "impulsivity": 91,
+        "bravery": 22,
+        "focus": 12
+      }
+    },
+    "relationship": {
+      "familiarity": 0.33,
+      "affection": 0.652,
+      "trust": 0.766,
+      "respect": 0.58,
+      "fear": 0.371
+    },
+    "features": "girl age:17 anxious MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 1891011452,
+    "relationship_seed": 2599561616,
+    "profile": {
+      "occupation": "noble",
+      "age": 37,
+      "gender": "male",
+      "traits": {
+        "warmth": 91,
+        "humor": 22,
+        "impulsivity": 12,
+        "bravery": 12,
+        "focus": 31
+      }
+    },
+    "relationship": {
+      "familiarity": 0.766,
+      "affection": 0.58,
+      "trust": 0.371,
+      "respect": 0.847,
+      "fear": 0.956
+    },
+    "features": "man age:37 gentle NOBLE R:friend"
+  },
+  {
+    "profile_seed": 667453552,
+    "relationship_seed": 3994349939,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 51,
+      "gender": "male",
+      "traits": {
+        "warmth": 12,
+        "humor": 12,
+        "impulsivity": 31,
+        "bravery": 51,
+        "focus": 25
+      }
+    },
+    "relationship": {
+      "familiarity": 0.371,
+      "affection": 0.847,
+      "trust": 0.956,
+      "respect": 0.874,
+      "fear": 0.099
+    },
+    "features": "man age:51 cold INNKEEPER R:friend"
+  },
+  {
+    "profile_seed": 2003797166,
+    "relationship_seed": 2025516339,
+    "profile": {
+      "occupation": "wizard",
+      "age": 50,
+      "gender": "male",
+      "traits": {
+        "warmth": 31,
+        "humor": 51,
+        "impulsivity": 25,
+        "bravery": 38,
+        "focus": 73
+      }
+    },
+    "relationship": {
+      "familiarity": 0.956,
+      "affection": 0.874,
+      "trust": 0.099,
+      "respect": 0.218,
+      "fear": 0.992
+    },
+    "features": "man age:50 stoic WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 2257545245,
+    "relationship_seed": 437470907,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 30,
+      "gender": "male",
+      "traits": {
+        "warmth": 25,
+        "humor": 38,
+        "impulsivity": 73,
+        "bravery": 71,
+        "focus": 63
+      }
+    },
+    "relationship": {
+      "familiarity": 0.099,
+      "affection": 0.218,
+      "trust": 0.992,
+      "respect": 0.677,
+      "fear": 0.859
+    },
+    "features": "man age:30 gruff INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 709354745,
+    "relationship_seed": 231562549,
+    "profile": {
+      "occupation": "guard",
+      "age": 37,
+      "gender": "male",
+      "traits": {
+        "warmth": 73,
+        "humor": 71,
+        "impulsivity": 63,
+        "bravery": 8,
+        "focus": 34
+      }
+    },
+    "relationship": {
+      "familiarity": 0.992,
+      "affection": 0.677,
+      "trust": 0.859,
+      "respect": 0.028,
+      "fear": 0.19
+    },
+    "features": "man age:37 sassy GUARD R:friend"
+  },
+  {
+    "profile_seed": 1797156352,
+    "relationship_seed": 2098827407,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 80,
+      "gender": "female",
+      "traits": {
+        "warmth": 63,
+        "humor": 8,
+        "impulsivity": 34,
+        "bravery": 63,
+        "focus": 18
+      }
+    },
+    "relationship": {
+      "familiarity": 0.859,
+      "affection": 0.028,
+      "trust": 0.19,
+      "respect": 0.94,
+      "fear": 0.482
+    },
+    "features": "elderly woman age:80 serious INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 2919413355,
+    "relationship_seed": 3778734988,
+    "profile": {
+      "occupation": "damsel",
+      "age": 78,
+      "gender": "male",
+      "traits": {
+        "warmth": 34,
+        "humor": 63,
+        "impulsivity": 18,
+        "bravery": 28,
+        "focus": 84
+      }
+    },
+    "relationship": {
+      "familiarity": 0.19,
+      "affection": 0.94,
+      "trust": 0.482,
+      "respect": 0.351,
+      "fear": 0.347
+    },
+    "features": "elderly man age:78 stoic DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 892174473,
+    "relationship_seed": 580952311,
+    "profile": {
+      "occupation": "healer",
+      "age": 61,
+      "gender": "female",
+      "traits": {
+        "warmth": 18,
+        "humor": 28,
+        "impulsivity": 84,
+        "bravery": 64,
+        "focus": 93
+      }
+    },
+    "relationship": {
+      "familiarity": 0.482,
+      "affection": 0.351,
+      "trust": 0.347,
+      "respect": 0.075,
+      "fear": 0.646
+    },
+    "features": "elderly woman age:61 stoic HEALER R:acquaintance"
+  },
+  {
+    "profile_seed": 3782553256,
+    "relationship_seed": 3500250104,
+    "profile": {
+      "occupation": "noble",
+      "age": 12,
+      "gender": "male",
+      "traits": {
+        "warmth": 84,
+        "humor": 64,
+        "impulsivity": 93,
+        "bravery": 100,
+        "focus": 69
+      }
+    },
+    "relationship": {
+      "familiarity": 0.347,
+      "affection": 0.075,
+      "trust": 0.646,
+      "respect": 0.478,
+      "fear": 0.737
+    },
+    "features": "boy age:12 cheerful NOBLE R:acquaintance"
+  },
+  {
+    "profile_seed": 3103961207,
+    "relationship_seed": 243849681,
+    "profile": {
+      "occupation": "bandit",
+      "age": 13,
+      "gender": "female",
+      "traits": {
+        "warmth": 93,
+        "humor": 100,
+        "impulsivity": 69,
+        "bravery": 88,
+        "focus": 61
+      }
+    },
+    "relationship": {
+      "familiarity": 0.646,
+      "affection": 0.478,
+      "trust": 0.737,
+      "respect": 0.731,
+      "fear": 0.685
+    },
+    "features": "girl age:13 sassy BANDIT R:friend"
+  },
+  {
+    "profile_seed": 2750190088,
+    "relationship_seed": 68997406,
+    "profile": {
+      "occupation": "farmer",
+      "age": 22,
+      "gender": "male",
+      "traits": {
+        "warmth": 69,
+        "humor": 88,
+        "impulsivity": 61,
+        "bravery": 64,
+        "focus": 29
+      }
+    },
+    "relationship": {
+      "familiarity": 0.737,
+      "affection": 0.731,
+      "trust": 0.685,
+      "respect": 0.54,
+      "fear": 0.043
+    },
+    "features": "man age:22 sassy FARMER R:friend"
+  },
+  {
+    "profile_seed": 1507106337,
+    "relationship_seed": 2282470921,
+    "profile": {
+      "occupation": "guard",
+      "age": 49,
+      "gender": "male",
+      "traits": {
+        "warmth": 61,
+        "humor": 64,
+        "impulsivity": 29,
+        "bravery": 14,
+        "focus": 17
+      }
+    },
+    "relationship": {
+      "familiarity": 0.685,
+      "affection": 0.54,
+      "trust": 0.043,
+      "respect": 0.499,
+      "fear": 0.342
+    },
+    "features": "man age:49 anxious GUARD R:neutral"
+  },
+  {
+    "profile_seed": 110550124,
+    "relationship_seed": 2122149569,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 40,
+      "gender": "female",
+      "traits": {
+        "warmth": 29,
+        "humor": 14,
+        "impulsivity": 17,
+        "bravery": 22,
+        "focus": 15
+      }
+    },
+    "relationship": {
+      "familiarity": 0.043,
+      "affection": 0.499,
+      "trust": 0.342,
+      "respect": 0.396,
+      "fear": 0.489
+    },
+    "features": "woman age:40 anxious PUB_PATRON R:acquaintance"
+  },
+  {
+    "profile_seed": 2801911155,
+    "relationship_seed": 1783807524,
+    "profile": {
+      "occupation": "villager",
+      "age": 36,
+      "gender": "female",
+      "traits": {
+        "warmth": 17,
+        "humor": 22,
+        "impulsivity": 15,
+        "bravery": 63,
+        "focus": 38
+      }
+    },
+    "relationship": {
+      "familiarity": 0.342,
+      "affection": 0.396,
+      "trust": 0.489,
+      "respect": 0.526,
+      "fear": 0.342
+    },
+    "features": "woman age:36 cold VILLAGER R:neutral"
+  },
+  {
+    "profile_seed": 2404531471,
+    "relationship_seed": 3599013814,
+    "profile": {
+      "occupation": "farmer",
+      "age": 84,
+      "gender": "male",
+      "traits": {
+        "warmth": 15,
+        "humor": 63,
+        "impulsivity": 38,
+        "bravery": 34,
+        "focus": 75
+      }
+    },
+    "relationship": {
+      "familiarity": 0.489,
+      "affection": 0.526,
+      "trust": 0.342,
+      "respect": 0.616,
+      "fear": 0.094
+    },
+    "features": "elderly man age:84 stoic FARMER R:neutral"
+  },
+  {
+    "profile_seed": 3392980079,
+    "relationship_seed": 76590039,
+    "profile": {
+      "occupation": "wizard",
+      "age": 23,
+      "gender": "male",
+      "traits": {
+        "warmth": 38,
+        "humor": 34,
+        "impulsivity": 75,
+        "bravery": 13,
+        "focus": 53
+      }
+    },
+    "relationship": {
+      "familiarity": 0.342,
+      "affection": 0.616,
+      "trust": 0.094,
+      "respect": 0.588,
+      "fear": 0.893
+    },
+    "features": "man age:23 timid WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 748824418,
+    "relationship_seed": 1636056037,
+    "profile": {
+      "occupation": "guard",
+      "age": 62,
+      "gender": "female",
+      "traits": {
+        "warmth": 75,
+        "humor": 13,
+        "impulsivity": 53,
+        "bravery": 76,
+        "focus": 73
+      }
+    },
+    "relationship": {
+      "familiarity": 0.094,
+      "affection": 0.588,
+      "trust": 0.893,
+      "respect": 0.462,
+      "fear": 0.382
+    },
+    "features": "elderly woman age:62 serious GUARD R:neutral"
+  },
+  {
+    "profile_seed": 971373497,
+    "relationship_seed": 1421969136,
+    "profile": {
+      "occupation": "villager",
+      "age": 68,
+      "gender": "female",
+      "traits": {
+        "warmth": 53,
+        "humor": 76,
+        "impulsivity": 73,
+        "bravery": 63,
+        "focus": 9
+      }
+    },
+    "relationship": {
+      "familiarity": 0.893,
+      "affection": 0.462,
+      "trust": 0.382,
+      "respect": 0.637,
+      "fear": 0.939
+    },
+    "features": "elderly woman age:68 sassy VILLAGER R:neutral"
+  },
+  {
+    "profile_seed": 3890817823,
+    "relationship_seed": 2480922906,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 73,
+      "gender": "male",
+      "traits": {
+        "warmth": 73,
+        "humor": 63,
+        "impulsivity": 9,
+        "bravery": 67,
+        "focus": 19
+      }
+    },
+    "relationship": {
+      "familiarity": 0.382,
+      "affection": 0.637,
+      "trust": 0.939,
+      "respect": 0.092,
+      "fear": 0.213
+    },
+    "features": "elderly man age:73 cheerful BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 2423147108,
+    "relationship_seed": 2105423957,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 52,
+      "gender": "male",
+      "traits": {
+        "warmth": 9,
+        "humor": 67,
+        "impulsivity": 19,
+        "bravery": 74,
+        "focus": 9
+      }
+    },
+    "relationship": {
+      "familiarity": 0.939,
+      "affection": 0.092,
+      "trust": 0.213,
+      "respect": 0.541,
+      "fear": 0.539
+    },
+    "features": "man age:52 gruff PUB_PATRON R:neutral"
+  },
+  {
+    "profile_seed": 4109133967,
+    "relationship_seed": 1179335249,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 54,
+      "gender": "female",
+      "traits": {
+        "warmth": 19,
+        "humor": 74,
+        "impulsivity": 9,
+        "bravery": 49,
+        "focus": 44
+      }
+    },
+    "relationship": {
+      "familiarity": 0.213,
+      "affection": 0.541,
+      "trust": 0.539,
+      "respect": 0.295,
+      "fear": 0.126
+    },
+    "features": "woman age:54 careful PUB_PATRON R:acquaintance"
+  },
+  {
+    "profile_seed": 18895089,
+    "relationship_seed": 1827723438,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 81,
+      "gender": "male",
+      "traits": {
+        "warmth": 9,
+        "humor": 49,
+        "impulsivity": 44,
+        "bravery": 29,
+        "focus": 86
+      }
+    },
+    "relationship": {
+      "familiarity": 0.539,
+      "affection": 0.295,
+      "trust": 0.126,
+      "respect": 0.451,
+      "fear": 0.933
+    },
+    "features": "elderly man age:81 stoic BLACKSMITH R:acquaintance"
+  },
+  {
+    "profile_seed": 2336311516,
+    "relationship_seed": 3909724113,
+    "profile": {
+      "occupation": "bandit",
+      "age": 45,
+      "gender": "male",
+      "traits": {
+        "warmth": 44,
+        "humor": 29,
+        "impulsivity": 86,
+        "bravery": 25,
+        "focus": 35
+      }
+    },
+    "relationship": {
+      "familiarity": 0.126,
+      "affection": 0.451,
+      "trust": 0.933,
+      "respect": 0.733,
+      "fear": 0.518
+    },
+    "features": "man age:45 anxious BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 1670302760,
+    "relationship_seed": 4219057293,
+    "profile": {
+      "occupation": "bandit",
+      "age": 62,
+      "gender": "male",
+      "traits": {
+        "warmth": 86,
+        "humor": 25,
+        "impulsivity": 35,
+        "bravery": 95,
+        "focus": 43
+      }
+    },
+    "relationship": {
+      "familiarity": 0.933,
+      "affection": 0.733,
+      "trust": 0.518,
+      "respect": 0.299,
+      "fear": 0.623
+    },
+    "features": "elderly man age:62 bold BANDIT R:friend"
+  },
+  {
+    "profile_seed": 1894137177,
+    "relationship_seed": 1592105247,
+    "profile": {
+      "occupation": "wizard",
+      "age": 81,
+      "gender": "female",
+      "traits": {
+        "warmth": 35,
+        "humor": 95,
+        "impulsivity": 43,
+        "bravery": 88,
+        "focus": 46
+      }
+    },
+    "relationship": {
+      "familiarity": 0.518,
+      "affection": 0.299,
+      "trust": 0.623,
+      "respect": 0.055,
+      "fear": 0.338
+    },
+    "features": "elderly woman age:81 gruff WIZARD R:acquaintance"
+  },
+  {
+    "profile_seed": 1426583676,
+    "relationship_seed": 3389823736,
+    "profile": {
+      "occupation": "damsel",
+      "age": 54,
+      "gender": "female",
+      "traits": {
+        "warmth": 43,
+        "humor": 88,
+        "impulsivity": 46,
+        "bravery": 68,
+        "focus": 93
+      }
+    },
+    "relationship": {
+      "familiarity": 0.623,
+      "affection": 0.055,
+      "trust": 0.338,
+      "respect": 0.165,
+      "fear": 0.897
+    },
+    "features": "woman age:54 stoic DAMSEL R:acquaintance"
+  },
+  {
+    "profile_seed": 1931836529,
+    "relationship_seed": 1238202020,
+    "profile": {
+      "occupation": "noble",
+      "age": 77,
+      "gender": "female",
+      "traits": {
+        "warmth": 46,
+        "humor": 68,
+        "impulsivity": 93,
+        "bravery": 19,
+        "focus": 52
+      }
+    },
+    "relationship": {
+      "familiarity": 0.338,
+      "affection": 0.165,
+      "trust": 0.897,
+      "respect": 0.892,
+      "fear": 0.277
+    },
+    "features": "elderly woman age:77 impulsive NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 69804072,
+    "relationship_seed": 631912446,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 25,
+      "gender": "male",
+      "traits": {
+        "warmth": 93,
+        "humor": 19,
+        "impulsivity": 52,
+        "bravery": 13,
+        "focus": 46
+      }
+    },
+    "relationship": {
+      "familiarity": 0.897,
+      "affection": 0.892,
+      "trust": 0.277,
+      "respect": 0.425,
+      "fear": 0.355
+    },
+    "features": "man age:25 gentle BLACKSMITH R:friend"
+  },
+  {
+    "profile_seed": 166530260,
+    "relationship_seed": 2794243343,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 62,
+      "gender": "male",
+      "traits": {
+        "warmth": 52,
+        "humor": 13,
+        "impulsivity": 46,
+        "bravery": 25,
+        "focus": 67
+      }
+    },
+    "relationship": {
+      "familiarity": 0.277,
+      "affection": 0.425,
+      "trust": 0.355,
+      "respect": 0.712,
+      "fear": 0.345
+    },
+    "features": "elderly man age:62 serious INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 4220156217,
+    "relationship_seed": 554528399,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 22,
+      "gender": "male",
+      "traits": {
+        "warmth": 46,
+        "humor": 25,
+        "impulsivity": 67,
+        "bravery": 100,
+        "focus": 42
+      }
+    },
+    "relationship": {
+      "familiarity": 0.355,
+      "affection": 0.712,
+      "trust": 0.345,
+      "respect": 0.023,
+      "fear": 0.138
+    },
+    "features": "man age:22 reckless INNKEEPER R:acquaintance"
+  },
+  {
+    "profile_seed": 390452417,
+    "relationship_seed": 376039375,
+    "profile": {
+      "occupation": "healer",
+      "age": 60,
+      "gender": "female",
+      "traits": {
+        "warmth": 67,
+        "humor": 100,
+        "impulsivity": 42,
+        "bravery": 66,
+        "focus": 18
+      }
+    },
+    "relationship": {
+      "familiarity": 0.345,
+      "affection": 0.023,
+      "trust": 0.138,
+      "respect": 0.962,
+      "fear": 0.329
+    },
+    "features": "elderly woman age:60 playful HEALER R:acquaintance"
+  },
+  {
+    "profile_seed": 2022851175,
+    "relationship_seed": 722074376,
+    "profile": {
+      "occupation": "noble",
+      "age": 33,
+      "gender": "female",
+      "traits": {
+        "warmth": 42,
+        "humor": 66,
+        "impulsivity": 18,
+        "bravery": 70,
+        "focus": 27
+      }
+    },
+    "relationship": {
+      "familiarity": 0.138,
+      "affection": 0.962,
+      "trust": 0.329,
+      "respect": 0.658,
+      "fear": 0.604
+    },
+    "features": "woman age:33 gruff NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 2574702268,
+    "relationship_seed": 932158188,
+    "profile": {
+      "occupation": "villager",
+      "age": 42,
+      "gender": "male",
+      "traits": {
+        "warmth": 18,
+        "humor": 70,
+        "impulsivity": 27,
+        "bravery": 82,
+        "focus": 56
+      }
+    },
+    "relationship": {
+      "familiarity": 0.329,
+      "affection": 0.658,
+      "trust": 0.604,
+      "respect": 0.91,
+      "fear": 0.587
+    },
+    "features": "man age:42 gruff VILLAGER R:friend"
+  },
+  {
+    "profile_seed": 1587374117,
+    "relationship_seed": 2158988489,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 23,
+      "gender": "male",
+      "traits": {
+        "warmth": 27,
+        "humor": 82,
+        "impulsivity": 56,
+        "bravery": 0,
+        "focus": 47
+      }
+    },
+    "relationship": {
+      "familiarity": 0.604,
+      "affection": 0.91,
+      "trust": 0.587,
+      "respect": 0.381,
+      "fear": 0.478
+    },
+    "features": "man age:23 timid PUB_PATRON R:friend"
+  },
+  {
+    "profile_seed": 1474567698,
+    "relationship_seed": 1356903457,
+    "profile": {
+      "occupation": "guard",
+      "age": 40,
+      "gender": "male",
+      "traits": {
+        "warmth": 56,
+        "humor": 0,
+        "impulsivity": 47,
+        "bravery": 44,
+        "focus": 51
+      }
+    },
+    "relationship": {
+      "familiarity": 0.587,
+      "affection": 0.381,
+      "trust": 0.478,
+      "respect": 0.247,
+      "fear": 0.774
+    },
+    "features": "man age:40 serious GUARD R:neutral"
+  },
+  {
+    "profile_seed": 2331137395,
+    "relationship_seed": 3419864829,
+    "profile": {
+      "occupation": "bandit",
+      "age": 14,
+      "gender": "male",
+      "traits": {
+        "warmth": 47,
+        "humor": 44,
+        "impulsivity": 51,
+        "bravery": 72,
+        "focus": 53
+      }
+    },
+    "relationship": {
+      "familiarity": 0.478,
+      "affection": 0.247,
+      "trust": 0.774,
+      "respect": 0.726,
+      "fear": 0.897
+    },
+    "features": "boy age:14 bold BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 2502151129,
+    "relationship_seed": 1732977493,
+    "profile": {
+      "occupation": "guard",
+      "age": 74,
+      "gender": "male",
+      "traits": {
+        "warmth": 51,
+        "humor": 72,
+        "impulsivity": 53,
+        "bravery": 48,
+        "focus": 12
+      }
+    },
+    "relationship": {
+      "familiarity": 0.774,
+      "affection": 0.726,
+      "trust": 0.897,
+      "respect": 0.938,
+      "fear": 0.128
+    },
+    "features": "elderly man age:74 distracted GUARD R:close_friend"
+  },
+  {
+    "profile_seed": 1729223269,
+    "relationship_seed": 3623345451,
+    "profile": {
+      "occupation": "wizard",
+      "age": 7,
+      "gender": "male",
+      "traits": {
+        "warmth": 53,
+        "humor": 48,
+        "impulsivity": 12,
+        "bravery": 79,
+        "focus": 79
+      }
+    },
+    "relationship": {
+      "familiarity": 0.897,
+      "affection": 0.938,
+      "trust": 0.128,
+      "respect": 0.357,
+      "fear": 0.531
+    },
+    "features": "boy age:7 measured WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 2785528642,
+    "relationship_seed": 2996517461,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 50,
+      "gender": "male",
+      "traits": {
+        "warmth": 12,
+        "humor": 79,
+        "impulsivity": 79,
+        "bravery": 51,
+        "focus": 31
+      }
+    },
+    "relationship": {
+      "familiarity": 0.128,
+      "affection": 0.357,
+      "trust": 0.531,
+      "respect": 0.209,
+      "fear": 0.023
+    },
+    "features": "man age:50 sassy PUB_PATRON R:acquaintance"
+  },
+  {
+    "profile_seed": 1877993245,
+    "relationship_seed": 4069383675,
+    "profile": {
+      "occupation": "wizard",
+      "age": 23,
+      "gender": "female",
+      "traits": {
+        "warmth": 79,
+        "humor": 51,
+        "impulsivity": 31,
+        "bravery": 88,
+        "focus": 26
+      }
+    },
+    "relationship": {
+      "familiarity": 0.531,
+      "affection": 0.209,
+      "trust": 0.023,
+      "respect": 0.606,
+      "fear": 0.367
+    },
+    "features": "woman age:23 bold WIZARD R:acquaintance"
+  },
+  {
+    "profile_seed": 1868674338,
+    "relationship_seed": 1635705280,
+    "profile": {
+      "occupation": "damsel",
+      "age": 72,
+      "gender": "male",
+      "traits": {
+        "warmth": 31,
+        "humor": 88,
+        "impulsivity": 26,
+        "bravery": 61,
+        "focus": 31
+      }
+    },
+    "relationship": {
+      "familiarity": 0.023,
+      "affection": 0.606,
+      "trust": 0.367,
+      "respect": 0.607,
+      "fear": 0.0
+    },
+    "features": "elderly man age:72 playful DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 361845507,
+    "relationship_seed": 3251942299,
+    "profile": {
+      "occupation": "healer",
+      "age": 29,
+      "gender": "female",
+      "traits": {
+        "warmth": 26,
+        "humor": 61,
+        "impulsivity": 31,
+        "bravery": 63,
+        "focus": 85
+      }
+    },
+    "relationship": {
+      "familiarity": 0.367,
+      "affection": 0.607,
+      "trust": 0.0,
+      "respect": 0.03,
+      "fear": 0.736
+    },
+    "features": "woman age:29 stoic HEALER R:acquaintance"
+  },
+  {
+    "profile_seed": 2740515144,
+    "relationship_seed": 323244528,
+    "profile": {
+      "occupation": "villager",
+      "age": 66,
+      "gender": "male",
+      "traits": {
+        "warmth": 31,
+        "humor": 63,
+        "impulsivity": 85,
+        "bravery": 1,
+        "focus": 34
+      }
+    },
+    "relationship": {
+      "familiarity": 0.0,
+      "affection": 0.03,
+      "trust": 0.736,
+      "respect": 0.573,
+      "fear": 0.605
+    },
+    "features": "elderly man age:66 anxious VILLAGER R:acquaintance"
+  },
+  {
+    "profile_seed": 3057235181,
+    "relationship_seed": 2486092639,
+    "profile": {
+      "occupation": "healer",
+      "age": 66,
+      "gender": "female",
+      "traits": {
+        "warmth": 85,
+        "humor": 1,
+        "impulsivity": 34,
+        "bravery": 99,
+        "focus": 76
+      }
+    },
+    "relationship": {
+      "familiarity": 0.736,
+      "affection": 0.573,
+      "trust": 0.605,
+      "respect": 0.795,
+      "fear": 0.795
+    },
+    "features": "elderly woman age:66 measured HEALER R:friend"
+  },
+  {
+    "profile_seed": 3303385821,
+    "relationship_seed": 1182298690,
+    "profile": {
+      "occupation": "farmer",
+      "age": 15,
+      "gender": "female",
+      "traits": {
+        "warmth": 34,
+        "humor": 99,
+        "impulsivity": 76,
+        "bravery": 81,
+        "focus": 1
+      }
+    },
+    "relationship": {
+      "familiarity": 0.605,
+      "affection": 0.795,
+      "trust": 0.795,
+      "respect": 0.272,
+      "fear": 0.836
+    },
+    "features": "girl age:15 sassy FARMER R:friend"
+  },
+  {
+    "profile_seed": 1311956250,
+    "relationship_seed": 2812505490,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 31,
+      "gender": "male",
+      "traits": {
+        "warmth": 76,
+        "humor": 81,
+        "impulsivity": 1,
+        "bravery": 40,
+        "focus": 92
+      }
+    },
+    "relationship": {
+      "familiarity": 0.795,
+      "affection": 0.272,
+      "trust": 0.836,
+      "respect": 0.469,
+      "fear": 0.687
+    },
+    "features": "man age:31 gentle BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 2285394906,
+    "relationship_seed": 3945272603,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 19,
+      "gender": "female",
+      "traits": {
+        "warmth": 1,
+        "humor": 40,
+        "impulsivity": 92,
+        "bravery": 24,
+        "focus": 65
+      }
+    },
+    "relationship": {
+      "familiarity": 0.836,
+      "affection": 0.469,
+      "trust": 0.687,
+      "respect": 0.591,
+      "fear": 0.185
+    },
+    "features": "girl age:19 cold INNKEEPER R:friend"
+  },
+  {
+    "profile_seed": 3639294494,
+    "relationship_seed": 1253842058,
+    "profile": {
+      "occupation": "merchant",
+      "age": 49,
+      "gender": "female",
+      "traits": {
+        "warmth": 92,
+        "humor": 24,
+        "impulsivity": 65,
+        "bravery": 69,
+        "focus": 24
+      }
+    },
+    "relationship": {
+      "familiarity": 0.687,
+      "affection": 0.591,
+      "trust": 0.185,
+      "respect": 0.373,
+      "fear": 0.461
+    },
+    "features": "woman age:49 warm MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 3968482204,
+    "relationship_seed": 3569623648,
+    "profile": {
+      "occupation": "damsel",
+      "age": 9,
+      "gender": "female",
+      "traits": {
+        "warmth": 65,
+        "humor": 69,
+        "impulsivity": 24,
+        "bravery": 14,
+        "focus": 70
+      }
+    },
+    "relationship": {
+      "familiarity": 0.185,
+      "affection": 0.373,
+      "trust": 0.461,
+      "respect": 0.377,
+      "fear": 0.463
+    },
+    "features": "girl age:9 measured DAMSEL R:acquaintance"
+  },
+  {
+    "profile_seed": 1099517604,
+    "relationship_seed": 1675799498,
+    "profile": {
+      "occupation": "merchant",
+      "age": 60,
+      "gender": "male",
+      "traits": {
+        "warmth": 24,
+        "humor": 14,
+        "impulsivity": 70,
+        "bravery": 97,
+        "focus": 84
+      }
+    },
+    "relationship": {
+      "familiarity": 0.461,
+      "affection": 0.377,
+      "trust": 0.463,
+      "respect": 0.767,
+      "fear": 0.587
+    },
+    "features": "elderly man age:60 gruff MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 3857047655,
+    "relationship_seed": 1691139827,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 15,
+      "gender": "female",
+      "traits": {
+        "warmth": 70,
+        "humor": 97,
+        "impulsivity": 84,
+        "bravery": 63,
+        "focus": 84
+      }
+    },
+    "relationship": {
+      "familiarity": 0.463,
+      "affection": 0.767,
+      "trust": 0.587,
+      "respect": 0.091,
+      "fear": 0.586
+    },
+    "features": "girl age:15 sassy INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 2437302330,
+    "relationship_seed": 1348839258,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 82,
+      "gender": "female",
+      "traits": {
+        "warmth": 84,
+        "humor": 63,
+        "impulsivity": 84,
+        "bravery": 85,
+        "focus": 9
+      }
+    },
+    "relationship": {
+      "familiarity": 0.587,
+      "affection": 0.091,
+      "trust": 0.586,
+      "respect": 0.047,
+      "fear": 0.586
+    },
+    "features": "elderly woman age:82 cheerful BLACKSMITH R:acquaintance"
+  },
+  {
+    "profile_seed": 1968977597,
+    "relationship_seed": 2197160056,
+    "profile": {
+      "occupation": "damsel",
+      "age": 73,
+      "gender": "female",
+      "traits": {
+        "warmth": 84,
+        "humor": 85,
+        "impulsivity": 9,
+        "bravery": 9,
+        "focus": 39
+      }
+    },
+    "relationship": {
+      "familiarity": 0.586,
+      "affection": 0.047,
+      "trust": 0.586,
+      "respect": 0.64,
+      "fear": 0.94
+    },
+    "features": "elderly woman age:73 gentle DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 501023108,
+    "relationship_seed": 5648690,
+    "profile": {
+      "occupation": "merchant",
+      "age": 79,
+      "gender": "male",
+      "traits": {
+        "warmth": 9,
+        "humor": 9,
+        "impulsivity": 39,
+        "bravery": 85,
+        "focus": 100
+      }
+    },
+    "relationship": {
+      "familiarity": 0.586,
+      "affection": 0.64,
+      "trust": 0.94,
+      "respect": 0.666,
+      "fear": 0.277
+    },
+    "features": "elderly man age:79 gruff MERCHANT R:friend"
+  },
+  {
+    "profile_seed": 141710154,
+    "relationship_seed": 25000615,
+    "profile": {
+      "occupation": "healer",
+      "age": 72,
+      "gender": "female",
+      "traits": {
+        "warmth": 39,
+        "humor": 85,
+        "impulsivity": 100,
+        "bravery": 8,
+        "focus": 4
+      }
+    },
+    "relationship": {
+      "familiarity": 0.94,
+      "affection": 0.666,
+      "trust": 0.277,
+      "respect": 0.133,
+      "fear": 0.584
+    },
+    "features": "elderly woman age:72 sassy HEALER R:neutral"
+  },
+  {
+    "profile_seed": 1796242387,
+    "relationship_seed": 3912176934,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 8,
+      "gender": "male",
+      "traits": {
+        "warmth": 100,
+        "humor": 8,
+        "impulsivity": 4,
+        "bravery": 37,
+        "focus": 56
+      }
+    },
+    "relationship": {
+      "familiarity": 0.277,
+      "affection": 0.133,
+      "trust": 0.584,
+      "respect": 0.047,
+      "fear": 0.509
+    },
+    "features": "boy age:8 gentle BLACKSMITH R:acquaintance"
+  },
+  {
+    "profile_seed": 2062666883,
+    "relationship_seed": 793783123,
+    "profile": {
+      "occupation": "healer",
+      "age": 35,
+      "gender": "female",
+      "traits": {
+        "warmth": 4,
+        "humor": 37,
+        "impulsivity": 56,
+        "bravery": 70,
+        "focus": 50
+      }
+    },
+    "relationship": {
+      "familiarity": 0.584,
+      "affection": 0.047,
+      "trust": 0.509,
+      "respect": 0.967,
+      "fear": 0.928
+    },
+    "features": "woman age:35 gruff HEALER R:neutral"
+  },
+  {
+    "profile_seed": 1836160910,
+    "relationship_seed": 2945413518,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 6,
+      "gender": "female",
+      "traits": {
+        "warmth": 56,
+        "humor": 70,
+        "impulsivity": 50,
+        "bravery": 15,
+        "focus": 62
+      }
+    },
+    "relationship": {
+      "familiarity": 0.509,
+      "affection": 0.967,
+      "trust": 0.928,
+      "respect": 0.115,
+      "fear": 0.979
+    },
+    "features": "girl age:6 timid BLACKSMITH R:friend"
+  },
+  {
+    "profile_seed": 1986837361,
+    "relationship_seed": 3244266992,
+    "profile": {
+      "occupation": "noble",
+      "age": 69,
+      "gender": "female",
+      "traits": {
+        "warmth": 50,
+        "humor": 15,
+        "impulsivity": 62,
+        "bravery": 7,
+        "focus": 79
+      }
+    },
+    "relationship": {
+      "familiarity": 0.928,
+      "affection": 0.115,
+      "trust": 0.979,
+      "respect": 0.842,
+      "fear": 0.165
+    },
+    "features": "elderly woman age:69 timid NOBLE R:friend"
+  },
+  {
+    "profile_seed": 1339034624,
+    "relationship_seed": 2220183080,
+    "profile": {
+      "occupation": "noble",
+      "age": 21,
+      "gender": "male",
+      "traits": {
+        "warmth": 62,
+        "humor": 7,
+        "impulsivity": 79,
+        "bravery": 67,
+        "focus": 49
+      }
+    },
+    "relationship": {
+      "familiarity": 0.979,
+      "affection": 0.842,
+      "trust": 0.165,
+      "respect": 0.615,
+      "fear": 0.129
+    },
+    "features": "man age:21 serious NOBLE R:friend"
+  },
+  {
+    "profile_seed": 2677753056,
+    "relationship_seed": 400610051,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 40,
+      "gender": "female",
+      "traits": {
+        "warmth": 79,
+        "humor": 67,
+        "impulsivity": 49,
+        "bravery": 93,
+        "focus": 64
+      }
+    },
+    "relationship": {
+      "familiarity": 0.165,
+      "affection": 0.615,
+      "trust": 0.129,
+      "respect": 0.655,
+      "fear": 0.679
+    },
+    "features": "woman age:40 cheerful INNKEEPER R:acquaintance"
+  },
+  {
+    "profile_seed": 3180727715,
+    "relationship_seed": 4167575026,
+    "profile": {
+      "occupation": "farmer",
+      "age": 62,
+      "gender": "female",
+      "traits": {
+        "warmth": 49,
+        "humor": 93,
+        "impulsivity": 64,
+        "bravery": 12,
+        "focus": 22
+      }
+    },
+    "relationship": {
+      "familiarity": 0.129,
+      "affection": 0.655,
+      "trust": 0.679,
+      "respect": 0.431,
+      "fear": 0.495
+    },
+    "features": "elderly woman age:62 sassy FARMER R:neutral"
+  },
+  {
+    "profile_seed": 1712679097,
+    "relationship_seed": 2873592376,
+    "profile": {
+      "occupation": "damsel",
+      "age": 61,
+      "gender": "male",
+      "traits": {
+        "warmth": 64,
+        "humor": 12,
+        "impulsivity": 22,
+        "bravery": 74,
+        "focus": 69
+      }
+    },
+    "relationship": {
+      "familiarity": 0.679,
+      "affection": 0.431,
+      "trust": 0.495,
+      "respect": 0.02,
+      "fear": 0.79
+    },
+    "features": "elderly man age:61 measured DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 437534776,
+    "relationship_seed": 3497144081,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 14,
+      "gender": "female",
+      "traits": {
+        "warmth": 22,
+        "humor": 74,
+        "impulsivity": 69,
+        "bravery": 14,
+        "focus": 62
+      }
+    },
+    "relationship": {
+      "familiarity": 0.495,
+      "affection": 0.02,
+      "trust": 0.79,
+      "respect": 0.404,
+      "fear": 0.237
+    },
+    "features": "girl age:14 sassy PUB_PATRON R:neutral"
+  },
+  {
+    "profile_seed": 664338169,
+    "relationship_seed": 817863066,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 49,
+      "gender": "female",
+      "traits": {
+        "warmth": 69,
+        "humor": 14,
+        "impulsivity": 62,
+        "bravery": 14,
+        "focus": 16
+      }
+    },
+    "relationship": {
+      "familiarity": 0.79,
+      "affection": 0.404,
+      "trust": 0.237,
+      "respect": 0.647,
+      "fear": 0.907
+    },
+    "features": "woman age:49 anxious BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 2988159964,
+    "relationship_seed": 1214934124,
+    "profile": {
+      "occupation": "damsel",
+      "age": 84,
+      "gender": "male",
+      "traits": {
+        "warmth": 62,
+        "humor": 14,
+        "impulsivity": 16,
+        "bravery": 96,
+        "focus": 99
+      }
+    },
+    "relationship": {
+      "familiarity": 0.237,
+      "affection": 0.647,
+      "trust": 0.907,
+      "respect": 0.557,
+      "fear": 0.031
+    },
+    "features": "elderly man age:84 measured DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 3105504639,
+    "relationship_seed": 671213189,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 66,
+      "gender": "male",
+      "traits": {
+        "warmth": 16,
+        "humor": 96,
+        "impulsivity": 99,
+        "bravery": 44,
+        "focus": 80
+      }
+    },
+    "relationship": {
+      "familiarity": 0.907,
+      "affection": 0.557,
+      "trust": 0.031,
+      "respect": 0.352,
+      "fear": 0.67
+    },
+    "features": "elderly man age:66 sassy PUB_PATRON R:neutral"
+  },
+  {
+    "profile_seed": 2398671181,
+    "relationship_seed": 251027333,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 43,
+      "gender": "female",
+      "traits": {
+        "warmth": 99,
+        "humor": 44,
+        "impulsivity": 80,
+        "bravery": 42,
+        "focus": 16
+      }
+    },
+    "relationship": {
+      "familiarity": 0.031,
+      "affection": 0.352,
+      "trust": 0.67,
+      "respect": 0.227,
+      "fear": 0.169
+    },
+    "features": "woman age:43 gentle PUB_PATRON R:acquaintance"
+  },
+  {
+    "profile_seed": 1708473798,
+    "relationship_seed": 2413691632,
+    "profile": {
+      "occupation": "damsel",
+      "age": 37,
+      "gender": "male",
+      "traits": {
+        "warmth": 80,
+        "humor": 42,
+        "impulsivity": 16,
+        "bravery": 50,
+        "focus": 69
+      }
+    },
+    "relationship": {
+      "familiarity": 0.67,
+      "affection": 0.227,
+      "trust": 0.169,
+      "respect": 0.52,
+      "fear": 0.926
+    },
+    "features": "man age:37 measured DAMSEL R:acquaintance"
+  },
+  {
+    "profile_seed": 3213132592,
+    "relationship_seed": 3551530209,
+    "profile": {
+      "occupation": "bandit",
+      "age": 44,
+      "gender": "female",
+      "traits": {
+        "warmth": 16,
+        "humor": 50,
+        "impulsivity": 69,
+        "bravery": 24,
+        "focus": 73
+      }
+    },
+    "relationship": {
+      "familiarity": 0.169,
+      "affection": 0.52,
+      "trust": 0.926,
+      "respect": 0.867,
+      "fear": 0.847
+    },
+    "features": "woman age:44 stoic BANDIT R:friend"
+  },
+  {
+    "profile_seed": 2544171799,
+    "relationship_seed": 268825076,
+    "profile": {
+      "occupation": "noble",
+      "age": 62,
+      "gender": "female",
+      "traits": {
+        "warmth": 69,
+        "humor": 24,
+        "impulsivity": 73,
+        "bravery": 16,
+        "focus": 52
+      }
+    },
+    "relationship": {
+      "familiarity": 0.926,
+      "affection": 0.867,
+      "trust": 0.847,
+      "respect": 0.072,
+      "fear": 0.679
+    },
+    "features": "elderly woman age:62 timid NOBLE R:friend"
+  },
+  {
+    "profile_seed": 1767898057,
+    "relationship_seed": 1391758234,
+    "profile": {
+      "occupation": "farmer",
+      "age": 14,
+      "gender": "male",
+      "traits": {
+        "warmth": 73,
+        "humor": 16,
+        "impulsivity": 52,
+        "bravery": 20,
+        "focus": 47
+      }
+    },
+    "relationship": {
+      "familiarity": 0.847,
+      "affection": 0.072,
+      "trust": 0.679,
+      "respect": 0.253,
+      "fear": 0.571
+    },
+    "features": "boy age:14 gentle FARMER R:neutral"
+  },
+  {
+    "profile_seed": 3010650489,
+    "relationship_seed": 82537527,
+    "profile": {
+      "occupation": "wizard",
+      "age": 70,
+      "gender": "female",
+      "traits": {
+        "warmth": 52,
+        "humor": 20,
+        "impulsivity": 47,
+        "bravery": 9,
+        "focus": 80
+      }
+    },
+    "relationship": {
+      "familiarity": 0.679,
+      "affection": 0.253,
+      "trust": 0.571,
+      "respect": 0.826,
+      "fear": 0.093
+    },
+    "features": "elderly woman age:70 timid WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 1155180705,
+    "relationship_seed": 673089670,
+    "profile": {
+      "occupation": "farmer",
+      "age": 54,
+      "gender": "male",
+      "traits": {
+        "warmth": 47,
+        "humor": 9,
+        "impulsivity": 80,
+        "bravery": 92,
+        "focus": 11
+      }
+    },
+    "relationship": {
+      "familiarity": 0.571,
+      "affection": 0.826,
+      "trust": 0.093,
+      "respect": 0.283,
+      "fear": 0.874
+    },
+    "features": "man age:54 reckless FARMER R:neutral"
+  },
+  {
+    "profile_seed": 3637031969,
+    "relationship_seed": 131240935,
+    "profile": {
+      "occupation": "healer",
+      "age": 5,
+      "gender": "male",
+      "traits": {
+        "warmth": 80,
+        "humor": 92,
+        "impulsivity": 11,
+        "bravery": 27,
+        "focus": 78
+      }
+    },
+    "relationship": {
+      "familiarity": 0.093,
+      "affection": 0.283,
+      "trust": 0.874,
+      "respect": 0.581,
+      "fear": 0.666
+    },
+    "features": "boy age:5 gentle HEALER R:neutral"
+  },
+  {
+    "profile_seed": 3764748080,
+    "relationship_seed": 3219670737,
+    "profile": {
+      "occupation": "bandit",
+      "age": 13,
+      "gender": "female",
+      "traits": {
+        "warmth": 11,
+        "humor": 27,
+        "impulsivity": 78,
+        "bravery": 35,
+        "focus": 75
+      }
+    },
+    "relationship": {
+      "familiarity": 0.874,
+      "affection": 0.581,
+      "trust": 0.666,
+      "respect": 0.66,
+      "fear": 0.921
+    },
+    "features": "girl age:13 stoic BANDIT R:friend"
+  },
+  {
+    "profile_seed": 1366660168,
+    "relationship_seed": 2623558518,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 70,
+      "gender": "female",
+      "traits": {
+        "warmth": 78,
+        "humor": 35,
+        "impulsivity": 75,
+        "bravery": 82,
+        "focus": 8
+      }
+    },
+    "relationship": {
+      "familiarity": 0.666,
+      "affection": 0.66,
+      "trust": 0.921,
+      "respect": 0.979,
+      "fear": 0.972
+    },
+    "features": "elderly woman age:70 reckless BLACKSMITH R:close_friend"
+  },
+  {
+    "profile_seed": 1473631825,
+    "relationship_seed": 1324325662,
+    "profile": {
+      "occupation": "farmer",
+      "age": 45,
+      "gender": "male",
+      "traits": {
+        "warmth": 75,
+        "humor": 82,
+        "impulsivity": 8,
+        "bravery": 44,
+        "focus": 18
+      }
+    },
+    "relationship": {
+      "familiarity": 0.921,
+      "affection": 0.979,
+      "trust": 0.972,
+      "respect": 0.753,
+      "fear": 0.503
+    },
+    "features": "man age:45 gentle FARMER R:close_friend"
+  },
+  {
+    "profile_seed": 202161880,
+    "relationship_seed": 3777598803,
+    "profile": {
+      "occupation": "wizard",
+      "age": 7,
+      "gender": "male",
+      "traits": {
+        "warmth": 8,
+        "humor": 44,
+        "impulsivity": 18,
+        "bravery": 68,
+        "focus": 83
+      }
+    },
+    "relationship": {
+      "familiarity": 0.972,
+      "affection": 0.753,
+      "trust": 0.503,
+      "respect": 0.439,
+      "fear": 0.207
+    },
+    "features": "boy age:7 stoic WIZARD R:friend"
+  },
+  {
+    "profile_seed": 2750418642,
+    "relationship_seed": 3882477351,
+    "profile": {
+      "occupation": "wizard",
+      "age": 54,
+      "gender": "male",
+      "traits": {
+        "warmth": 18,
+        "humor": 68,
+        "impulsivity": 83,
+        "bravery": 19,
+        "focus": 78
+      }
+    },
+    "relationship": {
+      "familiarity": 0.503,
+      "affection": 0.439,
+      "trust": 0.207,
+      "respect": 0.796,
+      "fear": 0.432
+    },
+    "features": "man age:54 stoic WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 2854237889,
+    "relationship_seed": 871388957,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 25,
+      "gender": "female",
+      "traits": {
+        "warmth": 83,
+        "humor": 19,
+        "impulsivity": 78,
+        "bravery": 43,
+        "focus": 1
+      }
+    },
+    "relationship": {
+      "familiarity": 0.207,
+      "affection": 0.796,
+      "trust": 0.432,
+      "respect": 0.539,
+      "fear": 0.307
+    },
+    "features": "woman age:25 gentle PUB_PATRON R:neutral"
+  },
+  {
+    "profile_seed": 460232980,
+    "relationship_seed": 3250838386,
+    "profile": {
+      "occupation": "farmer",
+      "age": 41,
+      "gender": "female",
+      "traits": {
+        "warmth": 78,
+        "humor": 43,
+        "impulsivity": 1,
+        "bravery": 40,
+        "focus": 76
+      }
+    },
+    "relationship": {
+      "familiarity": 0.432,
+      "affection": 0.539,
+      "trust": 0.307,
+      "respect": 0.126,
+      "fear": 0.428
+    },
+    "features": "woman age:41 gentle FARMER R:acquaintance"
+  },
+  {
+    "profile_seed": 4011131556,
+    "relationship_seed": 2809464196,
+    "profile": {
+      "occupation": "damsel",
+      "age": 27,
+      "gender": "female",
+      "traits": {
+        "warmth": 1,
+        "humor": 40,
+        "impulsivity": 76,
+        "bravery": 23,
+        "focus": 25
+      }
+    },
+    "relationship": {
+      "familiarity": 0.307,
+      "affection": 0.126,
+      "trust": 0.428,
+      "respect": 0.455,
+      "fear": 0.061
+    },
+    "features": "woman age:27 anxious DAMSEL R:acquaintance"
+  },
+  {
+    "profile_seed": 4285876902,
+    "relationship_seed": 2450888566,
+    "profile": {
+      "occupation": "farmer",
+      "age": 48,
+      "gender": "female",
+      "traits": {
+        "warmth": 76,
+        "humor": 23,
+        "impulsivity": 25,
+        "bravery": 18,
+        "focus": 92
+      }
+    },
+    "relationship": {
+      "familiarity": 0.428,
+      "affection": 0.455,
+      "trust": 0.061,
+      "respect": 0.481,
+      "fear": 0.464
+    },
+    "features": "woman age:48 gentle FARMER R:acquaintance"
+  },
+  {
+    "profile_seed": 1066641003,
+    "relationship_seed": 545430340,
+    "profile": {
+      "occupation": "damsel",
+      "age": 54,
+      "gender": "male",
+      "traits": {
+        "warmth": 25,
+        "humor": 18,
+        "impulsivity": 92,
+        "bravery": 5,
+        "focus": 23
+      }
+    },
+    "relationship": {
+      "familiarity": 0.061,
+      "affection": 0.481,
+      "trust": 0.464,
+      "respect": 0.401,
+      "fear": 0.914
+    },
+    "features": "man age:54 anxious DAMSEL R:acquaintance"
+  },
+  {
+    "profile_seed": 246314129,
+    "relationship_seed": 3350898031,
+    "profile": {
+      "occupation": "healer",
+      "age": 41,
+      "gender": "male",
+      "traits": {
+        "warmth": 92,
+        "humor": 5,
+        "impulsivity": 23,
+        "bravery": 1,
+        "focus": 27
+      }
+    },
+    "relationship": {
+      "familiarity": 0.464,
+      "affection": 0.401,
+      "trust": 0.914,
+      "respect": 0.918,
+      "fear": 0.37
+    },
+    "features": "man age:41 gentle HEALER R:friend"
+  },
+  {
+    "profile_seed": 4059467876,
+    "relationship_seed": 1555706553,
+    "profile": {
+      "occupation": "bandit",
+      "age": 36,
+      "gender": "female",
+      "traits": {
+        "warmth": 23,
+        "humor": 1,
+        "impulsivity": 27,
+        "bravery": 28,
+        "focus": 99
+      }
+    },
+    "relationship": {
+      "familiarity": 0.914,
+      "affection": 0.918,
+      "trust": 0.37,
+      "respect": 0.154,
+      "fear": 0.427
+    },
+    "features": "woman age:36 stoic BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 1196353071,
+    "relationship_seed": 3940693674,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 22,
+      "gender": "male",
+      "traits": {
+        "warmth": 27,
+        "humor": 28,
+        "impulsivity": 99,
+        "bravery": 44,
+        "focus": 77
+      }
+    },
+    "relationship": {
+      "familiarity": 0.37,
+      "affection": 0.154,
+      "trust": 0.427,
+      "respect": 0.794,
+      "fear": 0.583
+    },
+    "features": "man age:22 stoic BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 718485137,
+    "relationship_seed": 3425116849,
+    "profile": {
+      "occupation": "guard",
+      "age": 14,
+      "gender": "female",
+      "traits": {
+        "warmth": 99,
+        "humor": 44,
+        "impulsivity": 77,
+        "bravery": 8,
+        "focus": 92
+      }
+    },
+    "relationship": {
+      "familiarity": 0.427,
+      "affection": 0.794,
+      "trust": 0.583,
+      "respect": 0.372,
+      "fear": 0.978
+    },
+    "features": "girl age:14 gentle GUARD R:neutral"
+  },
+  {
+    "profile_seed": 643024809,
+    "relationship_seed": 2323634106,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 51,
+      "gender": "male",
+      "traits": {
+        "warmth": 77,
+        "humor": 8,
+        "impulsivity": 92,
+        "bravery": 7,
+        "focus": 42
+      }
+    },
+    "relationship": {
+      "familiarity": 0.583,
+      "affection": 0.372,
+      "trust": 0.978,
+      "respect": 0.732,
+      "fear": 0.559
+    },
+    "features": "man age:51 gentle BLACKSMITH R:friend"
+  },
+  {
+    "profile_seed": 1637699646,
+    "relationship_seed": 3099872147,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 61,
+      "gender": "female",
+      "traits": {
+        "warmth": 92,
+        "humor": 7,
+        "impulsivity": 42,
+        "bravery": 58,
+        "focus": 85
+      }
+    },
+    "relationship": {
+      "familiarity": 0.978,
+      "affection": 0.732,
+      "trust": 0.559,
+      "respect": 0.762,
+      "fear": 0.381
+    },
+    "features": "elderly woman age:61 serious INNKEEPER R:friend"
+  },
+  {
+    "profile_seed": 124803656,
+    "relationship_seed": 2333267668,
+    "profile": {
+      "occupation": "damsel",
+      "age": 5,
+      "gender": "female",
+      "traits": {
+        "warmth": 42,
+        "humor": 58,
+        "impulsivity": 85,
+        "bravery": 74,
+        "focus": 76
+      }
+    },
+    "relationship": {
+      "familiarity": 0.559,
+      "affection": 0.762,
+      "trust": 0.381,
+      "respect": 0.23,
+      "fear": 0.428
+    },
+    "features": "girl age:5 gruff DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 3905943600,
+    "relationship_seed": 4009199956,
+    "profile": {
+      "occupation": "damsel",
+      "age": 47,
+      "gender": "male",
+      "traits": {
+        "warmth": 85,
+        "humor": 74,
+        "impulsivity": 76,
+        "bravery": 55,
+        "focus": 24
+      }
+    },
+    "relationship": {
+      "familiarity": 0.381,
+      "affection": 0.23,
+      "trust": 0.428,
+      "respect": 0.682,
+      "fear": 0.052
+    },
+    "features": "man age:47 sassy DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 3833451002,
+    "relationship_seed": 2517984699,
+    "profile": {
+      "occupation": "wizard",
+      "age": 15,
+      "gender": "female",
+      "traits": {
+        "warmth": 76,
+        "humor": 55,
+        "impulsivity": 24,
+        "bravery": 7,
+        "focus": 100
+      }
+    },
+    "relationship": {
+      "familiarity": 0.428,
+      "affection": 0.682,
+      "trust": 0.052,
+      "respect": 0.37,
+      "fear": 0.321
+    },
+    "features": "girl age:15 gentle WIZARD R:acquaintance"
+  },
+  {
+    "profile_seed": 1860240810,
+    "relationship_seed": 2228761216,
+    "profile": {
+      "occupation": "damsel",
+      "age": 9,
+      "gender": "male",
+      "traits": {
+        "warmth": 24,
+        "humor": 7,
+        "impulsivity": 100,
+        "bravery": 30,
+        "focus": 95
+      }
+    },
+    "relationship": {
+      "familiarity": 0.052,
+      "affection": 0.37,
+      "trust": 0.321,
+      "respect": 0.589,
+      "fear": 0.4
+    },
+    "features": "boy age:9 stoic DAMSEL R:acquaintance"
+  },
+  {
+    "profile_seed": 3548777284,
+    "relationship_seed": 1329513555,
+    "profile": {
+      "occupation": "wizard",
+      "age": 62,
+      "gender": "male",
+      "traits": {
+        "warmth": 100,
+        "humor": 30,
+        "impulsivity": 95,
+        "bravery": 64,
+        "focus": 32
+      }
+    },
+    "relationship": {
+      "familiarity": 0.321,
+      "affection": 0.589,
+      "trust": 0.4,
+      "respect": 0.315,
+      "fear": 0.211
+    },
+    "features": "elderly man age:62 warm WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 1630084777,
+    "relationship_seed": 494921015,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 48,
+      "gender": "male",
+      "traits": {
+        "warmth": 95,
+        "humor": 64,
+        "impulsivity": 32,
+        "bravery": 3,
+        "focus": 64
+      }
+    },
+    "relationship": {
+      "familiarity": 0.4,
+      "affection": 0.315,
+      "trust": 0.211,
+      "respect": 0.472,
+      "fear": 0.142
+    },
+    "features": "man age:48 gentle INNKEEPER R:acquaintance"
+  },
+  {
+    "profile_seed": 3673673403,
+    "relationship_seed": 1194809931,
+    "profile": {
+      "occupation": "wizard",
+      "age": 9,
+      "gender": "female",
+      "traits": {
+        "warmth": 32,
+        "humor": 3,
+        "impulsivity": 64,
+        "bravery": 83,
+        "focus": 74
+      }
+    },
+    "relationship": {
+      "familiarity": 0.211,
+      "affection": 0.472,
+      "trust": 0.142,
+      "respect": 0.434,
+      "fear": 0.101
+    },
+    "features": "girl age:9 gruff WIZARD R:acquaintance"
+  },
+  {
+    "profile_seed": 598991604,
+    "relationship_seed": 2722426178,
+    "profile": {
+      "occupation": "merchant",
+      "age": 41,
+      "gender": "female",
+      "traits": {
+        "warmth": 64,
+        "humor": 83,
+        "impulsivity": 74,
+        "bravery": 82,
+        "focus": 13
+      }
+    },
+    "relationship": {
+      "familiarity": 0.142,
+      "affection": 0.434,
+      "trust": 0.101,
+      "respect": 0.419,
+      "fear": 0.705
+    },
+    "features": "woman age:41 sassy MERCHANT R:acquaintance"
+  },
+  {
+    "profile_seed": 3262833716,
+    "relationship_seed": 1098465802,
+    "profile": {
+      "occupation": "farmer",
+      "age": 59,
+      "gender": "female",
+      "traits": {
+        "warmth": 74,
+        "humor": 82,
+        "impulsivity": 13,
+        "bravery": 43,
+        "focus": 5
+      }
+    },
+    "relationship": {
+      "familiarity": 0.101,
+      "affection": 0.419,
+      "trust": 0.705,
+      "respect": 0.279,
+      "fear": 0.286
+    },
+    "features": "woman age:59 gentle FARMER R:acquaintance"
+  },
+  {
+    "profile_seed": 1312744534,
+    "relationship_seed": 3292122252,
+    "profile": {
+      "occupation": "villager",
+      "age": 45,
+      "gender": "female",
+      "traits": {
+        "warmth": 13,
+        "humor": 43,
+        "impulsivity": 5,
+        "bravery": 60,
+        "focus": 79
+      }
+    },
+    "relationship": {
+      "familiarity": 0.705,
+      "affection": 0.279,
+      "trust": 0.286,
+      "respect": 0.629,
+      "fear": 0.442
+    },
+    "features": "woman age:45 stoic VILLAGER R:neutral"
+  },
+  {
+    "profile_seed": 1219393880,
+    "relationship_seed": 1998744026,
+    "profile": {
+      "occupation": "merchant",
+      "age": 75,
+      "gender": "female",
+      "traits": {
+        "warmth": 5,
+        "humor": 60,
+        "impulsivity": 79,
+        "bravery": 46,
+        "focus": 30
+      }
+    },
+    "relationship": {
+      "familiarity": 0.286,
+      "affection": 0.629,
+      "trust": 0.442,
+      "respect": 0.727,
+      "fear": 0.706
+    },
+    "features": "elderly woman age:75 cold MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 2034216470,
+    "relationship_seed": 324543848,
+    "profile": {
+      "occupation": "noble",
+      "age": 55,
+      "gender": "male",
+      "traits": {
+        "warmth": 79,
+        "humor": 46,
+        "impulsivity": 30,
+        "bravery": 69,
+        "focus": 58
+      }
+    },
+    "relationship": {
+      "familiarity": 0.442,
+      "affection": 0.727,
+      "trust": 0.706,
+      "respect": 0.038,
+      "fear": 0.461
+    },
+    "features": "man age:55 warm NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 3914398930,
+    "relationship_seed": 798110039,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 32,
+      "gender": "male",
+      "traits": {
+        "warmth": 30,
+        "humor": 69,
+        "impulsivity": 58,
+        "bravery": 90,
+        "focus": 32
+      }
+    },
+    "relationship": {
+      "familiarity": 0.706,
+      "affection": 0.038,
+      "trust": 0.461,
+      "respect": 0.621,
+      "fear": 0.041
+    },
+    "features": "man age:32 gruff INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 1587827947,
+    "relationship_seed": 1393721367,
+    "profile": {
+      "occupation": "wizard",
+      "age": 84,
+      "gender": "female",
+      "traits": {
+        "warmth": 58,
+        "humor": 90,
+        "impulsivity": 32,
+        "bravery": 4,
+        "focus": 48
+      }
+    },
+    "relationship": {
+      "familiarity": 0.461,
+      "affection": 0.621,
+      "trust": 0.041,
+      "respect": 0.552,
+      "fear": 0.753
+    },
+    "features": "elderly woman age:84 timid WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 1629246079,
+    "relationship_seed": 2167094550,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 55,
+      "gender": "male",
+      "traits": {
+        "warmth": 32,
+        "humor": 4,
+        "impulsivity": 48,
+        "bravery": 26,
+        "focus": 37
+      }
+    },
+    "relationship": {
+      "familiarity": 0.041,
+      "affection": 0.552,
+      "trust": 0.753,
+      "respect": 0.809,
+      "fear": 0.471
+    },
+    "features": "man age:55 anxious BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 934822930,
+    "relationship_seed": 3631835759,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 26,
+      "gender": "male",
+      "traits": {
+        "warmth": 48,
+        "humor": 26,
+        "impulsivity": 37,
+        "bravery": 62,
+        "focus": 3
+      }
+    },
+    "relationship": {
+      "familiarity": 0.753,
+      "affection": 0.809,
+      "trust": 0.471,
+      "respect": 0.477,
+      "fear": 0.341
+    },
+    "features": "man age:26 distracted INNKEEPER R:friend"
+  },
+  {
+    "profile_seed": 1403711061,
+    "relationship_seed": 3261687237,
+    "profile": {
+      "occupation": "bandit",
+      "age": 82,
+      "gender": "female",
+      "traits": {
+        "warmth": 37,
+        "humor": 62,
+        "impulsivity": 3,
+        "bravery": 87,
+        "focus": 99
+      }
+    },
+    "relationship": {
+      "familiarity": 0.471,
+      "affection": 0.477,
+      "trust": 0.341,
+      "respect": 0.228,
+      "fear": 0.404
+    },
+    "features": "elderly woman age:82 gruff BANDIT R:acquaintance"
+  },
+  {
+    "profile_seed": 887613197,
+    "relationship_seed": 3368174286,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 72,
+      "gender": "female",
+      "traits": {
+        "warmth": 3,
+        "humor": 87,
+        "impulsivity": 99,
+        "bravery": 28,
+        "focus": 25
+      }
+    },
+    "relationship": {
+      "familiarity": 0.341,
+      "affection": 0.228,
+      "trust": 0.404,
+      "respect": 0.617,
+      "fear": 0.221
+    },
+    "features": "elderly woman age:72 sassy BLACKSMITH R:acquaintance"
+  },
+  {
+    "profile_seed": 2481165027,
+    "relationship_seed": 3595552188,
+    "profile": {
+      "occupation": "villager",
+      "age": 5,
+      "gender": "male",
+      "traits": {
+        "warmth": 99,
+        "humor": 28,
+        "impulsivity": 25,
+        "bravery": 5,
+        "focus": 41
+      }
+    },
+    "relationship": {
+      "familiarity": 0.404,
+      "affection": 0.617,
+      "trust": 0.221,
+      "respect": 0.951,
+      "fear": 0.998
+    },
+    "features": "boy age:5 gentle VILLAGER R:neutral"
+  },
+  {
+    "profile_seed": 4059171520,
+    "relationship_seed": 2782920757,
+    "profile": {
+      "occupation": "guard",
+      "age": 27,
+      "gender": "female",
+      "traits": {
+        "warmth": 25,
+        "humor": 5,
+        "impulsivity": 41,
+        "bravery": 8,
+        "focus": 83
+      }
+    },
+    "relationship": {
+      "familiarity": 0.221,
+      "affection": 0.951,
+      "trust": 0.998,
+      "respect": 0.516,
+      "fear": 0.21
+    },
+    "features": "woman age:27 stoic GUARD R:friend"
+  },
+  {
+    "profile_seed": 423143942,
+    "relationship_seed": 2205543290,
+    "profile": {
+      "occupation": "merchant",
+      "age": 28,
+      "gender": "female",
+      "traits": {
+        "warmth": 41,
+        "humor": 8,
+        "impulsivity": 83,
+        "bravery": 72,
+        "focus": 87
+      }
+    },
+    "relationship": {
+      "familiarity": 0.998,
+      "affection": 0.516,
+      "trust": 0.21,
+      "respect": 0.851,
+      "fear": 0.266
+    },
+    "features": "woman age:28 gruff MERCHANT R:friend"
+  },
+  {
+    "profile_seed": 4249631383,
+    "relationship_seed": 969020568,
+    "profile": {
+      "occupation": "villager",
+      "age": 21,
+      "gender": "male",
+      "traits": {
+        "warmth": 83,
+        "humor": 72,
+        "impulsivity": 87,
+        "bravery": 6,
+        "focus": 65
+      }
+    },
+    "relationship": {
+      "familiarity": 0.21,
+      "affection": 0.851,
+      "trust": 0.266,
+      "respect": 0.718,
+      "fear": 0.446
+    },
+    "features": "man age:21 sassy VILLAGER R:neutral"
+  },
+  {
+    "profile_seed": 292818736,
+    "relationship_seed": 2195368025,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 6,
+      "gender": "female",
+      "traits": {
+        "warmth": 87,
+        "humor": 6,
+        "impulsivity": 65,
+        "bravery": 62,
+        "focus": 49
+      }
+    },
+    "relationship": {
+      "familiarity": 0.266,
+      "affection": 0.718,
+      "trust": 0.446,
+      "respect": 0.915,
+      "fear": 0.568
+    },
+    "features": "girl age:6 serious PUB_PATRON R:neutral"
+  },
+  {
+    "profile_seed": 770545041,
+    "relationship_seed": 1956691454,
+    "profile": {
+      "occupation": "merchant",
+      "age": 6,
+      "gender": "male",
+      "traits": {
+        "warmth": 65,
+        "humor": 62,
+        "impulsivity": 49,
+        "bravery": 91,
+        "focus": 16
+      }
+    },
+    "relationship": {
+      "familiarity": 0.446,
+      "affection": 0.915,
+      "trust": 0.568,
+      "respect": 0.659,
+      "fear": 0.971
+    },
+    "features": "boy age:6 bold MERCHANT R:friend"
+  },
+  {
+    "profile_seed": 16171601,
+    "relationship_seed": 3475853295,
+    "profile": {
+      "occupation": "wizard",
+      "age": 28,
+      "gender": "female",
+      "traits": {
+        "warmth": 49,
+        "humor": 91,
+        "impulsivity": 16,
+        "bravery": 100,
+        "focus": 35
+      }
+    },
+    "relationship": {
+      "familiarity": 0.568,
+      "affection": 0.659,
+      "trust": 0.971,
+      "respect": 0.856,
+      "fear": 0.152
+    },
+    "features": "woman age:28 bold WIZARD R:friend"
+  },
+  {
+    "profile_seed": 3166899303,
+    "relationship_seed": 1958730432,
+    "profile": {
+      "occupation": "villager",
+      "age": 72,
+      "gender": "female",
+      "traits": {
+        "warmth": 16,
+        "humor": 100,
+        "impulsivity": 35,
+        "bravery": 77,
+        "focus": 55
+      }
+    },
+    "relationship": {
+      "familiarity": 0.971,
+      "affection": 0.856,
+      "trust": 0.152,
+      "respect": 0.05,
+      "fear": 0.756
+    },
+    "features": "elderly woman age:72 gruff VILLAGER R:neutral"
+  },
+  {
+    "profile_seed": 1930705747,
+    "relationship_seed": 2075790572,
+    "profile": {
+      "occupation": "noble",
+      "age": 84,
+      "gender": "female",
+      "traits": {
+        "warmth": 35,
+        "humor": 77,
+        "impulsivity": 55,
+        "bravery": 87,
+        "focus": 2
+      }
+    },
+    "relationship": {
+      "familiarity": 0.152,
+      "affection": 0.05,
+      "trust": 0.756,
+      "respect": 0.84,
+      "fear": 0.48
+    },
+    "features": "elderly woman age:84 gruff NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 2127932959,
+    "relationship_seed": 2849200404,
+    "profile": {
+      "occupation": "villager",
+      "age": 81,
+      "gender": "male",
+      "traits": {
+        "warmth": 55,
+        "humor": 87,
+        "impulsivity": 2,
+        "bravery": 75,
+        "focus": 29
+      }
+    },
+    "relationship": {
+      "familiarity": 0.756,
+      "affection": 0.84,
+      "trust": 0.48,
+      "respect": 0.844,
+      "fear": 0.633
+    },
+    "features": "elderly man age:81 careful VILLAGER R:friend"
+  },
+  {
+    "profile_seed": 2630268396,
+    "relationship_seed": 85527281,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 7,
+      "gender": "male",
+      "traits": {
+        "warmth": 2,
+        "humor": 75,
+        "impulsivity": 29,
+        "bravery": 25,
+        "focus": 86
+      }
+    },
+    "relationship": {
+      "familiarity": 0.48,
+      "affection": 0.844,
+      "trust": 0.633,
+      "respect": 0.322,
+      "fear": 0.659
+    },
+    "features": "boy age:7 stoic PUB_PATRON R:neutral"
+  },
+  {
+    "profile_seed": 2896175762,
+    "relationship_seed": 3065310091,
+    "profile": {
+      "occupation": "healer",
+      "age": 62,
+      "gender": "female",
+      "traits": {
+        "warmth": 29,
+        "humor": 25,
+        "impulsivity": 86,
+        "bravery": 31,
+        "focus": 67
+      }
+    },
+    "relationship": {
+      "familiarity": 0.633,
+      "affection": 0.322,
+      "trust": 0.659,
+      "respect": 0.457,
+      "fear": 0.18
+    },
+    "features": "elderly woman age:62 cold HEALER R:neutral"
+  },
+  {
+    "profile_seed": 1400263497,
+    "relationship_seed": 3136866054,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 63,
+      "gender": "male",
+      "traits": {
+        "warmth": 86,
+        "humor": 31,
+        "impulsivity": 67,
+        "bravery": 45,
+        "focus": 37
+      }
+    },
+    "relationship": {
+      "familiarity": 0.659,
+      "affection": 0.457,
+      "trust": 0.18,
+      "respect": 0.677,
+      "fear": 0.134
+    },
+    "features": "elderly man age:63 warm BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 3776091978,
+    "relationship_seed": 3431618647,
+    "profile": {
+      "occupation": "healer",
+      "age": 44,
+      "gender": "male",
+      "traits": {
+        "warmth": 67,
+        "humor": 45,
+        "impulsivity": 37,
+        "bravery": 30,
+        "focus": 62
+      }
+    },
+    "relationship": {
+      "familiarity": 0.18,
+      "affection": 0.677,
+      "trust": 0.134,
+      "respect": 0.725,
+      "fear": 0.071
+    },
+    "features": "man age:44 timid HEALER R:neutral"
+  },
+  {
+    "profile_seed": 2006944119,
+    "relationship_seed": 1351905231,
+    "profile": {
+      "occupation": "wizard",
+      "age": 46,
+      "gender": "female",
+      "traits": {
+        "warmth": 37,
+        "humor": 30,
+        "impulsivity": 62,
+        "bravery": 13,
+        "focus": 1
+      }
+    },
+    "relationship": {
+      "familiarity": 0.134,
+      "affection": 0.725,
+      "trust": 0.071,
+      "respect": 0.622,
+      "fear": 0.746
+    },
+    "features": "woman age:46 anxious WIZARD R:acquaintance"
+  },
+  {
+    "profile_seed": 1892798041,
+    "relationship_seed": 1782812756,
+    "profile": {
+      "occupation": "noble",
+      "age": 21,
+      "gender": "female",
+      "traits": {
+        "warmth": 62,
+        "humor": 13,
+        "impulsivity": 1,
+        "bravery": 83,
+        "focus": 39
+      }
+    },
+    "relationship": {
+      "familiarity": 0.071,
+      "affection": 0.622,
+      "trust": 0.746,
+      "respect": 0.1,
+      "fear": 0.532
+    },
+    "features": "woman age:21 careful NOBLE R:acquaintance"
+  },
+  {
+    "profile_seed": 292196976,
+    "relationship_seed": 666029986,
+    "profile": {
+      "occupation": "farmer",
+      "age": 22,
+      "gender": "male",
+      "traits": {
+        "warmth": 1,
+        "humor": 83,
+        "impulsivity": 39,
+        "bravery": 5,
+        "focus": 87
+      }
+    },
+    "relationship": {
+      "familiarity": 0.746,
+      "affection": 0.1,
+      "trust": 0.532,
+      "respect": 0.322,
+      "fear": 0.81
+    },
+    "features": "man age:22 stoic FARMER R:neutral"
+  },
+  {
+    "profile_seed": 3062931617,
+    "relationship_seed": 4062113155,
+    "profile": {
+      "occupation": "healer",
+      "age": 73,
+      "gender": "male",
+      "traits": {
+        "warmth": 39,
+        "humor": 5,
+        "impulsivity": 87,
+        "bravery": 83,
+        "focus": 54
+      }
+    },
+    "relationship": {
+      "familiarity": 0.532,
+      "affection": 0.322,
+      "trust": 0.81,
+      "respect": 0.432,
+      "fear": 0.359
+    },
+    "features": "elderly man age:73 gruff HEALER R:neutral"
+  },
+  {
+    "profile_seed": 3665678548,
+    "relationship_seed": 1821080583,
+    "profile": {
+      "occupation": "wizard",
+      "age": 7,
+      "gender": "female",
+      "traits": {
+        "warmth": 87,
+        "humor": 83,
+        "impulsivity": 54,
+        "bravery": 48,
+        "focus": 21
+      }
+    },
+    "relationship": {
+      "familiarity": 0.81,
+      "affection": 0.432,
+      "trust": 0.359,
+      "respect": 0.75,
+      "fear": 0.608
+    },
+    "features": "girl age:7 cheerful WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 1652043202,
+    "relationship_seed": 2680920674,
+    "profile": {
+      "occupation": "merchant",
+      "age": 54,
+      "gender": "female",
+      "traits": {
+        "warmth": 54,
+        "humor": 48,
+        "impulsivity": 21,
+        "bravery": 95,
+        "focus": 93
+      }
+    },
+    "relationship": {
+      "familiarity": 0.359,
+      "affection": 0.75,
+      "trust": 0.608,
+      "respect": 0.902,
+      "fear": 0.038
+    },
+    "features": "woman age:54 measured MERCHANT R:friend"
+  },
+  {
+    "profile_seed": 2087856129,
+    "relationship_seed": 389055416,
+    "profile": {
+      "occupation": "noble",
+      "age": 16,
+      "gender": "male",
+      "traits": {
+        "warmth": 21,
+        "humor": 95,
+        "impulsivity": 93,
+        "bravery": 80,
+        "focus": 39
+      }
+    },
+    "relationship": {
+      "familiarity": 0.608,
+      "affection": 0.902,
+      "trust": 0.038,
+      "respect": 0.237,
+      "fear": 0.657
+    },
+    "features": "boy age:16 sassy NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 4021781371,
+    "relationship_seed": 3838148215,
+    "profile": {
+      "occupation": "healer",
+      "age": 71,
+      "gender": "male",
+      "traits": {
+        "warmth": 93,
+        "humor": 80,
+        "impulsivity": 39,
+        "bravery": 19,
+        "focus": 40
+      }
+    },
+    "relationship": {
+      "familiarity": 0.038,
+      "affection": 0.237,
+      "trust": 0.657,
+      "respect": 0.844,
+      "fear": 0.506
+    },
+    "features": "elderly man age:71 gentle HEALER R:neutral"
+  },
+  {
+    "profile_seed": 712820146,
+    "relationship_seed": 3952166455,
+    "profile": {
+      "occupation": "healer",
+      "age": 49,
+      "gender": "female",
+      "traits": {
+        "warmth": 39,
+        "humor": 19,
+        "impulsivity": 40,
+        "bravery": 18,
+        "focus": 28
+      }
+    },
+    "relationship": {
+      "familiarity": 0.657,
+      "affection": 0.844,
+      "trust": 0.506,
+      "respect": 0.241,
+      "fear": 0.716
+    },
+    "features": "woman age:49 anxious HEALER R:neutral"
+  },
+  {
+    "profile_seed": 2846831644,
+    "relationship_seed": 2864636618,
+    "profile": {
+      "occupation": "merchant",
+      "age": 62,
+      "gender": "female",
+      "traits": {
+        "warmth": 40,
+        "humor": 18,
+        "impulsivity": 28,
+        "bravery": 38,
+        "focus": 18
+      }
+    },
+    "relationship": {
+      "familiarity": 0.506,
+      "affection": 0.241,
+      "trust": 0.716,
+      "respect": 0.332,
+      "fear": 0.297
+    },
+    "features": "elderly woman age:62 anxious MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 2853482137,
+    "relationship_seed": 3342188090,
+    "profile": {
+      "occupation": "merchant",
+      "age": 24,
+      "gender": "female",
+      "traits": {
+        "warmth": 28,
+        "humor": 38,
+        "impulsivity": 18,
+        "bravery": 11,
+        "focus": 81
+      }
+    },
+    "relationship": {
+      "familiarity": 0.716,
+      "affection": 0.332,
+      "trust": 0.297,
+      "respect": 0.209,
+      "fear": 0.599
+    },
+    "features": "woman age:24 stoic MERCHANT R:acquaintance"
+  },
+  {
+    "profile_seed": 1856638499,
+    "relationship_seed": 3265350420,
+    "profile": {
+      "occupation": "villager",
+      "age": 58,
+      "gender": "female",
+      "traits": {
+        "warmth": 18,
+        "humor": 11,
+        "impulsivity": 81,
+        "bravery": 61,
+        "focus": 14
+      }
+    },
+    "relationship": {
+      "familiarity": 0.297,
+      "affection": 0.209,
+      "trust": 0.599,
+      "respect": 0.286,
+      "fear": 0.808
+    },
+    "features": "woman age:58 cold VILLAGER R:acquaintance"
+  },
+  {
+    "profile_seed": 2478071893,
+    "relationship_seed": 3899080394,
+    "profile": {
+      "occupation": "merchant",
+      "age": 58,
+      "gender": "female",
+      "traits": {
+        "warmth": 81,
+        "humor": 61,
+        "impulsivity": 14,
+        "bravery": 48,
+        "focus": 50
+      }
+    },
+    "relationship": {
+      "familiarity": 0.599,
+      "affection": 0.286,
+      "trust": 0.808,
+      "respect": 0.843,
+      "fear": 0.267
+    },
+    "features": "woman age:58 cheerful MERCHANT R:friend"
+  },
+  {
+    "profile_seed": 4168178613,
+    "relationship_seed": 3019232502,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 24,
+      "gender": "male",
+      "traits": {
+        "warmth": 14,
+        "humor": 48,
+        "impulsivity": 50,
+        "bravery": 71,
+        "focus": 63
+      }
+    },
+    "relationship": {
+      "familiarity": 0.808,
+      "affection": 0.843,
+      "trust": 0.267,
+      "respect": 0.225,
+      "fear": 0.269
+    },
+    "features": "man age:24 gruff BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 604575779,
+    "relationship_seed": 3869380357,
+    "profile": {
+      "occupation": "guard",
+      "age": 73,
+      "gender": "female",
+      "traits": {
+        "warmth": 50,
+        "humor": 71,
+        "impulsivity": 63,
+        "bravery": 77,
+        "focus": 33
+      }
+    },
+    "relationship": {
+      "familiarity": 0.267,
+      "affection": 0.225,
+      "trust": 0.269,
+      "respect": 0.011,
+      "fear": 0.611
+    },
+    "features": "elderly woman age:73 sassy GUARD R:stranger"
+  },
+  {
+    "profile_seed": 1327327268,
+    "relationship_seed": 2703932456,
+    "profile": {
+      "occupation": "noble",
+      "age": 36,
+      "gender": "male",
+      "traits": {
+        "warmth": 63,
+        "humor": 77,
+        "impulsivity": 33,
+        "bravery": 54,
+        "focus": 3
+      }
+    },
+    "relationship": {
+      "familiarity": 0.269,
+      "affection": 0.011,
+      "trust": 0.611,
+      "respect": 0.208,
+      "fear": 0.95
+    },
+    "features": "man age:36 distracted NOBLE R:acquaintance"
+  },
+  {
+    "profile_seed": 592914591,
+    "relationship_seed": 248634397,
+    "profile": {
+      "occupation": "guard",
+      "age": 57,
+      "gender": "female",
+      "traits": {
+        "warmth": 33,
+        "humor": 54,
+        "impulsivity": 3,
+        "bravery": 10,
+        "focus": 38
+      }
+    },
+    "relationship": {
+      "familiarity": 0.611,
+      "affection": 0.208,
+      "trust": 0.95,
+      "respect": 0.121,
+      "fear": 0.459
+    },
+    "features": "woman age:57 anxious GUARD R:neutral"
+  },
+  {
+    "profile_seed": 2669588532,
+    "relationship_seed": 1780122552,
+    "profile": {
+      "occupation": "villager",
+      "age": 83,
+      "gender": "male",
+      "traits": {
+        "warmth": 3,
+        "humor": 10,
+        "impulsivity": 38,
+        "bravery": 31,
+        "focus": 59
+      }
+    },
+    "relationship": {
+      "familiarity": 0.95,
+      "affection": 0.121,
+      "trust": 0.459,
+      "respect": 0.918,
+      "fear": 0.862
+    },
+    "features": "elderly man age:83 cold VILLAGER R:friend"
+  },
+  {
+    "profile_seed": 2011057998,
+    "relationship_seed": 2026756853,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 49,
+      "gender": "male",
+      "traits": {
+        "warmth": 38,
+        "humor": 31,
+        "impulsivity": 59,
+        "bravery": 43,
+        "focus": 23
+      }
+    },
+    "relationship": {
+      "familiarity": 0.459,
+      "affection": 0.918,
+      "trust": 0.862,
+      "respect": 0.794,
+      "fear": 0.117
+    },
+    "features": "man age:49 distracted PUB_PATRON R:friend"
+  },
+  {
+    "profile_seed": 2985327804,
+    "relationship_seed": 1922290287,
+    "profile": {
+      "occupation": "wizard",
+      "age": 69,
+      "gender": "female",
+      "traits": {
+        "warmth": 59,
+        "humor": 43,
+        "impulsivity": 23,
+        "bravery": 76,
+        "focus": 63
+      }
+    },
+    "relationship": {
+      "familiarity": 0.862,
+      "affection": 0.794,
+      "trust": 0.117,
+      "respect": 0.542,
+      "fear": 0.996
+    },
+    "features": "elderly woman age:69 measured WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 320402944,
+    "relationship_seed": 3066490220,
+    "profile": {
+      "occupation": "noble",
+      "age": 62,
+      "gender": "female",
+      "traits": {
+        "warmth": 23,
+        "humor": 76,
+        "impulsivity": 63,
+        "bravery": 96,
+        "focus": 67
+      }
+    },
+    "relationship": {
+      "familiarity": 0.117,
+      "affection": 0.542,
+      "trust": 0.996,
+      "respect": 0.031,
+      "fear": 0.607
+    },
+    "features": "elderly woman age:62 sassy NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 100680697,
+    "relationship_seed": 3247700998,
+    "profile": {
+      "occupation": "farmer",
+      "age": 52,
+      "gender": "female",
+      "traits": {
+        "warmth": 63,
+        "humor": 96,
+        "impulsivity": 67,
+        "bravery": 52,
+        "focus": 26
+      }
+    },
+    "relationship": {
+      "familiarity": 0.996,
+      "affection": 0.031,
+      "trust": 0.607,
+      "respect": 0.813,
+      "fear": 0.421
+    },
+    "features": "woman age:52 sassy FARMER R:friend"
+  },
+  {
+    "profile_seed": 2088698607,
+    "relationship_seed": 410465086,
+    "profile": {
+      "occupation": "farmer",
+      "age": 27,
+      "gender": "male",
+      "traits": {
+        "warmth": 67,
+        "humor": 52,
+        "impulsivity": 26,
+        "bravery": 64,
+        "focus": 79
+      }
+    },
+    "relationship": {
+      "familiarity": 0.607,
+      "affection": 0.813,
+      "trust": 0.421,
+      "respect": 0.287,
+      "fear": 0.261
+    },
+    "features": "man age:27 measured FARMER R:neutral"
+  },
+  {
+    "profile_seed": 1006701302,
+    "relationship_seed": 3064418169,
+    "profile": {
+      "occupation": "bandit",
+      "age": 82,
+      "gender": "female",
+      "traits": {
+        "warmth": 26,
+        "humor": 64,
+        "impulsivity": 79,
+        "bravery": 17,
+        "focus": 46
+      }
+    },
+    "relationship": {
+      "familiarity": 0.421,
+      "affection": 0.287,
+      "trust": 0.261,
+      "respect": 0.143,
+      "fear": 0.194
+    },
+    "features": "elderly woman age:82 timid BANDIT R:acquaintance"
+  },
+  {
+    "profile_seed": 3057671037,
+    "relationship_seed": 417011882,
+    "profile": {
+      "occupation": "merchant",
+      "age": 50,
+      "gender": "female",
+      "traits": {
+        "warmth": 79,
+        "humor": 17,
+        "impulsivity": 46,
+        "bravery": 18,
+        "focus": 6
+      }
+    },
+    "relationship": {
+      "familiarity": 0.261,
+      "affection": 0.143,
+      "trust": 0.194,
+      "respect": 0.465,
+      "fear": 0.93
+    },
+    "features": "woman age:50 gentle MERCHANT R:acquaintance"
+  },
+  {
+    "profile_seed": 33737965,
+    "relationship_seed": 678913378,
+    "profile": {
+      "occupation": "farmer",
+      "age": 84,
+      "gender": "female",
+      "traits": {
+        "warmth": 46,
+        "humor": 18,
+        "impulsivity": 6,
+        "bravery": 51,
+        "focus": 80
+      }
+    },
+    "relationship": {
+      "familiarity": 0.194,
+      "affection": 0.465,
+      "trust": 0.93,
+      "respect": 0.379,
+      "fear": 0.406
+    },
+    "features": "elderly woman age:84 measured FARMER R:neutral"
+  },
+  {
+    "profile_seed": 1605609199,
+    "relationship_seed": 1185167448,
+    "profile": {
+      "occupation": "villager",
+      "age": 36,
+      "gender": "male",
+      "traits": {
+        "warmth": 6,
+        "humor": 51,
+        "impulsivity": 80,
+        "bravery": 71,
+        "focus": 20
+      }
+    },
+    "relationship": {
+      "familiarity": 0.93,
+      "affection": 0.379,
+      "trust": 0.406,
+      "respect": 0.713,
+      "fear": 0.29
+    },
+    "features": "man age:36 gruff VILLAGER R:friend"
+  },
+  {
+    "profile_seed": 4098115951,
+    "relationship_seed": 3495652539,
+    "profile": {
+      "occupation": "wizard",
+      "age": 82,
+      "gender": "male",
+      "traits": {
+        "warmth": 80,
+        "humor": 71,
+        "impulsivity": 20,
+        "bravery": 99,
+        "focus": 49
+      }
+    },
+    "relationship": {
+      "familiarity": 0.406,
+      "affection": 0.713,
+      "trust": 0.29,
+      "respect": 0.957,
+      "fear": 0.47
+    },
+    "features": "elderly man age:82 cheerful WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 71703037,
+    "relationship_seed": 675451489,
+    "profile": {
+      "occupation": "guard",
+      "age": 27,
+      "gender": "male",
+      "traits": {
+        "warmth": 20,
+        "humor": 99,
+        "impulsivity": 49,
+        "bravery": 38,
+        "focus": 100
+      }
+    },
+    "relationship": {
+      "familiarity": 0.29,
+      "affection": 0.957,
+      "trust": 0.47,
+      "respect": 0.772,
+      "fear": 0.807
+    },
+    "features": "man age:27 stoic GUARD R:friend"
+  },
+  {
+    "profile_seed": 1004495782,
+    "relationship_seed": 584238611,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 80,
+      "gender": "male",
+      "traits": {
+        "warmth": 49,
+        "humor": 38,
+        "impulsivity": 100,
+        "bravery": 49,
+        "focus": 75
+      }
+    },
+    "relationship": {
+      "familiarity": 0.47,
+      "affection": 0.772,
+      "trust": 0.807,
+      "respect": 0.624,
+      "fear": 0.919
+    },
+    "features": "elderly man age:80 impulsive INNKEEPER R:friend"
+  },
+  {
+    "profile_seed": 939784315,
+    "relationship_seed": 2795226205,
+    "profile": {
+      "occupation": "guard",
+      "age": 42,
+      "gender": "female",
+      "traits": {
+        "warmth": 100,
+        "humor": 49,
+        "impulsivity": 75,
+        "bravery": 94,
+        "focus": 12
+      }
+    },
+    "relationship": {
+      "familiarity": 0.807,
+      "affection": 0.624,
+      "trust": 0.919,
+      "respect": 0.928,
+      "fear": 0.436
+    },
+    "features": "woman age:42 reckless GUARD R:close_friend"
+  },
+  {
+    "profile_seed": 470901237,
+    "relationship_seed": 903144866,
+    "profile": {
+      "occupation": "merchant",
+      "age": 7,
+      "gender": "female",
+      "traits": {
+        "warmth": 75,
+        "humor": 94,
+        "impulsivity": 12,
+        "bravery": 52,
+        "focus": 52
+      }
+    },
+    "relationship": {
+      "familiarity": 0.919,
+      "affection": 0.928,
+      "trust": 0.436,
+      "respect": 0.019,
+      "fear": 0.527
+    },
+    "features": "girl age:7 cheerful MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 2239681362,
+    "relationship_seed": 3179489240,
+    "profile": {
+      "occupation": "noble",
+      "age": 41,
+      "gender": "female",
+      "traits": {
+        "warmth": 12,
+        "humor": 52,
+        "impulsivity": 52,
+        "bravery": 9,
+        "focus": 23
+      }
+    },
+    "relationship": {
+      "familiarity": 0.436,
+      "affection": 0.019,
+      "trust": 0.527,
+      "respect": 0.418,
+      "fear": 0.413
+    },
+    "features": "woman age:41 anxious NOBLE R:acquaintance"
+  },
+  {
+    "profile_seed": 4134610916,
+    "relationship_seed": 2201230050,
+    "profile": {
+      "occupation": "blacksmith",
+      "age": 59,
+      "gender": "female",
+      "traits": {
+        "warmth": 52,
+        "humor": 9,
+        "impulsivity": 23,
+        "bravery": 14,
+        "focus": 39
+      }
+    },
+    "relationship": {
+      "familiarity": 0.527,
+      "affection": 0.418,
+      "trust": 0.413,
+      "respect": 0.29,
+      "fear": 0.13
+    },
+    "features": "woman age:59 anxious BLACKSMITH R:neutral"
+  },
+  {
+    "profile_seed": 224591894,
+    "relationship_seed": 3244237414,
+    "profile": {
+      "occupation": "farmer",
+      "age": 36,
+      "gender": "male",
+      "traits": {
+        "warmth": 23,
+        "humor": 14,
+        "impulsivity": 39,
+        "bravery": 53,
+        "focus": 72
+      }
+    },
+    "relationship": {
+      "familiarity": 0.413,
+      "affection": 0.29,
+      "trust": 0.13,
+      "respect": 0.98,
+      "fear": 0.298
+    },
+    "features": "man age:36 stoic FARMER R:neutral"
+  },
+  {
+    "profile_seed": 2272128271,
+    "relationship_seed": 1666063689,
+    "profile": {
+      "occupation": "bandit",
+      "age": 47,
+      "gender": "female",
+      "traits": {
+        "warmth": 39,
+        "humor": 53,
+        "impulsivity": 72,
+        "bravery": 57,
+        "focus": 37
+      }
+    },
+    "relationship": {
+      "familiarity": 0.13,
+      "affection": 0.98,
+      "trust": 0.298,
+      "respect": 0.951,
+      "fear": 0.513
+    },
+    "features": "woman age:47 impulsive BANDIT R:neutral"
+  },
+  {
+    "profile_seed": 3154823802,
+    "relationship_seed": 1308287960,
+    "profile": {
+      "occupation": "noble",
+      "age": 61,
+      "gender": "male",
+      "traits": {
+        "warmth": 72,
+        "humor": 57,
+        "impulsivity": 37,
+        "bravery": 55,
+        "focus": 39
+      }
+    },
+    "relationship": {
+      "familiarity": 0.298,
+      "affection": 0.951,
+      "trust": 0.513,
+      "respect": 0.759,
+      "fear": 0.732
+    },
+    "features": "elderly man age:61 warm NOBLE R:friend"
+  },
+  {
+    "profile_seed": 566003736,
+    "relationship_seed": 2806372519,
+    "profile": {
+      "occupation": "healer",
+      "age": 36,
+      "gender": "female",
+      "traits": {
+        "warmth": 37,
+        "humor": 55,
+        "impulsivity": 39,
+        "bravery": 66,
+        "focus": 88
+      }
+    },
+    "relationship": {
+      "familiarity": 0.513,
+      "affection": 0.759,
+      "trust": 0.732,
+      "respect": 0.538,
+      "fear": 0.761
+    },
+    "features": "woman age:36 stoic HEALER R:friend"
+  },
+  {
+    "profile_seed": 2524440431,
+    "relationship_seed": 970749538,
+    "profile": {
+      "occupation": "farmer",
+      "age": 47,
+      "gender": "female",
+      "traits": {
+        "warmth": 39,
+        "humor": 66,
+        "impulsivity": 88,
+        "bravery": 92,
+        "focus": 75
+      }
+    },
+    "relationship": {
+      "familiarity": 0.732,
+      "affection": 0.538,
+      "trust": 0.761,
+      "respect": 0.837,
+      "fear": 0.592
+    },
+    "features": "woman age:47 gruff FARMER R:friend"
+  },
+  {
+    "profile_seed": 1428017322,
+    "relationship_seed": 236192494,
+    "profile": {
+      "occupation": "farmer",
+      "age": 15,
+      "gender": "female",
+      "traits": {
+        "warmth": 88,
+        "humor": 92,
+        "impulsivity": 75,
+        "bravery": 53,
+        "focus": 85
+      }
+    },
+    "relationship": {
+      "familiarity": 0.761,
+      "affection": 0.837,
+      "trust": 0.592,
+      "respect": 0.462,
+      "fear": 0.309
+    },
+    "features": "girl age:15 sassy FARMER R:friend"
+  },
+  {
+    "profile_seed": 1199127690,
+    "relationship_seed": 2111951678,
+    "profile": {
+      "occupation": "merchant",
+      "age": 82,
+      "gender": "female",
+      "traits": {
+        "warmth": 75,
+        "humor": 53,
+        "impulsivity": 85,
+        "bravery": 20,
+        "focus": 49
+      }
+    },
+    "relationship": {
+      "familiarity": 0.592,
+      "affection": 0.462,
+      "trust": 0.309,
+      "respect": 0.476,
+      "fear": 0.946
+    },
+    "features": "elderly woman age:82 gentle MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 3074436957,
+    "relationship_seed": 3889239816,
+    "profile": {
+      "occupation": "villager",
+      "age": 69,
+      "gender": "female",
+      "traits": {
+        "warmth": 85,
+        "humor": 20,
+        "impulsivity": 49,
+        "bravery": 51,
+        "focus": 87
+      }
+    },
+    "relationship": {
+      "familiarity": 0.309,
+      "affection": 0.476,
+      "trust": 0.946,
+      "respect": 0.05,
+      "fear": 0.868
+    },
+    "features": "elderly woman age:69 focused VILLAGER R:neutral"
+  },
+  {
+    "profile_seed": 1665058704,
+    "relationship_seed": 3261060278,
+    "profile": {
+      "occupation": "merchant",
+      "age": 39,
+      "gender": "male",
+      "traits": {
+        "warmth": 49,
+        "humor": 51,
+        "impulsivity": 87,
+        "bravery": 48,
+        "focus": 73
+      }
+    },
+    "relationship": {
+      "familiarity": 0.946,
+      "affection": 0.05,
+      "trust": 0.868,
+      "respect": 0.218,
+      "fear": 0.829
+    },
+    "features": "man age:39 impulsive MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 568857234,
+    "relationship_seed": 1425156783,
+    "profile": {
+      "occupation": "wizard",
+      "age": 65,
+      "gender": "female",
+      "traits": {
+        "warmth": 87,
+        "humor": 48,
+        "impulsivity": 73,
+        "bravery": 32,
+        "focus": 0
+      }
+    },
+    "relationship": {
+      "familiarity": 0.868,
+      "affection": 0.218,
+      "trust": 0.829,
+      "respect": 0.299,
+      "fear": 0.233
+    },
+    "features": "elderly woman age:65 gentle WIZARD R:neutral"
+  },
+  {
+    "profile_seed": 627019260,
+    "relationship_seed": 1223464460,
+    "profile": {
+      "occupation": "noble",
+      "age": 63,
+      "gender": "female",
+      "traits": {
+        "warmth": 73,
+        "humor": 32,
+        "impulsivity": 0,
+        "bravery": 97,
+        "focus": 96
+      }
+    },
+    "relationship": {
+      "familiarity": 0.829,
+      "affection": 0.299,
+      "trust": 0.233,
+      "respect": 0.846,
+      "fear": 0.699
+    },
+    "features": "elderly woman age:63 measured NOBLE R:neutral"
+  },
+  {
+    "profile_seed": 2676103258,
+    "relationship_seed": 1303377374,
+    "profile": {
+      "occupation": "merchant",
+      "age": 9,
+      "gender": "male",
+      "traits": {
+        "warmth": 0,
+        "humor": 97,
+        "impulsivity": 96,
+        "bravery": 43,
+        "focus": 28
+      }
+    },
+    "relationship": {
+      "familiarity": 0.233,
+      "affection": 0.846,
+      "trust": 0.699,
+      "respect": 0.324,
+      "fear": 0.95
+    },
+    "features": "boy age:9 sassy MERCHANT R:neutral"
+  },
+  {
+    "profile_seed": 3516524244,
+    "relationship_seed": 1159798485,
+    "profile": {
+      "occupation": "bandit",
+      "age": 77,
+      "gender": "male",
+      "traits": {
+        "warmth": 96,
+        "humor": 43,
+        "impulsivity": 28,
+        "bravery": 61,
+        "focus": 86
+      }
+    },
+    "relationship": {
+      "familiarity": 0.699,
+      "affection": 0.324,
+      "trust": 0.95,
+      "respect": 0.65,
+      "fear": 0.49
+    },
+    "features": "elderly man age:77 measured BANDIT R:friend"
+  },
+  {
+    "profile_seed": 3112843432,
+    "relationship_seed": 762821383,
+    "profile": {
+      "occupation": "healer",
+      "age": 65,
+      "gender": "female",
+      "traits": {
+        "warmth": 28,
+        "humor": 61,
+        "impulsivity": 86,
+        "bravery": 46,
+        "focus": 36
+      }
+    },
+    "relationship": {
+      "familiarity": 0.95,
+      "affection": 0.65,
+      "trust": 0.49,
+      "respect": 0.931,
+      "fear": 0.082
+    },
+    "features": "elderly woman age:65 impulsive HEALER R:friend"
+  },
+  {
+    "profile_seed": 2565994380,
+    "relationship_seed": 1711584524,
+    "profile": {
+      "occupation": "noble",
+      "age": 83,
+      "gender": "male",
+      "traits": {
+        "warmth": 86,
+        "humor": 46,
+        "impulsivity": 36,
+        "bravery": 76,
+        "focus": 50
+      }
+    },
+    "relationship": {
+      "familiarity": 0.49,
+      "affection": 0.931,
+      "trust": 0.082,
+      "respect": 0.078,
+      "fear": 0.141
+    },
+    "features": "elderly man age:83 warm NOBLE R:acquaintance"
+  },
+  {
+    "profile_seed": 3826050718,
+    "relationship_seed": 1664894161,
+    "profile": {
+      "occupation": "guard",
+      "age": 39,
+      "gender": "female",
+      "traits": {
+        "warmth": 36,
+        "humor": 76,
+        "impulsivity": 50,
+        "bravery": 0,
+        "focus": 19
+      }
+    },
+    "relationship": {
+      "familiarity": 0.082,
+      "affection": 0.078,
+      "trust": 0.141,
+      "respect": 0.445,
+      "fear": 0.229
+    },
+    "features": "woman age:39 anxious GUARD R:stranger"
+  },
+  {
+    "profile_seed": 2674143554,
+    "relationship_seed": 818135396,
+    "profile": {
+      "occupation": "noble",
+      "age": 72,
+      "gender": "male",
+      "traits": {
+        "warmth": 50,
+        "humor": 0,
+        "impulsivity": 19,
+        "bravery": 32,
+        "focus": 66
+      }
+    },
+    "relationship": {
+      "familiarity": 0.141,
+      "affection": 0.445,
+      "trust": 0.229,
+      "respect": 0.163,
+      "fear": 0.41
+    },
+    "features": "elderly man age:72 measured NOBLE R:acquaintance"
+  },
+  {
+    "profile_seed": 1426311027,
+    "relationship_seed": 2421915941,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 47,
+      "gender": "male",
+      "traits": {
+        "warmth": 19,
+        "humor": 32,
+        "impulsivity": 66,
+        "bravery": 69,
+        "focus": 22
+      }
+    },
+    "relationship": {
+      "familiarity": 0.229,
+      "affection": 0.163,
+      "trust": 0.41,
+      "respect": 0.987,
+      "fear": 0.498
+    },
+    "features": "man age:47 cold PUB_PATRON R:neutral"
+  },
+  {
+    "profile_seed": 4019548762,
+    "relationship_seed": 2048672789,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 63,
+      "gender": "male",
+      "traits": {
+        "warmth": 66,
+        "humor": 69,
+        "impulsivity": 22,
+        "bravery": 97,
+        "focus": 46
+      }
+    },
+    "relationship": {
+      "familiarity": 0.41,
+      "affection": 0.987,
+      "trust": 0.498,
+      "respect": 0.353,
+      "fear": 0.344
+    },
+    "features": "elderly man age:63 bold PUB_PATRON R:neutral"
+  },
+  {
+    "profile_seed": 2706191898,
+    "relationship_seed": 4131442301,
+    "profile": {
+      "occupation": "pub_patron",
+      "age": 79,
+      "gender": "male",
+      "traits": {
+        "warmth": 22,
+        "humor": 97,
+        "impulsivity": 46,
+        "bravery": 21,
+        "focus": 17
+      }
+    },
+    "relationship": {
+      "familiarity": 0.498,
+      "affection": 0.353,
+      "trust": 0.344,
+      "respect": 0.886,
+      "fear": 0.579
+    },
+    "features": "elderly man age:79 anxious PUB_PATRON R:neutral"
+  },
+  {
+    "profile_seed": 510406394,
+    "relationship_seed": 3990308675,
+    "profile": {
+      "occupation": "innkeeper",
+      "age": 81,
+      "gender": "female",
+      "traits": {
+        "warmth": 46,
+        "humor": 21,
+        "impulsivity": 17,
+        "bravery": 86,
+        "focus": 80
+      }
+    },
+    "relationship": {
+      "familiarity": 0.344,
+      "affection": 0.886,
+      "trust": 0.579,
+      "respect": 0.45,
+      "fear": 0.444
+    },
+    "features": "elderly woman age:81 measured INNKEEPER R:neutral"
+  },
+  {
+    "profile_seed": 2732301916,
+    "relationship_seed": 4078873684,
+    "profile": {
+      "occupation": "damsel",
+      "age": 35,
+      "gender": "female",
+      "traits": {
+        "warmth": 17,
+        "humor": 86,
+        "impulsivity": 80,
+        "bravery": 72,
+        "focus": 74
+      }
+    },
+    "relationship": {
+      "familiarity": 0.579,
+      "affection": 0.45,
+      "trust": 0.444,
+      "respect": 0.769,
+      "fear": 0.444
+    },
+    "features": "woman age:35 sassy DAMSEL R:neutral"
+  },
+  {
+    "profile_seed": 4094942430,
+    "relationship_seed": 2122528858,
+    "profile": {
+      "occupation": "farmer",
+      "age": 19,
+      "gender": "female",
+      "traits": {
+        "warmth": 80,
+        "humor": 72,
+        "impulsivity": 74,
+        "bravery": 38,
+        "focus": 18
+      }
+    },
+    "relationship": {
+      "familiarity": 0.444,
+      "affection": 0.769,
+      "trust": 0.444,
+      "respect": 0.099,
+      "fear": 0.349
+    },
+    "features": "girl age:19 sassy FARMER R:neutral"
+  }
+]

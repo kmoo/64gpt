@@ -22,7 +22,7 @@ so a second project can supply its own vocabulary without touching
 
 | layer | what it is | who owns it |
 |---|---|---|
-| **Meta-schema** | the shape: `characters[]`, `archetypes[]`, `schema_fields{}`, the tier system (full/mid/thin — full spec at M9, thin is what M7 proved) | ships with the toolkit, fixed |
+| **Meta-schema** | the shape: `characters[]`, `archetypes[]`, `schema_fields{}`, the tier system (full/mid/thin — full spec at M10, thin is what M7 proved) | ships with the toolkit, fixed |
 | **Project manifest** | one JSON file per game — the actual mood list, trait names, character entries | authored per-project, e.g. the dungeon crawler's |
 
 The meta-schema is mechanism: it says "you must declare a list of
@@ -118,15 +118,15 @@ before the archetype system is called proven (M8 DoD).
 `full` (Selena, M7) and `thin` (guard archetypes, M8) are in active use.
 `mid` is named here because the field exists in the shape, but its
 actual definition — what sits between "full character bible" and "range
-+ shared corpus" — is M9 scope, not decided yet. Don't build against a
-`mid` tier expecting specific semantics until M9 writes them.
++ shared corpus" — is M10 scope, not decided yet. Don't build against a
+`mid` tier expecting specific semantics until M10 writes them.
 
 ## Authoring convention: `_`-prefixed keys
 
 Any key starting with `_` (e.g. `_meta`, `_status`) is an authoring note
 for humans reading the manifest — provenance, TODOs, "not yet
 validated" flags. Tooling (the validation test above, any future
-manifest editor from M10) must ignore these keys entirely; they are
+manifest editor from M11) must ignore these keys entirely; they are
 never read as schema content. See `manifests/dungeon_crawler.json`'s
 `guard` entry for the pattern: `corpus_ref`/`name_gen` are `null` with
 an `_status` note explaining why, rather than a fabricated path to an
@@ -145,7 +145,7 @@ ignores a slider nobody meant to drop.
 
 ## Why this doc exists
 
-This is the concrete artifact M10's porting guide points at. "Supply a
+This is the concrete artifact M11's porting guide points at. "Supply a
 file shaped like `docs/08-manifest-schema.md`" is a testable
 instruction a second project's engineer can follow without reading this
 project's source; "supply your own character bibles" was not.
