@@ -194,6 +194,32 @@ def conditioning_features(profile: dict, relationship: dict) -> str:
             f"{profile['occupation'].upper()} R:{tier}")
 
 
+def prompt_fields(profile: dict, relationship: dict, mood: str, context: str,
+                   event: str = "") -> str:
+    """The actual training/inference prompt string: colon-delimited tokens
+    (matching ContextBuilder's N:/TR:/M:/C:/EV: convention -- every
+    space-separated token has a colon, unlike conditioning_features()'s
+    human-readable form). Supersedes M7/M8's opaque N:<id> AND its TR:
+    trust-tier field -- R: (relationship tier, derived the same way as
+    the old TR: dial but from real relationship state, not a flat 0-3
+    knob) covers the same closeness concept with one axis instead of two.
+
+    "P:girl AGE:12 D:sassy OCC:villager R:best_friend M:cheerful
+    C:greeting EV:none|"
+    """
+    # age_gender_token can be two words ("elderly woman") -- every
+    # space-separated prompt token must carry its own colon, so multi-word
+    # tokens get underscored here (conditioning_features() keeps the
+    # natural spaced form for human/LLM-facing text).
+    person = age_gender_token(profile["age"], profile["gender"]).replace(" ", "_")
+    descriptor = personality_descriptor(profile["traits"])
+    _, tier = relationship_label(relationship)
+    ev = event if event else "none"
+    return (f"P:{person} AGE:{profile['age']} D:{descriptor} "
+            f"OCC:{profile['occupation']} R:{tier} M:{mood} C:{context} "
+            f"EV:{ev}|")
+
+
 def generate_sample_population(n: int, seed: int = 0) -> list[dict]:
     """n randomized NPCs (profile + relationship), for coverage-checking
     the vocabulary and grounding docs in real generated examples rather

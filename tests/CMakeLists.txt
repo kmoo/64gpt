@@ -64,3 +64,15 @@ target_include_directories(test_context_builder PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_context_builder PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_context_builder PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_context_builder COMMAND test_context_builder)
+
+# M9 compositional conditioning (NpcService): same standalone portable-C++
+# treatment as test_context_builder above.
+add_executable(test_npc_service
+  test_npc_service.cpp
+  ${NGPT_GAME_USER_DIR}/NPCDatabase.cpp
+  ${NGPT_GAME_USER_DIR}/NpcService.cpp
+)
+target_include_directories(test_npc_service PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_npc_service PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_npc_service PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_npc_service COMMAND test_npc_service)

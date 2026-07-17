@@ -8,6 +8,7 @@ from ngpt_trainer.npc_service import (
     conditioning_features,
     generate_sample_population,
     personality_descriptor,
+    prompt_fields,
     random_npc_profile,
     random_relationship_state,
     relationship_label,
@@ -114,6 +115,32 @@ def test_generate_sample_population_deterministic_and_covers_vocab():
     assert pop_a == pop_b
     occupations_seen = {s["profile"]["occupation"] for s in pop_a}
     assert occupations_seen == set(OCCUPATIONS)
+
+
+def test_prompt_fields_format():
+    profile = {"occupation": "guard", "age": 30, "gender": "male",
+               "traits": {"warmth": 90, "humor": 85, "impulsivity": 70,
+                          "bravery": 55, "focus": 30}}
+    relationship = {"familiarity": 1.0, "affection": 1.0, "trust": 1.0, "respect": 1.0}
+    prompt = prompt_fields(profile, relationship, "cheerful", "greeting")
+    assert prompt == "P:man AGE:30 D:sassy OCC:guard R:best_friend M:cheerful C:greeting EV:none|"
+    # every space-separated token carries its own colon (ContextBuilder's
+    # existing N:/TR:/M:/C:/EV: parsing convention)
+    for tok in prompt.rstrip("|").split(" "):
+        assert ":" in tok
+
+
+def test_prompt_fields_multiword_person_token_underscored():
+    # age_gender_token can return "elderly woman"/"elderly man" -- must not
+    # break the one-token-per-space rule.
+    profile = {"occupation": "healer", "age": 70, "gender": "female",
+               "traits": {"warmth": 50, "humor": 50, "impulsivity": 50,
+                          "bravery": 50, "focus": 50}}
+    relationship = {"familiarity": 0.0, "affection": 0.0, "trust": 0.0, "respect": 0.0}
+    prompt = prompt_fields(profile, relationship, "worried", "farewell", "heading_home")
+    assert "P:elderly_woman " in prompt
+    for tok in prompt.rstrip("|").split(" "):
+        assert ":" in tok
 
 
 def test_generate_sample_population_different_seed_differs():
