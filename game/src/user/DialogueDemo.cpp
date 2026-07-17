@@ -33,6 +33,7 @@
 #include "WorldState.h"
 #include "NPCDatabase.h"
 #include "ContextBuilder.h"
+#include "NpcService.h"
 
 // ---- M6.1 RSP MATVEC BACKEND -------------------------------------------
 // The engine's ngpt_set_matvec hook, backed by the rsp_ngpt overlay
@@ -124,7 +125,12 @@ namespace
   ngpt_model model{};
   ngpt_ctx ctx{};
   char text[512]{};
-  char prompt[64]{};
+  // >=96 bytes per NpcService::buildPromptFields()'s contract (the new
+  // P:/D:/OCC:/R:/M:/C:/EV: schema runs longer than ContextBuilder's old
+  // N:/TR: one -- e.g. Fergus + a long context/event can reach ~105
+  // chars); 64 was sized for the old schema only and would have silently
+  // truncated the actual conditioning string for the new cast (M9).
+  char prompt[128]{};
   uint32_t textLen{};
   uint32_t pageStart{};  // draw() windows text[pageStart..] one page at a time
   int trustTier{}, moodIdx{}, contextIdx{};
@@ -169,20 +175,50 @@ namespace
   #endif
   // ---- TEMP ATTRACT MODE (END) ----------------------------------------
 
+  // M9: the curated compositional cast (trainer/ngpt_trainer/cast_corpus.py
+  // CHARACTERS, byte-for-byte the same traits/occupation/age/gender that
+  // were actually trained) -- conditioned via NpcService::buildPromptFields()
+  // (P:/D:/OCC:/R:/M:/C:/EV:), not ContextBuilder's old N:/TR: schema.
+  // "BRAM" deliberately reuses one of M8's own GUARD_NAMES (docs/milestones/
+  // m9.md section 4): the same character, speaking through both schemas,
+  // demonstrating the new one works without inventing a fresh identity.
+  constexpr int NEW_CAST_COUNT = 3;
+  const char *const NEW_CAST_NAMES[NEW_CAST_COUNT] = { "BRAM", "FERGUS", "KRAGAN" };
+  const NpcService::Profile NEW_CAST[NEW_CAST_COUNT] = {
+    { "guard",     35, NpcService::Gender::Male, {30, 15, 20, 80, 70} },
+    { "innkeeper", 62, NpcService::Gender::Male, {80, 75, 50, 50, 40} },
+    { "bandit",    45, NpcService::Gender::Male, {20, 15, 40, 55, 60} },
+  };
+
   // M8 task #11: which NPC the demo is currently talking to. 0 = Selena
   // (full character, M7), 1..GUARD_INSTANCE_COUNT = guardInstances[n-1]
-  // (archetype instances, M8) — cycled with START. Context cycling (below)
+  // (archetype instances, M8), then NEW_CAST_COUNT more = the M9
+  // compositional cast — cycled with START. Context cycling (below)
   // stays universal across all 8 CONTEXTS regardless of NPC: guard's own
   // corpus only trained 3 of them (guard_corpus.py's GUARD_CONTEXTS), so
   // an untrained combo on a guard is an honest demonstration of the
   // archetype's limits, not a bug to special-case away — this demo exists
   // to show the mechanism working, not to re-run the trainer's eval.
+  constexpr int NPC_SLOT_COUNT = 1 + NPCDatabase::GUARD_INSTANCE_COUNT + NEW_CAST_COUNT;
   int currentNpc{};
+
+  bool isNewCastSlot() { return currentNpc >= 1 + NPCDatabase::GUARD_INSTANCE_COUNT; }
 
   NPCDatabase::NPC &activeNpc()
   {
     return currentNpc == 0 ? NPCDatabase::selena
                            : NPCDatabase::guardInstances[currentNpc - 1];
+  }
+
+  // trustTier (0/1/2, the demo's existing D-pad control) maps onto 3 of
+  // NpcService's 6 relationship tiers -- stranger/neutral/best_friend --
+  // reusing the existing control scheme rather than adding a 4th D-pad
+  // axis just for the new cast. Uniform axes at the tier midpoint, same
+  // convention as trainer/ngpt_trainer/m9_corpus.py's _relationship_state().
+  NpcService::RelationshipState relationshipForTrustTier(int tier)
+  {
+    uint16_t v = tier == 0 ? 100 : tier == 1 ? 500 : 975;
+    return { v, v, v, v, 0 };
   }
 
   // M7: the demo's own trust/mood/context cycling drives the Context
@@ -194,6 +230,16 @@ namespace
   // scene exists to show the live mechanism working, not to re-run eval.
   void buildPrompt()
   {
+    if(isNewCastSlot()) {
+      const NpcService::Profile &profile =
+        NEW_CAST[currentNpc - 1 - NPCDatabase::GUARD_INSTANCE_COUNT];
+      NpcService::RelationshipState rel = relationshipForTrustTier(trustTier);
+      NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
+                                    NPCDatabase::MOODS[moodIdx],
+                                    NPCDatabase::CONTEXTS[contextIdx],
+                                    EventBus::lastTag());
+      return;
+    }
     NPCDatabase::NPC &npc = activeNpc();
     npc.trustTier = trustTier;
     npc.moodIdx = moodIdx;
@@ -377,7 +423,7 @@ namespace P64::Script::C64D1A106DE00001
     if(pressed.d_left) { moodIdx    = cycle(moodIdx, -1, NPCDatabase::MOOD_COUNT); changed = true; }
     if(pressed.c_right){ contextIdx = cycle(contextIdx, +1, NPCDatabase::CONTEXT_COUNT); changed = true; }
     if(pressed.c_left) { contextIdx = cycle(contextIdx, -1, NPCDatabase::CONTEXT_COUNT); changed = true; }
-    if(pressed.start) { currentNpc = cycle(currentNpc, +1, 1 + NPCDatabase::GUARD_INSTANCE_COUNT); changed = true; }
+    if(pressed.start) { currentNpc = cycle(currentNpc, +1, NPC_SLOT_COUNT); changed = true; }
     if(pressed.a || changed)restartGeneration();
     if(pressed.b) {
       uint32_t next = pageStart + TEXT_CHARS_PER_PAGE;
@@ -460,24 +506,28 @@ namespace P64::Script::C64D1A106DE00001
         char npcLine[40];
         if(currentNpc == 0)
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - SELENA (M7)");
+        else if(isNewCastSlot())
+          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M9 CAST)",
+                   NEW_CAST_NAMES[currentNpc - 1 - NPCDatabase::GUARD_INSTANCE_COUNT]);
         else
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M8 GUARD)",
                    activeNpc().name);
         Debug::print(24, 40, npcLine);
       }
 
-      // prompt/seed line: wrap across up to 2 rows so a long schema string
-      // (e.g. a long context/event name) doesn't silently run off the
-      // right edge of the screen -- same fix as the dialogue box below,
-      // simpler because prompt[] is capped at 64 chars (<=2 WRAP_COLS
-      // rows). Fixed 2-row reservation even when the prompt is short, so
-      // everything below stays at a constant position.
+      // prompt/seed line: wrap across up to 3 rows (102 chars) so a long
+      // schema string (e.g. a long context/event name, or M9's longer
+      // P:/D:/OCC:/R:/M:/C:/EV: schema vs. the old N:/TR: one) doesn't
+      // silently run off the right edge of the screen -- same fix as the
+      // dialogue box below. Fixed 3-row reservation even when the prompt
+      // is short, so everything below (STEP line at y=90) stays at a
+      // constant position.
       {
         size_t promptLen = strlen(prompt);
         char prow[WRAP_COLS + 1];
         size_t ppos = 0;
         int py = 60;
-        while(ppos < promptLen && py <= 70) {
+        while(ppos < promptLen && py <= 80) {
           size_t n = 0;
           while(n < WRAP_COLS && ppos < promptLen)prow[n++] = prompt[ppos++];
           prow[n] = '\0';

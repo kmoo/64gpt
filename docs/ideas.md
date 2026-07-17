@@ -93,6 +93,17 @@ Combined with idea 4 it yields actual back-and-forth *conversation* on
 the N64 — likely the single biggest wow-per-effort on this list.
 **Medium effort (mostly corpus + retrain), low risk.**
 
+**Caution, added 2026-07-17 (M9 session):** the intent-grouped design
+above (a small trained pool of plausible utterances, not raw open text)
+turns out to matter more than it looked when this was written — M9's
+first compositional-corpus attempt tried something closer to true
+open-vocabulary freeform text (130 near-unique LLM-generated personas)
+and the trained model produced visibly garbled spelling, traced to too
+little repetition per word at this model's tiny size (~394K params).
+Build this idea with the SAY= vocabulary as constrained/repeated as the
+intent groups above already imply — resist the temptation to widen it
+to genuinely free text later without re-checking corpus density first.
+
 ---
 
 Recommended first bites: **2 + 3 + 5** (near-immediate, transform the

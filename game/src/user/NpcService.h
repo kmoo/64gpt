@@ -80,8 +80,8 @@ namespace NpcService
   // Writes into out (must be >= 96 bytes), NUL-terminates. Returns the
   // written length excluding the NUL.
   //
-  // "P:girl AGE:12 D:sassy OCC:villager R:best_friend M:cheerful
-  //  C:greeting EV:none|"
+  // "P:girl D:sassy OCC:villager R:best_friend M:cheerful C:greeting
+  //  EV:none|"
   uint32_t buildPromptFields(char *out, uint32_t outCap, const Profile &profile,
                               const RelationshipState &relationship,
                               const char *mood, const char *context,

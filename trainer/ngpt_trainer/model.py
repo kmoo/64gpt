@@ -280,6 +280,15 @@ def train_corpus_conditioned(train_pairs: list[tuple[str, str]],
             loss = loss_fn(logits.reshape(-1, len(vocab)),
                            targets.reshape(-1).to(device))
             loss.backward()
+            # RNN gradients can explode on a single bad batch (M9's first
+            # H=320 run: val loss jumped 18x uniformly across the whole
+            # held-out set in one epoch -- the signature of a corrupting
+            # Adam step, not a data artifact, since a bad batch would only
+            # perturb the specific conditions it touched, not everything).
+            # Clipping is a no-op when gradients are already small (M7/M8's
+            # smaller, cleaner corpora never needed it), so this doesn't
+            # change their existing determinism.
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             opt.step()
         v = val_loss()
         print(f"epoch {epoch}: val loss {v:.4f}", flush=True)

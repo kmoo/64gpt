@@ -47,7 +47,7 @@ int main()
     Profile p{"villager", 12, Gender::Female, {90, 85, 70, 55, 30}};
     RelationshipState r{fx(1.0), fx(1.0), fx(1.0), fx(1.0), fx(0.0)};
     expect_prompt("selena calibration", p, r, "cheerful", "greeting", "",
-                  "P:girl AGE:12 D:sassy OCC:villager R:best_friend M:cheerful C:greeting EV:none|");
+                  "P:girl D:sassy OCC:villager R:best_friend M:cheerful C:greeting EV:none|");
   }
 
   // Elderly multi-word person-token, non-empty event, stranger tier.
@@ -55,7 +55,7 @@ int main()
     Profile p{"healer", 70, Gender::Male, {20, 20, 20, 80, 85}};
     RelationshipState r{fx(0.0), fx(0.0), fx(0.0), fx(0.0), fx(0.5)};
     expect_prompt("elderly stranger", p, r, "worried", "farewell", "heading_home",
-                  "P:elderly_man AGE:70 D:gruff OCC:healer R:stranger M:worried C:farewell EV:heading_home|");
+                  "P:elderly_man D:gruff OCC:healer R:stranger M:worried C:farewell EV:heading_home|");
   }
 
   // Real sampled profiles (random_npc_profile/random_relationship_state
@@ -65,49 +65,49 @@ int main()
     Profile p{"bandit", 54, Gender::Male, {54, 35, 61, 45, 93}};
     RelationshipState r{fx(0.939), fx(0.09), fx(0.661), fx(0.797), fx(0.495)};
     expect_prompt("sampled seed=1", p, r, "sassy", "combat-banter", "",
-                  "P:man AGE:54 D:focused OCC:bandit R:friend M:sassy C:combat-banter EV:none|");
+                  "P:man D:focused OCC:bandit R:friend M:sassy C:combat-banter EV:none|");
   }
   {
     Profile p{"wizard", 60, Gender::Male, {10, 1, 43, 100, 46}};
     RelationshipState r{fx(0.083), fx(0.256), fx(0.808), fx(0.38), fx(0.901)};
     expect_prompt("sampled seed=7", p, r, "sassy", "combat-banter", "",
-                  "P:elderly_man AGE:60 D:gruff OCC:wizard R:acquaintance M:sassy C:combat-banter EV:none|");
+                  "P:elderly_man D:gruff OCC:wizard R:acquaintance M:sassy C:combat-banter EV:none|");
   }
   {
     Profile p{"villager", 33, Gender::Male, {49, 97, 70, 42, 48}};
     RelationshipState r{fx(0.282), fx(0.715), fx(0.665), fx(0.158), fx(0.831)};
     expect_prompt("sampled seed=42", p, r, "sassy", "combat-banter", "",
-                  "P:man AGE:33 D:sassy OCC:villager R:neutral M:sassy C:combat-banter EV:none|");
+                  "P:man D:sassy OCC:villager R:neutral M:sassy C:combat-banter EV:none|");
   }
   {
     Profile p{"farmer", 62, Gender::Female, {13, 19, 38, 4, 81}};
     RelationshipState r{fx(0.133), fx(0.148), fx(0.675), fx(0.524), fx(0.978)};
     expect_prompt("sampled seed=1000", p, r, "sassy", "combat-banter", "",
-                  "P:elderly_woman AGE:62 D:stoic OCC:farmer R:acquaintance M:sassy C:combat-banter EV:none|");
+                  "P:elderly_woman D:stoic OCC:farmer R:acquaintance M:sassy C:combat-banter EV:none|");
   }
   {
     Profile p{"merchant", 80, Gender::Male, {54, 27, 67, 60, 67}};
     RelationshipState r{fx(0.187), fx(0.686), fx(0.089), fx(0.124), fx(0.945)};
     expect_prompt("sampled seed=99999", p, r, "sassy", "combat-banter", "",
-                  "P:elderly_man AGE:80 D:serious OCC:merchant R:acquaintance M:sassy C:combat-banter EV:none|");
+                  "P:elderly_man D:serious OCC:merchant R:acquaintance M:sassy C:combat-banter EV:none|");
   }
   {
     Profile p{"damsel", 31, Gender::Female, {13, 89, 96, 41, 28}};
     RelationshipState r{fx(0.341), fx(0.991), fx(0.638), fx(0.903), fx(0.44)};
     expect_prompt("sampled seed=0xC0FFEE", p, r, "sassy", "combat-banter", "",
-                  "P:woman AGE:31 D:sassy OCC:damsel R:friend M:sassy C:combat-banter EV:none|");
+                  "P:woman D:sassy OCC:damsel R:friend M:sassy C:combat-banter EV:none|");
   }
   {
     Profile p{"wizard", 7, Gender::Female, {10, 67, 62, 6, 16}};
     RelationshipState r{fx(0.775), fx(0.283), fx(0.074), fx(0.421), fx(0.982)};
     expect_prompt("sampled seed=0xDEADBEEF", p, r, "sassy", "combat-banter", "",
-                  "P:girl AGE:7 D:anxious OCC:wizard R:acquaintance M:sassy C:combat-banter EV:none|");
+                  "P:girl D:anxious OCC:wizard R:acquaintance M:sassy C:combat-banter EV:none|");
   }
   {
     Profile p{"wizard", 12, Gender::Female, {63, 4, 91, 9, 54}};
     RelationshipState r{fx(0.668), fx(0.54), fx(0.45), fx(0.961), fx(0.742)};
     expect_prompt("sampled seed=55555", p, r, "sassy", "combat-banter", "",
-                  "P:girl AGE:12 D:serious OCC:wizard R:friend M:sassy C:combat-banter EV:none|");
+                  "P:girl D:serious OCC:wizard R:friend M:sassy C:combat-banter EV:none|");
   }
 
   // Every space-separated prompt token must carry its own colon

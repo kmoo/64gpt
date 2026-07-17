@@ -460,3 +460,117 @@ a handful of values each, measured with the same divergence methodology
 M7/M8 already use) before committing real corpus budget to it — same
 discipline as every other conditioning-mechanism change on this
 project.
+
+## Part 4 — player reputation as global state (2026-07-17, during M9)
+
+A gap check against this doc during M9's corpus-quality debugging: most
+of what "an amazing NPC system" needs turned out to already be recorded
+here (continuity-of-existence over model size, gossip via EventBus now
+scheduled as M11's headline feature, event-specific memory in Part 1's
+"Memory strength/Emotional residue/Corruption" sketch). Two things
+genuinely aren't recorded anywhere yet:
+
+**Player reputation — global, not per-NPC.** Part 3's Relationship State
+is explicitly scoped as relationship-*to-the-player*, one vector per
+NPC (O(N), not a social graph). Reputation is a different axis entirely:
+a single shared value ("Hero," "Thief," "Stranger") that *every* NPC's
+conditioning can read, independent of whether that specific NPC has
+ever met the player. A guard who's never spoken to you before could
+still greet you differently if you're locally famous — relationship
+state alone can't express that (it's undefined for a stranger by
+design), reputation can. Cheap to store (one global int, not O(N)) but
+raises the same combo-grid concern Part 3 already flagged for
+relationship axes: another schema field multiplies the training combo
+grid, and needs its own divergence-methodology check before committing
+corpus budget, not assumed to be free just because storage is cheap.
+
+**Time-of-day** is actually already *listed* in Part 3's "World Context"
+bullet ("events, items, location, quest state, time, weather, mood...")
+but that was aspirational, not built — no `T:` field exists in the
+current schema, and nothing computes or feeds time-of-day into
+`ContextBuilder` today. Flagging that the doc already claimed this as
+"already built" when it wasn't concretely wired — worth fixing that
+claim's precision next time this doc gets revised, not just adding it
+to the pile of future ideas.
+
+Neither is scheduled or scoped into any milestone yet — recorded here
+so they don't get lost, same as everything else in this doc.
+
+### More candidate conditioning variables (brainstormed same session)
+
+Checked against the existing list (mood/context/event/relationship/
+reputation/time/weather/topic/danger/nearby-NPCs) to avoid duplicates.
+None of these are scoped or costed yet — same combo-grid-multiplication
+caveat as every axis above applies before committing corpus budget to
+any of them:
+
+- **Player's visible gear/appearance** — fine armor vs. rags changes how
+  a guard or merchant opens a conversation, independent of actual
+  reputation (a well-dressed thief still gets the polite greeting).
+- **NPC's own current condition** — tired, injured, drunk, mid-task —
+  separate from fixed personality; a normally-cheerful innkeeper reads
+  differently after a long night. Distinct from Part 1's "emotional
+  residue" (that's reaction to the player specifically; this is the
+  NPC's own independent state).
+- **Location atmosphere** — festive (festival day), tense (recent
+  crime), abandoned — a property of the *place*, not the NPC's personal
+  mood; the same NPC could read differently depending on where the
+  conversation happens.
+- **Visit frequency, not just depth** — a regular daily visitor vs.
+  someone who shows up once a season. Distinct from relationship
+  "familiarity" (Part 3), which tracks depth/duration, not cadence —
+  two players could reach the same familiarity score via very different
+  visit patterns and that difference is currently invisible to the NPC.
+- **NPC's active want/need** — a merchant who needs a specific item and
+  reacts specially if the player happens to be carrying it, tying
+  dialogue to real inventory/quest state rather than just vibes.
+- **Player's current health/danger in the moment** — distinct from a
+  past `EVENT_TOOK_DAMAGE` (already covered): an NPC noticing you're
+  visibly near death *right now*, not reacting to something that
+  happened earlier.
+- **Reputation vs. actual behavior divergence** — Part 4's reputation
+  idea and a player's real tracked behavior could be tracked as two
+  separate values that sometimes *contradict* (secretly stealing but
+  never caught = good reputation, bad behavior) — narratively richer
+  than either alone, an NPC who "just has a feeling" about you despite
+  your clean public record.
+
+**Explicitly reconsidered and still ruled out**: NPC-to-NPC
+relationships (a guard who resents a specific merchant) — tempting, but
+Part 3 already scoped this out on cost grounds (O(N²) social graph vs.
+O(N) player-relationship state) and nothing about this session changes
+that math.
+
+### Player actions as a state-mutation source, not just a generation input
+
+The player should be able to *change* an NPC's mood/relationship state
+mid-conversation, not just receive dialogue conditioned on it — saying
+something kind to an angry NPC calms them down; giving a gift raises
+affection. This is the missing connective tissue between two ideas
+already recorded separately:
+
+- `docs/ideas.md` idea #11 (free-text player replies): a `SAY=` slot
+  lets the player's typed/chosen words steer what the NPC says *next*,
+  grouped by intent (apology, kindness, aggression, ...) — but as
+  designed, that's a one-turn effect. Nothing about it persists.
+- This doc's Part 3 "missing piece" (the update/decay system): designed
+  so far only for *world/quest* events (`EVENT_PLAYER_STOLE_ITEM` →
+  `trust -0.4`) — dialogue choices were never wired in as an event
+  source, only things the game engine does to the player independent of
+  conversation.
+
+The fix is treating a recognized `SAY=` intent as just another event
+type the same update/decay system already has to handle — a kind word
+is `EVENT_PLAYER_WAS_KIND` the same way stealing is
+`EVENT_PLAYER_STOLE_ITEM`, both feeding the same `affection +/-, trust
++/-` mutation pipeline, one from a world action, one from a
+conversational choice. No new mechanism needed once the update/decay
+system exists — this is a scoping note (dialogue choices are in-scope
+as an event source, not a separate system) more than a new build item.
+Giving an item likely routes through the *existing* item/inventory
+event path rather than needing dialogue-specific plumbing at all.
+
+Still gated on the same "missing piece" both source ideas already
+flagged as not yet designed — this doesn't unblock it, it just says the
+eventual design needs to cover both event sources from day one instead
+of bolting dialogue-driven mutation on as an afterthought later.

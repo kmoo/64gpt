@@ -50,6 +50,31 @@ long survives.
   Raised 2026-07-17 during M8 corpus work; not required for M8's own DoD
   (3-4 named instances in one demo scene), but M10 shouldn't start
   procedural spawning without addressing it.
+- **M9's capacity-dilution density sweep was never re-run under
+  compositional conditioning.** M8's Data Science Review measured a real
+  trade-off (guard density up, Selena val loss up) using a density
+  sweep methodology; M9's whole premise is that compositional features
+  reduce that trade-off, but the DoD item requiring the same sweep
+  re-run under the new scheme was never done (real additional work —
+  multiple retrains at different M9 corpus densities — out of scope for
+  the time available in the session that built M9). `generalization_check()`'s
+  3 held-out combos is a related but different, lighter check (does it
+  generalize at all, not how the trade-off curve moves with density) —
+  does not substitute for this. Raised 2026-07-17 during M9;
+  `docs/milestones/m9.md`'s own DoD.
+- **M9's generated text coherence is inconsistent, unresolved.** Trained
+  H=320 model (curated cast, template-grammar corpus, gradient clipping)
+  measurably improved over an earlier freeform-LLM-corpus attempt (val
+  loss, agreement, judge scores) but still produces visibly garbled
+  output some of the time, confirmed live on real hardware for one of
+  three cast members (Kragan) even after the fix. Root cause not fully
+  diagnosed — corpus density improved substantially but may still be
+  insufficient for this model's ~400K-param budget, or there's a
+  separate contributing factor not yet identified. M10/M11 should not
+  assume M9's mechanism produces reliably coherent text without
+  addressing this first. Raised 2026-07-17 during M9;
+  `docs/milestones/m9.md` section 4 and DoD have the full investigation
+  history.
 
 **Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost

@@ -109,8 +109,8 @@ namespace NpcService
     const char *ev = (event && event[0]) ? event : "none";
 
     int n = snprintf(out, outCap,
-                      "P:%s AGE:%d D:%s OCC:%s R:%s M:%s C:%s EV:%s|",
-                      person, profile.age, descriptor, profile.occupation,
+                      "P:%s D:%s OCC:%s R:%s M:%s C:%s EV:%s|",
+                      person, descriptor, profile.occupation,
                       tier, mood, context, ev);
     if(n < 0)
     {

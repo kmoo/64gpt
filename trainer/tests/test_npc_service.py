@@ -123,7 +123,7 @@ def test_prompt_fields_format():
                           "bravery": 55, "focus": 30}}
     relationship = {"familiarity": 1.0, "affection": 1.0, "trust": 1.0, "respect": 1.0}
     prompt = prompt_fields(profile, relationship, "cheerful", "greeting")
-    assert prompt == "P:man AGE:30 D:sassy OCC:guard R:best_friend M:cheerful C:greeting EV:none|"
+    assert prompt == "P:man D:sassy OCC:guard R:best_friend M:cheerful C:greeting EV:none|"
     # every space-separated token carries its own colon (ContextBuilder's
     # existing N:/TR:/M:/C:/EV: parsing convention)
     for tok in prompt.rstrip("|").split(" "):
@@ -147,3 +147,32 @@ def test_generate_sample_population_different_seed_differs():
     pop_a = generate_sample_population(20, seed=1)
     pop_b = generate_sample_population(20, seed=2)
     assert pop_a != pop_b
+
+
+def test_guard_archetype_range_produces_plausible_labels():
+    # docs/milestones/m9.md Data Science Review: the blend rules are
+    # hand-authored heuristics calibrated on one point (Selena). Before
+    # trusting them for corpus generation at scale, sample across a real
+    # archetype's actual trait-range box -- GUARD_ARCHETYPE.ranges,
+    # game/src/user/NPCDatabase.cpp -- and confirm the labels stay
+    # guard-plausible (stern/reserved), never something wildly off-voice
+    # like "bubbly" or "chaotic".
+    ranges = {
+        "warmth": (20, 45), "humor": (5, 30), "impulsivity": (10, 35),
+        "bravery": (60, 90), "focus": (55, 85),
+    }
+    plausible = {"gruff", "stoic", "measured", "cold", "serious", "careful"}
+    seen = set()
+    rng = 1
+    for seed in range(1, 501):
+        rng = seed
+        traits = {}
+        for name in TRAITS:
+            lo, hi = ranges[name]
+            rng = xorshift32(rng)
+            traits[name] = lo + (rng % (hi - lo + 1))
+        label = personality_descriptor(traits)
+        seen.add(label)
+        assert label in plausible, (
+            f"guard-range traits {traits} produced off-voice label {label!r}")
+    assert "gruff" in seen  # the dominant label at this range, not just a rare edge case

@@ -2,11 +2,19 @@
 """Build the M9 blob, golden vectors, and ROM self-test header: Selena +
 guard (M7/M8, unchanged corpora, for non-regression) plus M9's
 compositional-conditioning corpus, trained fresh at H=320 -- the first
-model this project ships with the new P:/AGE:/D:/OCC:/R:/M:/C:/EV:
-prompt schema, replacing M7/M8's opaque N:<id> tag entirely (M8's own
-N: prompts stay in the training MIX for non-regression coverage of the
-old schema's characters, but the NEW schema's compositional strings are
-what M9 is actually testing). See docs/milestones/m9.md.
+model this project ships with the new P:/D:/OCC:/R:/M:/C:/EV: prompt
+schema, replacing M7/M8's opaque N:<id> tag entirely (M8's own N:
+prompts stay in the training MIX for non-regression coverage of the old
+schema's characters, but the NEW schema's compositional strings are what
+M9 is actually testing). See docs/milestones/m9.md.
+
+**Corpus generation, attempt #2**: cast_corpus.py (a curated named cast,
+Bram/Fergus/Kragan + Selena, template-grammar generated) replaces
+attempt #1's m9_corpus.py (130 freeform-LLM-generated personas, still
+present in the repo as a documented negative finding -- see m9.md
+section 4). Attempt #1's trained-model output measurably garbled
+(LLM-judge coherence 3.36/5 vs. the corpus's own 4.75/5); traced to
+~1,300 chars/persona vs. guard's own proven-working ~123K/instance.
 
 **Catastrophic-interference check**: same discipline as make_m8_blob.py
 -- Selena's val loss/divergence recomputed here and printed next to
@@ -16,15 +24,14 @@ her voice without someone noticing.
 **New gate -- generalization check (the actual M9 hypothesis test)**:
 docs/milestones/m9.md's Data Science Review specifically flags that
 "the capacity-dilution hypothesis needs its own falsification test, not
-just a plausibility argument." m9_corpus.py's combo-level holdout
-(~18% of (occupation, descriptor) pairs, never in training) is exactly
-that test: this script generates output for a sample of held-out
-combos and checks it isn't degenerate -- non-empty, not wildly long,
-not a verbatim copy of a trained combo's lines. This does NOT replace
-the LLM-judge pass (llm_judge.py, run separately) for actual voice
-quality on these unseen combos; it's the fast, automated half of the
-same question, same relationship divergence gates have to the LLM-
-judge's own text-quality read (m9.md section 5).
+just a plausibility argument." cast_corpus.py's HOLDOUT_COMBOS (3
+(occupation, descriptor) pairs, deliberately never generated anywhere,
+including in the axis-crossing draws) is exactly that test: this script
+generates output for those held-out combos and checks it isn't
+degenerate -- non-empty, not wildly long. This does NOT replace a real
+voice-quality read on these unseen combos; it's the fast, automated
+half of the same question, same relationship divergence gates have to
+text-quality judgment (m9.md section 5).
 
 Training is cached in trainer/.m9_model.pt (git-ignored); delete it to
 retrain. Run: uv run python make_m9_blob.py   (from trainer/)
@@ -37,8 +44,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from ngpt_trainer import cast_corpus as cc
 from ngpt_trainer import guard_corpus as gc
-from ngpt_trainer import m9_corpus as m9c
 from ngpt_trainer import selena_corpus as sc
 from ngpt_trainer.divergence import cross_set_divergence
 from ngpt_trainer.export import build_blob, trace_bytes
@@ -76,8 +83,8 @@ def build_all_pairs():
     selena_pairs = sc.generate_pairs(seed=SEED, per_combo=PER_COMBO)
     thin_pairs = sc.generate_thin_identity_pairs(seed=1000)
     guard_pairs = gc.generate_pairs(seed=SEED, per_combo=GUARD_PER_COMBO)
-    m9c.assert_no_holdout_leak()
-    m9_pairs = m9c.generate_pairs()
+    m9_pairs = cc.generate_pairs(seed=SEED)
+    cc.assert_no_holdout_leak(m9_pairs)
     return selena_pairs, thin_pairs, guard_pairs, m9_pairs
 
 
@@ -141,13 +148,13 @@ def curated_golden_combos():
     return combos
 
 
-def m9_golden_prompts(raw: list[dict], n: int = 6, seed: int = SAMPLE_SEED) -> list[str]:
-    """A spread of TRAINED (not held-out) M9 prompts for the self-test."""
-    from ngpt_trainer.npc_service import prompt_fields
+def m9_golden_prompts(m9_pairs: list[tuple[str, str]], n: int = 6,
+                      seed: int = SAMPLE_SEED) -> list[str]:
+    """A spread of TRAINED (not held-out) M9 prompts for the self-test --
+    sampled directly from cast_corpus's own generated pairs."""
     rng = random.Random(seed)
-    sample = rng.sample(raw, min(n, len(raw)))
-    return [prompt_fields(e["persona"], m9c._relationship_state(e["tier"]),
-                          e["mood"], e["context"]) for e in sample]
+    sample = rng.sample(m9_pairs, min(n, len(m9_pairs)))
+    return [prompt for prompt, _ in sample]
 
 
 def conditioning_divergence_table(q, vocab, held_combos) -> dict[str, float]:
@@ -184,39 +191,32 @@ def conditioning_divergence_table(q, vocab, held_combos) -> dict[str, float]:
 
 def generalization_check(q, vocab, seed: int = SAMPLE_SEED) -> list[dict]:
     """The real M9 hypothesis test: generate for held-out (occupation,
-    descriptor) combos the model NEVER trained on, and report whether
-    the output is at least non-degenerate. Full voice-quality judgment
-    is llm_judge.py's job (run separately against this same combo list)
-    -- this is the fast automated half."""
+    descriptor) combos the model NEVER trained on (cast_corpus.
+    HOLDOUT_COMBOS -- excluded even from the axis-crossing draws), and
+    report whether the output is at least non-degenerate. Full
+    voice-quality judgment is a separate manual/LLM-judge read; this is
+    the fast automated half."""
     from ngpt_trainer.npc_service import prompt_fields, random_relationship_state
-    held = m9c.holdout_pairs()
+    held = cc.holdout_pairs()
     rng = random.Random(seed ^ 0xF00D)
     sample = rng.sample(held, min(GENERALIZATION_SAMPLE_SIZE, len(held)))
 
+    # occupation -> a real trained character with that occupation; only
+    # its D: gets relabeled to the held-out descriptor, exactly the same
+    # technique cast_corpus.generate_pairs() uses for its crossed lines.
+    profile_by_occ = {p["occupation"]: p for p in cc.CHARACTERS.values()}
+
     results = []
     for occupation, descriptor in sample:
-        # Reconstruct a plausible profile matching this held-out combo --
-        # any age/gender/mood/context works, only occupation+descriptor
-        # need to match the withheld pair exactly.
-        traits = {"warmth": 50, "humor": 50, "impulsivity": 50, "bravery": 50, "focus": 50}
-        # Nudge traits toward the target descriptor by trying a few seeds.
-        profile = {"occupation": occupation, "age": 30, "gender": "female", "traits": traits}
-        for trial_seed in range(200):
-            trial_traits = {}
-            trng = trial_seed + 1
-            for name in traits:
-                trng = (trng * 1103515245 + 12345) & 0xFFFFFFFF
-                trial_traits[name] = trng % 101
-            if personality_descriptor(trial_traits) == descriptor:
-                profile["traits"] = trial_traits
-                break
-
+        profile = profile_by_occ[occupation]
+        real_descriptor = personality_descriptor(profile["traits"])
         # Python's hash() on strings is randomized per-process by default
         # (PYTHONHASHSEED) -- must not be used anywhere a reproducible
         # seed is required. A trivial deterministic checksum instead.
         combo_checksum = sum(ord(c) for c in occupation + descriptor)
         rel = random_relationship_state(seed + combo_checksum)
         prompt = prompt_fields(profile, rel, "cheerful", "greeting")
+        prompt = prompt.replace(f"D:{real_descriptor} ", f"D:{descriptor} ")
         got = generate_sampled(q, vocab, prompt, seed=seed, inv_t_q8=INV_T_Q8, top_k=TOP_K)
         degenerate = not (1 <= len(got) <= MAX_GOLDEN_LEN)
         results.append({"occupation": occupation, "descriptor": descriptor,
@@ -279,14 +279,14 @@ def main() -> None:
     full_text = (sc.corpus_text(seed=SEED, per_combo=PER_COMBO)
                 + "".join(p + r for p, r in thin_pairs)
                 + "".join(p + r for p, r in guard_pairs)
-                + m9c.combo_text())
+                + cc.corpus_text(seed=SEED))
     vocab = Vocab.from_text(full_text)
     print(f"corpus: {len(selena_pairs)} selena + {len(thin_pairs)} thin-identity + "
          f"{len(guard_pairs)} guard + {len(m9_pairs)} M9 compositional pairs "
          f"({len(full_text)} chars, {len(full_text)/1e6:.2f} MB)")
     print(f"combo split: {len(train_pairs)} train-combo lines, {len(val_pairs)} "
          f"held-out-combo lines, {len(held_combos)} combos held out of Selena's 120")
-    print(f"M9 combo-level holdout: {len(m9c.holdout_pairs())} (occupation, "
+    print(f"M9 combo-level holdout: {len(cc.holdout_pairs())} (occupation, "
          f"descriptor) pairs never in training")
     print(f"vocab: {len(vocab)} symbols (incl EOS)")
 
@@ -302,7 +302,6 @@ def main() -> None:
         print(f"FATAL: agreement {agree:.4f} < {MIN_AGREEMENT}")
         sys.exit(1)
 
-    raw_m9 = m9c.load_raw()
     golden_combos = curated_golden_combos()
     golden_pairs = []
     for combo in golden_combos:
@@ -322,7 +321,7 @@ def main() -> None:
             sys.exit(1)
         golden_pairs.append((prompt, got))
 
-    for prompt in m9_golden_prompts(raw_m9):
+    for prompt in m9_golden_prompts(m9_pairs):
         got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
                                inv_t_q8=INV_T_Q8, top_k=TOP_K)
         print(f"  {prompt}{got}")
@@ -342,9 +341,10 @@ def main() -> None:
              f"well below her mood divergence ({div_table['mood']:.4f}) — possible "
              f"catastrophic interference from the M9 corpus addition.")
 
-    print(f"\ngeneralization check ({GENERALIZATION_SAMPLE_SIZE} held-out "
-         f"(occupation, descriptor) combos, never seen in training):")
     gen_results = generalization_check(q, vocab)
+    print(f"\ngeneralization check ({len(gen_results)} held-out "
+         f"(occupation, descriptor) combos, never seen anywhere in training "
+         f"including axis-crossing draws):")
     degenerate_count = sum(1 for r in gen_results if r["degenerate"])
     for r in gen_results:
         flag = "DEGENERATE" if r["degenerate"] else "ok"
@@ -355,8 +355,9 @@ def main() -> None:
     if degenerate_count > len(gen_results) // 2:
         print(f"WARNING: more than half of held-out combos degenerated — the "
              f"compositional-generalization hypothesis is NOT supported by this "
-             f"run. Run llm_judge.py against these specific outputs for the "
-             f"actual voice-quality read before drawing conclusions.")
+             f"run. Read these specific outputs directly before drawing "
+             f"conclusions -- non-degenerate (length-bound) is not the same "
+             f"claim as coherent.")
 
     blob = build_blob(q, vocab)
     targets = {

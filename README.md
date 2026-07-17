@@ -58,7 +58,7 @@ The on-console proof is re-verified continuously:
       (`docs/milestones/m6.1.md`)
 - [x] **M7** — ROM v1.2: first living NPC, Selena — Event Bus + Shared
       World State + NPC Database + Context Builder replace hardcoded demo
-      conditioning; H=256 (~500K+ params) trained on a schema-conditioned,
+      conditioning; H=256 (~266K params) trained on a schema-conditioned,
       120-combo corpus with prefix-loss masking and a combo-level holdout
       split; identity-conditioning proven at scale (per-axis divergence
       table, identity 0.94 ≥ mood 0.92); int8-vs-float agreement 99.25%;
@@ -70,6 +70,21 @@ The on-console proof is re-verified continuously:
       instances sharing Selena's model; within-archetype divergence 0.94
       vs. mood baseline 0.97; SELFTEST PASS in Ares, START cycles NPC
       live in the demo (`docs/milestones/m8.md`)
+- [x] **M9** — ROM v1.4: compositional conditioning — M8's opaque
+      `N:<id>` identity tag replaced with reusable descriptive features
+      (`P:<person> D:<descriptor> OCC:<occupation> R:<tier> M:<mood>
+      C:<context> EV:<event>|`); RSP matvec kernel generalized to H=320
+      (~394K params, first non-power-of-2 hidden size, 320B DMEM
+      headroom); curated 3-character cast (Bram/Fergus/Kragan) trained
+      via template-grammar corpus generation after a freeform-LLM-corpus
+      attempt measurably garbled at this model's scale; val loss 0.0985
+      (beats M8's 0.1026 despite +50% params), int8-vs-float agreement
+      0.9838; SELFTEST PASS + XCHK PASS together on the real trained
+      model for the first time; all three new characters confirmed live
+      via START cycling on real hardware. **Known open gap**: generated
+      text coherence remains inconsistent, confirmed live on real
+      hardware — not silently claimed solved (`docs/milestones/m9.md`,
+      `docs/plan.md` Known follow-ups)
 
 ## Quickstart
 

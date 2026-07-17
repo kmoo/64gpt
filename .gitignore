@@ -37,3 +37,4 @@ __pycache__/
 # M9 bulk LLM-generated corpus (regenerable via generate_m9_corpus_llm.py)
 trainer/m9_corpus_llm.json
 trainer/m9_corpus_holdout.json
+trainer/m9_llm_judge_report.json

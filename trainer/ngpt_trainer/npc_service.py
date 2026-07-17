@@ -204,8 +204,15 @@ def prompt_fields(profile: dict, relationship: dict, mood: str, context: str,
     the old TR: dial but from real relationship state, not a flat 0-3
     knob) covers the same closeness concept with one axis instead of two.
 
-    "P:girl AGE:12 D:sassy OCC:villager R:best_friend M:cheerful
-    C:greeting EV:none|"
+    No raw AGE: field -- P:'s age/gender token (girl/boy/woman/man/
+    elderly woman/elderly man) already carries the only age signal that
+    matters for voice; a bare integer would just be redundant precision
+    the model has no way to use (a char-level GRU has no numeric-magnitude
+    primitive, so "AGE:63" costs prompt characters for a distinction P:
+    already made without teaching the model anything new).
+
+    "P:girl D:sassy OCC:villager R:best_friend M:cheerful C:greeting
+    EV:none|"
     """
     # age_gender_token can be two words ("elderly woman") -- every
     # space-separated prompt token must carry its own colon, so multi-word
@@ -215,7 +222,7 @@ def prompt_fields(profile: dict, relationship: dict, mood: str, context: str,
     descriptor = personality_descriptor(profile["traits"])
     _, tier = relationship_label(relationship)
     ev = event if event else "none"
-    return (f"P:{person} AGE:{profile['age']} D:{descriptor} "
+    return (f"P:{person} D:{descriptor} "
             f"OCC:{profile['occupation']} R:{tier} M:{mood} C:{context} "
             f"EV:{ev}|")
 
