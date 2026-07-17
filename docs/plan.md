@@ -32,20 +32,17 @@ was written. Move an item to "Closed" (with the milestone that closed it)
 rather than deleting it, so the record of what regressed and for how
 long survives.
 
-**Open:**
-- **RSP fast path is H=128-only; M7 doubled the model to H=256 and lost
-  it.** M6.1 shipped a 2.1x speedup (10,303us -> 4,809us/step) via RSP
-  matvec, proven and hardcoded for 128 columns
-  (`docs/spikes/rsp-matvec.md`). M7's H=256 model doesn't fit that kernel,
-  so M7 runs CPU-only (~208 ch/s -> ~25 ch/s; full arithmetic in
-  `docs/milestones/m7.md` "Performance: the RSP fast path does not (yet)
-  cover H=256"). Generalizing the kernel to 256-wide tiles would recover
-  roughly half the lost speed. Not required for any milestone's DoD yet,
-  but don't let two or three more milestones pass with this still open by
-  default — re-evaluate explicitly at M9 (boss encounters, the milestone
-  most likely to need the headroom) if not sooner.
+**Open:** (none currently)
 
-**Closed:** (none yet)
+**Closed:**
+- **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost
+  it.** Closed same-session, follow-up work after M7 (`docs/spikes/
+  rsp-matvec-h256.md`, adopted on `main`). Generalized the kernel to
+  768x256 (8-row tiles to fit the 4096B DMEM budget); SELFTEST PASS +
+  XCHK PASS on first real boot (no bugs, unlike the original H=128
+  spike's five); recovered CPU 38,417us -> RSP 15,428us per step (2.49x,
+  beats the H=128 kernel's own 2.1x), ~25 ch/s -> ~63 ch/s. Full
+  before/after in `docs/milestones/m7.md`'s Performance section.
 
 ## Context
 
