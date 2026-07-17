@@ -64,7 +64,12 @@ screencapture -x /tmp/ares_boot.png   # Read the image, look for "SELFTEST PASS"
 This repo is public. Nothing private ever gets committed: no absolute
 `/Users/<name>` paths (write `~` or `$HOME`), no emails, no machine-local
 config (that goes in git-ignored `CLAUDE.local.md`). Check `git diff
---cached` for leaks before every commit, and again before any push.
+--cached` for leaks before every commit, and again before any push:
+
+```sh
+git diff --cached | grep -niE "/Users/[a-z]+|@[a-z0-9.]+\.(com|net|org)"
+# no output = clean; anything printed needs fixing before the commit lands
+```
 
 ## Hard constraints (violating any breaks the build or the bit-exactness proof)
 

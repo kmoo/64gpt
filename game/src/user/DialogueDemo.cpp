@@ -100,9 +100,9 @@ namespace
   // in M5); one char/frame streams 60 chars/sec with VPS held at 60.
   constexpr int CHARS_PER_FRAME = 1;
   constexpr int WRAP_COLS = 34;      // 7px glyph advance, ~240px text area
-  constexpr int TEXT_ROW_Y0 = 120;
+  constexpr int TEXT_ROW_Y0 = 130;  // +10 vs. before: the prompt line now reserves 2 rows
   constexpr int TEXT_ROW_DY = 10;
-  constexpr int TEXT_ROWS_PER_PAGE = 7;  // (190-120)/10: fits above the controls row
+  constexpr int TEXT_ROWS_PER_PAGE = 6;  // (190-130)/10: fits above the controls row
   // Companion opener+body+closer lines (M7) routinely exceed one page —
   // this used to just stop drawing at the bottom of the box and silently
   // drop the rest of the generated text. text[]/textLen still hold the
@@ -139,16 +139,22 @@ namespace
   // ------------------------------------------------------------------------
 
   // ---- TEMP ATTRACT MODE (BEGIN) --------------------------------------
-  // Headless-verification aid: after IDLE_START secs without input,
-  // auto-advance to the next prompt combo every IDLE_STEP secs; any
-  // button press takes control back. TO REMOVE: set the define to 0 or
-  // delete the three fenced blocks (search: TEMP ATTRACT MODE).
+  // Headless-verification aid: after IDLE_START secs without input, auto-
+  // cycle to the next prompt combo; any button press takes control back.
+  // Paced on actual completion, not a blind timer: waits for the current
+  // line to finish streaming, then holds each page (auto-turning through
+  // any that overflow one screen, same "MORE" mechanism B uses manually)
+  // for ATTRACT_PAGE_HOLD secs before moving on -- so hands-off playback
+  // always shows a full line, never a mid-stream or mid-page slice of
+  // one, but still always keeps moving (just paced by the mode, not
+  // stuck). TO REMOVE: set the define to 0 or delete the three fenced
+  // blocks (search: TEMP ATTRACT MODE).
   #define NGPT_ATTRACT_MODE 1
   #if NGPT_ATTRACT_MODE
   constexpr float IDLE_START = 8.0f;
-  constexpr float IDLE_STEP = 3.0f;
+  constexpr float ATTRACT_PAGE_HOLD = 2.0f;
   float idleTime{};
-  float attractTimer{};
+  float attractHoldTimer{};
   bool attract{};
   #endif
   // ---- TEMP ATTRACT MODE (END) ----------------------------------------
@@ -351,20 +357,29 @@ namespace P64::Script::C64D1A106DE00001
       idleTime += deltaTime;
       if(!attract && idleTime >= IDLE_START) {
         attract = true;
-        attractTimer = IDLE_STEP; /* advance immediately on entry */
+        attractHoldTimer = 0.0f;
       }
     }
     if(attract) {
-      attractTimer += deltaTime;
-      if(attractTimer >= IDLE_STEP) {
-        attractTimer = 0.0f;
-        /* nested odometer: CONTEXT fastest, then MOOD, then TRUST TIER */
-        contextIdx = cycle(contextIdx, +1, NPCDatabase::CONTEXT_COUNT);
-        if(contextIdx == 0) {
-          moodIdx = cycle(moodIdx, +1, NPCDatabase::MOOD_COUNT);
-          if(moodIdx == 0)trustTier = cycle(trustTier, +1, 3);
+      if(generating) {
+        attractHoldTimer = 0.0f;  // still streaming -- never cut a line off
+      } else {
+        attractHoldTimer += deltaTime;
+        if(attractHoldTimer >= ATTRACT_PAGE_HOLD) {
+          attractHoldTimer = 0.0f;
+          uint32_t next = pageStart + TEXT_CHARS_PER_PAGE;
+          if(next < textLen) {
+            pageStart = next;  // auto "press B": more of this line to show
+          } else {
+            /* nested odometer: CONTEXT fastest, then MOOD, then TRUST TIER */
+            contextIdx = cycle(contextIdx, +1, NPCDatabase::CONTEXT_COUNT);
+            if(contextIdx == 0) {
+              moodIdx = cycle(moodIdx, +1, NPCDatabase::MOOD_COUNT);
+              if(moodIdx == 0)trustTier = cycle(trustTier, +1, 3);
+            }
+            restartGeneration();
+          }
         }
-        restartGeneration();
       }
     }
     #endif
@@ -403,20 +418,39 @@ namespace P64::Script::C64D1A106DE00001
         Debug::print(24, 24, selftestPass ? "SELFTEST PASS" : "SELFTEST FAIL");
       }
       Debug::print(24, 40, "64GPT V1.2 - SELENA (M7)");
-      Debug::print(24, 60, prompt);
+
+      // prompt/seed line: wrap across up to 2 rows so a long schema string
+      // (e.g. a long context/event name) doesn't silently run off the
+      // right edge of the screen -- same fix as the dialogue box below,
+      // simpler because prompt[] is capped at 64 chars (<=2 WRAP_COLS
+      // rows). Fixed 2-row reservation even when the prompt is short, so
+      // everything below stays at a constant position.
+      {
+        size_t promptLen = strlen(prompt);
+        char prow[WRAP_COLS + 1];
+        size_t ppos = 0;
+        int py = 60;
+        while(ppos < promptLen && py <= 70) {
+          size_t n = 0;
+          while(n < WRAP_COLS && ppos < promptLen)prow[n++] = prompt[ppos++];
+          prow[n] = '\0';
+          Debug::print(24, py, prow);
+          py += 10;
+        }
+      }
 
       if(stepMeasured) {
         uint32_t us = (uint32_t)TICKS_TO_US(stepTicksEma);
         snprintf(line, sizeof(line), "STEP %lu US  RAW %lu CH/S",
                  (unsigned long)us, (unsigned long)(us ? 1000000u / us : 0));
-        Debug::print(24, 80, line);
+        Debug::print(24, 90, line);
       }
       if(bootPhase == BOOT_READY && loaded) {
         snprintf(line, sizeof(line), "%s XCHK %s  CPU %lu RSP %lu US",
                  rspReady ? "RSP ON" : "RSP OFF",
                  xchkPass ? "PASS" : "FAIL",
                  (unsigned long)cpuStepUs, (unsigned long)rspStepUs);
-        Debug::print(24, 96, line);
+        Debug::print(24, 106, line);
       }
 
       // dialogue box: wrap one page of the streamed text into rows. The
