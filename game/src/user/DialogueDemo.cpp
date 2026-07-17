@@ -48,12 +48,14 @@ namespace
   // W_hh copied out of the blob once at init: the blob offset is not
   // 8-aligned and DMA from an unaligned RDRAM source lands shifted in
   // DMEM. Written uncached so RDRAM is coherent before the RSP reads it.
-  // H=256 generalization (spike: rsp-matvec-h256): sizes doubled-then-
-  // squared where the math requires it -- W_hh is 3H x H so it's 4x, not
-  // 2x, at double the hidden size.
-  int8_t rspWhh[3 * 256 * 256] __attribute__((aligned(16)));   // 192 KB
-  int16_t rspHShuf[256] __attribute__((aligned(16)));          // 512 B
-  int32_t rspMvOut[768] __attribute__((aligned(16)));          // 3072 B
+  // H=320 generalization (M9, spike: rsp-matvec-h256 -> this): sizes
+  // scale the same way the H=128->256 step did -- W_hh is 3H x H so
+  // it's 4x, not 2x, at 320/256 = 1.25x the hidden size (960*320 =
+  // 3H*H). rspHShuf/rspMvOut scale linearly with H/3H respectively.
+  constexpr int RSP_H = 320;
+  int8_t rspWhh[3 * RSP_H * RSP_H] __attribute__((aligned(16)));   // 300 KB
+  int16_t rspHShuf[RSP_H] __attribute__((aligned(16)));            // 640 B
+  int32_t rspMvOut[3 * RSP_H] __attribute__((aligned(16)));        // 3840 B
   const uint8_t *rspWhhSrc{};   // the blob W_hh this copy mirrors
   bool rspReady{};
   uint32_t rspOvlId{};
@@ -61,9 +63,9 @@ namespace
   void rspBackendInit(const ngpt_model *m)
   {
     if(rspReady)return;
-    if(m->gru.H != 256)return; // the kernel is written for 256 columns
+    if(m->gru.H != RSP_H)return; // the kernel is written for RSP_H columns
     volatile int8_t *dst = (volatile int8_t *)UncachedAddr(rspWhh);
-    for(uint32_t i = 0; i < 3u * 256 * 256; ++i)dst[i] = (int8_t)m->gru.w_hh[i];
+    for(uint32_t i = 0; i < 3u * RSP_H * RSP_H; ++i)dst[i] = (int8_t)m->gru.w_hh[i];
     rspWhhSrc = m->gru.w_hh;
     rspOvlId = rspq_overlay_register(&rsp_ngpt);
     rspReady = true;
@@ -76,7 +78,7 @@ namespace
   void rspMatvec(const uint8_t *w, uint32_t rows, uint32_t cols,
                  const int16_t *h, int32_t *out)
   {
-    if(!rspReady || w != rspWhhSrc || rows != 768 || cols != 256) {
+    if(!rspReady || w != rspWhhSrc || rows != 3u * RSP_H || cols != RSP_H) {
       for(uint32_t i = 0; i < rows; ++i) {
         int32_t sum = 0;
         const uint8_t *row = w + i * cols;
@@ -85,16 +87,19 @@ namespace
       }
       return;
     }
-    // h shuffled even-indices-first (h[0,2,..254], then h[1,3,..255])
+    // h shuffled even-indices-first (h[0,2,..318], then h[1,3,..319])
     // to match the ucode's lqv byte-pair unpack; dot products are
-    // order-invariant so the sums are unchanged.
+    // order-invariant so the sums are unchanged. Odd half starts at
+    // RSP_H/2 (== new even-half element count), same relationship the
+    // H=256 kernel had at 128 -- see rsp_ngpt.S's file header.
     volatile int16_t *hs = (volatile int16_t *)UncachedAddr(rspHShuf);
-    for(uint32_t j = 0; j < 256; ++j)hs[(j & 1) ? 128 + j / 2 : j / 2] = h[j];
+    for(uint32_t j = 0; j < (uint32_t)RSP_H; ++j)
+      hs[(j & 1) ? RSP_H / 2 + j / 2 : j / 2] = h[j];
     volatile int32_t *mo = (volatile int32_t *)UncachedAddr(rspMvOut);
     rspq_write(rspOvlId, 0, 0, PhysicalAddr(rspWhh), PhysicalAddr(rspHShuf),
                PhysicalAddr(rspMvOut));
     rspq_wait(); // never reached from initDelete — see boot sequence below
-    for(uint32_t i = 0; i < 768; ++i)out[i] = mo[i];
+    for(uint32_t i = 0; i < 3u * RSP_H; ++i)out[i] = mo[i];
   }
 }
 // ---- M6.1 RSP MATVEC BACKEND (END) --------------------------------------
