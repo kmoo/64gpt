@@ -21,6 +21,12 @@ later". Milestone definition of done, in order:
 3. docs written (concept guides + `docs/milestones/mN.md`) — **a milestone
    without its docs is not done**
 4. README status checklist updated → commit → tag `mN`
+5. **Copy the FINAL `.z64` into `versions/mN_64gpt.z64`** (+ a row in
+   `versions/README.md`) — every milestone from M2 has one except M7,
+   which got missed because this step lived only as an unwritten
+   convention, not a checklist item. Do this LAST, after any fixes found
+   during Ares verification (pagination/seed/etc. bugs caught by actually
+   watching the demo run) — not the first boot that merely passes.
 
 Docs audience: a good software engineer with zero game-dev / zero embedded-ML
 background. Explain why, not just what.
@@ -48,6 +54,16 @@ python3 trainer/make_canned_blob.py
 # ⚠ invoke the app binary by its REAL path — exec'ing it via a symlink breaks
 # NSBundle's Resources/ lookup and every build template silently loads empty
 # (0-byte generated game/Makefile → "make: No targets"). Any CWD works.
+# ⚠ incremental builds don't track header dependencies: editing a .h shared
+# by multiple .cpp files (e.g. NPCDatabase.h) does NOT trigger a recompile
+# of .cpp files that only #include it — their stale .o keeps the OLD struct
+# layout while freshly-rebuilt callers use the NEW one, an ABI mismatch
+# that reads/writes wrong field offsets and crashes with a garbage address
+# (M8: a stale ContextBuilder.o read past a struct field, crashed reading
+# address 0x73656C65 — literally the ASCII bytes "sele" from "selena",
+# misread as a pointer). If a rebuilt ROM boots to a CPU exception in code
+# you didn't touch, suspect this first: `rm -rf game/build` and rebuild
+# clean before assuming it's a real logic bug.
 "$HOME/GitHub/Pyrite64-v0.4.0/Pyrite64.app/Contents/MacOS/pyrite64" \
   --cli --cmd build "$PWD/game/project.p64proj"   # → game/64gpt.z64, boot in Ares
 

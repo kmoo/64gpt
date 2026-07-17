@@ -1,13 +1,17 @@
 #pragma once
+#include <stdint.h>
 
 // NPC Database: per-NPC identity + mutable state (trust tier, mood) the
-// Context Builder reads to build the M7 conditioning string. M7 scope:
-// Selena only — the milestone's one full-tier character — plus the
-// declared mood/context vocabularies her schema uses (see
-// docs/milestones/m7.md, "corpus diversity" combo grid: Mood x Trust
-// tier x Context). M8 formalizes these lists into a project manifest
-// (schema_fields) instead of hardcoded arrays; nothing here needs to
-// change for that migration, per m7.md's own forward note.
+// Context Builder reads to build the M7 conditioning string, plus (M8)
+// the archetype/instance model: a fixed personality point (characters[],
+// e.g. Selena) vs. a range + deterministic seed jitter (archetypes[],
+// e.g. guard) per docs/08-manifest-schema.md and docs/milestones/m8.md
+// section 2. The declared mood/context vocabularies match
+// manifests/dungeon_crawler.json's schema_fields exactly (see
+// docs/milestones/m7.md's "corpus diversity" combo grid: Mood x Trust
+// tier x Context) — hardcoded here still, per m7.md's own forward note
+// that the manifest formalizes these lists without requiring this file
+// to change shape for the migration.
 //
 // Portable C++, no libdragon includes — builds in the host test suite.
 namespace NPCDatabase
@@ -18,13 +22,66 @@ namespace NPCDatabase
   constexpr int CONTEXT_COUNT = 8;
   extern const char *const CONTEXTS[CONTEXT_COUNT];
 
+  constexpr int TRAIT_COUNT = 5;
+  extern const char *const TRAITS[TRAIT_COUNT]; // warmth/humor/impulsivity/bravery/focus
+
+  constexpr int MAX_ID_LEN = 20;   // "shopkeeper#ffff" + NUL, room to spare
+  constexpr int MAX_NAME_LEN = 16;
+
   struct NPC
   {
-    const char *id;   // trained identity tag, e.g. "selena" — lowercase,
-                      // must match the corpus's N: tag exactly
-    int trustTier;    // 0..3, per the schema's TR: field
-    int moodIdx;      // index into MOODS
+    char id[MAX_ID_LEN];         // conditioning N: tag: fixed ("selena")
+                                  // or generated ("guard#4f2a"), lowercase
+                                  // per schema-value convention
+    char name[MAX_NAME_LEN];     // display name; "" for characters that
+                                  // don't need one yet (unused until M8 §4)
+    int trustTier;               // 0..2, per the schema's TR: field
+    int moodIdx;                 // index into MOODS
+    int personality[TRAIT_COUNT]; // 0-100 per TRAITS axis; fixed point for
+                                   // a character, jittered for an instance
+    uint32_t memorySlot;          // opaque per-instance memory handle,
+                                   // M9+ scope; 0 = empty/unused
   };
 
   extern NPC selena;
+
+  // An archetype template (manifest's archetypes[] entry): a
+  // personality_ranges box per TRAITS axis, plus a name pool for
+  // generated instances. Not itself an NPC — spawnInstance() resolves
+  // one into a concrete NPC.
+  struct PersonalityRange { int lo, hi; };
+
+  struct Archetype
+  {
+    const char *idPrefix;                  // e.g. "guard" — the N: tag's
+                                            // archetype half, before '#'
+    PersonalityRange ranges[TRAIT_COUNT];  // keyed by TRAITS, same order
+    const char *const *namePool;
+    int namePoolSize;
+  };
+
+  extern const Archetype GUARD_ARCHETYPE;
+
+  // M8 task #11: the fixed set of guard instances the demo/game actually
+  // ships with (guard_corpus.py's GUARD_IDS — the model was only ever
+  // trained on these 4 seeds, per M8's "fixed-set, not runtime-generalizing"
+  // design). guardInstances[] starts default-constructed (id[0]=='\0');
+  // initGuardInstances() must run once (e.g. from initDelete) before any
+  // code reads it.
+  constexpr int GUARD_INSTANCE_COUNT = 4;
+  constexpr uint32_t GUARD_SEEDS[GUARD_INSTANCE_COUNT] = {
+    0x1001, 0x1002, 0x1003, 0x1004,
+  };
+  extern NPC guardInstances[GUARD_INSTANCE_COUNT];
+  void initGuardInstances();
+
+  // Deterministically resolves archetype+seed into a concrete instance:
+  // xorshift32 jitter per trait (same RNG discipline as core/'s sampler,
+  // see core/ngpt_sample.cpp), a name drawn from the archetype's pool,
+  // and an id formatted as "<idPrefix>#<4 lowercase hex digits of seed>".
+  // seed 0 remaps to 1 (xorshift32's fixed point, same rule as
+  // core/ngpt.cpp's ngpt_reset). Two calls with the same seed are
+  // byte-identical; different seeds land at different but reproducible
+  // points inside the archetype's ranges.
+  NPC spawnInstance(const Archetype &archetype, uint32_t seed);
 }

@@ -63,6 +63,13 @@ The on-console proof is re-verified continuously:
       split; identity-conditioning proven at scale (per-axis divergence
       table, identity 0.94 ≥ mood 0.92); int8-vs-float agreement 99.25%;
       SELFTEST PASS in Ares (`docs/milestones/m7.md`)
+- [x] **M8** — ROM v1.3: archetypes, the portability substrate — manifest
+      meta-schema (`docs/08-manifest-schema.md`) separates mechanism from
+      per-game content; archetype/instance system (personality-range +
+      deterministic xorshift32 jitter) proven on `guard`, 4 seeded
+      instances sharing Selena's model; within-archetype divergence 0.94
+      vs. mood baseline 0.97; SELFTEST PASS in Ares, START cycles NPC
+      live in the demo (`docs/milestones/m8.md`)
 
 ## Quickstart
 

@@ -33,19 +33,33 @@ rather than deleting it, so the record of what regressed and for how
 long survives.
 
 **Open:**
-- **RSP fast path is H=128-only; M7 doubled the model to H=256 and lost
-  it.** M6.1 shipped a 2.1x speedup (10,303us -> 4,809us/step) via RSP
-  matvec, proven and hardcoded for 128 columns
-  (`docs/spikes/rsp-matvec.md`). M7's H=256 model doesn't fit that kernel,
-  so M7 runs CPU-only (~208 ch/s -> ~25 ch/s; full arithmetic in
-  `docs/milestones/m7.md` "Performance: the RSP fast path does not (yet)
-  cover H=256"). Generalizing the kernel to 256-wide tiles would recover
-  roughly half the lost speed. Not required for any milestone's DoD yet,
-  but don't let two or three more milestones pass with this still open by
-  default — re-evaluate explicitly at M9 (boss encounters, the milestone
-  most likely to need the headroom) if not sooner.
+- **Archetype instance spawning has no seed-source strategy yet — M8
+  trains 4 fixed guard seeds (`0x1001`-`0x1004`, hand-picked), but
+  nothing decides which seed gets placed where in the game world.**
+  `NPCDatabase::spawnInstance(archetype, seed)` is intentionally a pure
+  function (same seed -> same guard forever, so a save file only needs
+  to store a seed, not a character record) — that determinism is
+  correct and shouldn't change. What's missing is the *spawn-time*
+  logic that picks *which* seed to use per dungeon level / spawn slot,
+  so the world doesn't always place the same 4 guards in the same
+  order. Also note: this only covers *choosing among the trained set* —
+  generalizing to arbitrary *untrained* seeds (true unlimited procedural
+  variety) is a separate, harder, unproven capability, explicitly out of
+  scope until M10's procedural spawning work (renumbered 2026-07-17 when
+  compositional conditioning became M9 — see `docs/milestones/m9.md`).
+  Raised 2026-07-17 during M8 corpus work; not required for M8's own DoD
+  (3-4 named instances in one demo scene), but M10 shouldn't start
+  procedural spawning without addressing it.
 
-**Closed:** (none yet)
+**Closed:**
+- **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost
+  it.** Closed same-session, follow-up work after M7 (`docs/spikes/
+  rsp-matvec-h256.md`, adopted on `main`). Generalized the kernel to
+  768x256 (8-row tiles to fit the 4096B DMEM budget); SELFTEST PASS +
+  XCHK PASS on first real boot (no bugs, unlike the original H=128
+  spike's five); recovered CPU 38,417us -> RSP 15,428us per step (2.49x,
+  beats the H=128 kernel's own 2.1x), ~25 ch/s -> ~63 ch/s. Full
+  before/after in `docs/milestones/m7.md`'s Performance section.
 
 ## Context
 

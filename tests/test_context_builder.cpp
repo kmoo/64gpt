@@ -62,7 +62,7 @@ static void test_npc_database()
 
 static void test_context_builder()
 {
-  NPCDatabase::NPC npc{"selena", 2, 0}; /* trust tier 2, mood[0]=cheerful */
+  NPCDatabase::NPC npc{"selena", "", 2, 0, {90, 85, 70, 55, 30}, 0}; /* trust tier 2, mood[0]=cheerful */
   char out[64];
 
   uint32_t len = ContextBuilder::build(out, sizeof(out), npc, "item-found", "found_gem");
@@ -91,11 +91,80 @@ static void test_context_builder()
   CHECK(strlen(tiny) == tlen);
 }
 
+static void test_archetype_instance()
+{
+  /* deterministic: same seed -> byte-identical instance */
+  NPCDatabase::NPC a = NPCDatabase::spawnInstance(NPCDatabase::GUARD_ARCHETYPE, 0x4f2a);
+  NPCDatabase::NPC b = NPCDatabase::spawnInstance(NPCDatabase::GUARD_ARCHETYPE, 0x4f2a);
+  CHECK(strcmp(a.id, b.id) == 0);
+  CHECK(strcmp(a.name, b.name) == 0);
+  for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
+    CHECK_EQ_INT(a.personality[i], b.personality[i]);
+
+  /* id carries the archetype prefix + 4 lowercase hex digits of the seed */
+  CHECK(strcmp(a.id, "guard#4f2a") == 0);
+
+  /* every jittered trait lands inside the archetype's declared range */
+  for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
+  {
+    NPCDatabase::PersonalityRange r = NPCDatabase::GUARD_ARCHETYPE.ranges[i];
+    CHECK(a.personality[i] >= r.lo);
+    CHECK(a.personality[i] <= r.hi);
+  }
+
+  /* a different seed lands at a different (but still in-range) point --
+   * not a hard guarantee for any single trait, but the id and name must
+   * differ since they're keyed off the raw seed/derived rng state, not
+   * off the personality values */
+  NPCDatabase::NPC c = NPCDatabase::spawnInstance(NPCDatabase::GUARD_ARCHETYPE, 0x1b7c);
+  CHECK(strcmp(a.id, c.id) != 0);
+
+  /* seed 0 remaps to 1 rather than leaving xorshift32 stuck at its fixed
+   * point (0 ^ anything == 0) -- same rule as core/ngpt.cpp's ngpt_reset */
+  NPCDatabase::NPC zero = NPCDatabase::spawnInstance(NPCDatabase::GUARD_ARCHETYPE, 0);
+  bool anyNonZero = false;
+  for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
+    if(zero.personality[i] != 0)anyNonZero = true;
+  CHECK(anyNonZero);
+
+  /* fresh memory slot, per M8's "own NPC Database memory slot, initially
+   * empty" -- M9+ gives this real meaning, M8 just reserves it */
+  CHECK_EQ_INT((int)a.memorySlot, 0);
+}
+
+// M8 task #11: the fixed guard instance registry, checked against ground
+// truth pulled from the real compiled spawnInstance() (same values
+// trainer/tests/test_guard_instances.py cross-checks the Python port
+// against — see that file's EXPECTED dict for provenance).
+void test_guard_instance_registry()
+{
+  NPCDatabase::initGuardInstances();
+  CHECK_EQ_INT(NPCDatabase::GUARD_INSTANCE_COUNT, 4);
+
+  struct Want { const char *id; const char *name; int p[5]; };
+  const Want want[4] = {
+    {"guard#1001", "BRAM",   {43, 5, 35, 72, 73}},
+    {"guard#1002", "EDRIC",  {42, 24, 16, 60, 80}},
+    {"guard#1003", "EDRIC",  {33, 7, 19, 72, 56}},
+    {"guard#1004", "IVOR",   {32, 18, 24, 84, 76}},
+  };
+  for(int i = 0; i < 4; ++i)
+  {
+    const NPCDatabase::NPC &npc = NPCDatabase::guardInstances[i];
+    CHECK(strcmp(npc.id, want[i].id) == 0);
+    CHECK(strcmp(npc.name, want[i].name) == 0);
+    for(int t = 0; t < NPCDatabase::TRAIT_COUNT; ++t)
+      CHECK_EQ_INT(npc.personality[t], want[i].p[t]);
+  }
+}
+
 int main()
 {
   test_event_bus();
   test_world_state();
   test_npc_database();
   test_context_builder();
+  test_archetype_instance();
+  test_guard_instance_registry();
   return test_summary("test_context_builder");
 }

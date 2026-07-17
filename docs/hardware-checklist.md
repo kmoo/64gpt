@@ -71,8 +71,49 @@ v1.0 requires this document to have been executed on real silicon.)*
 
 ## Milestone ROM lineup (for A/B demos)
 
-Keep one card folder per milestone (`/64gpt/m2/` … `/64gpt/m5/`): the
+Keep one card folder per milestone (`/64gpt/m2/` … `/64gpt/m7/`): the
 same demo getting a progressively more real brain — canned line → one
 memorized line → 12 prompted lines → fresh sampled lines → fast fresh
-sampled lines — is the walking-skeleton story told in cartridge form.
-(Current test copies: `m2/m3/m4/m5_64gpt.z64`, built 2026-07-15/16.)
+sampled lines → H=256 RSP-accelerated Selena — is the walking-skeleton
+story told in cartridge form. **Outstanding as of 2026-07-17: nothing
+past M5 has actually been run on real hardware yet** — M6/v1.0 requires
+it, M7's own docs note it as "occasional spot-check... not required for
+this milestone's DoD," which is why it kept sliding. The pressure-test
+table below is the next real-hardware session's actual job, not a
+future nice-to-have.
+
+## Pressure-test table: emulator vs. physical (fill in the right column)
+
+Two different questions, both worth real silicon numbers: does Ares'
+timing match reality closely enough to trust ("hardware-accurate" is a
+claim, not a given), and where do the architecture's actual limits sit
+(DMEM, RDRAM, ROM size) versus where we've only pushed it so far.
+
+| metric | Ares (measured 2026-07-17) | Physical N64 (fill in) |
+|---|---|---|
+| Steady-state gen speed, H=256 RSP ON | 63 ch/s raw | |
+| Per-step latency (`STEP` line) | ~15,700us | |
+| RSP vs CPU speedup ratio | 2.49x (CPU 38,417us / RSP 15,428us) | |
+| Boot + SELFTEST time (18 goldens through RSP) | not precisely timed yet — ballpark <60s, worth a stopwatch pass on either platform | |
+| ROM ↔ real-console load/boot latency | n/a (Ares loads instantly) | first real EverDrive-specific number |
+
+**Fixed specs (same on any platform, not an Ares-vs-physical question —
+included here as the actual limits, not yet pressure-tested past current
+usage):**
+
+| metric | current (H=256) | headroom / limit |
+|---|---|---|
+| RSP DMEM (data+bss) | 3,656 / 4,096 B | 440B slack at H=256's 8-row tiling — untested whether a *practically*-tiled (not 1-row) kernel could go past H=256 at all without redesign |
+| RSP IMEM (text) | 1,152 / 4,096 B | plenty of room, not the binding constraint |
+| Theoretical max H (1-row tiles, pure DMEM math, unverified) | — | ~700, but 1-row tiling would be DMA-transfer-bound, likely far slower than useful — **untested, don't trust this number without actually building it** |
+| ROM file size | 704,512 B | EverDrive carts are large; not remotely the binding constraint yet |
+| Model blob (`game/rawfs/model.bin`) | 268,621 B | RDRAM is 4MB total, shared with everything else the engine needs — untested how many archetype-instance blobs (M8) this budget actually supports |
+
+**What "pressure test" should mean when you actually run this:** not
+just confirming H=256 works (already proven, see `docs/milestones/
+m7.md`) — deliberately push past it. Retrain a throwaway H=384 or H=512
+blob (no character bible needed, same discipline as the identity spike's
+throwaway identities), see whether the *current* 8-row-tile kernel still
+fits DMEM at all, and if not, at what H it stops fitting. That number,
+not the untested ~700 estimate above, is what M8's capacity planning
+should actually be budgeted against.

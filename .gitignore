@@ -31,3 +31,4 @@ __pycache__/
 .ai/tasks/*.log
 .m4_model.pt
 .m7_model.pt
+.m8_model.pt
