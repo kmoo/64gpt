@@ -160,6 +160,28 @@ design decision (mine to set, not the generator's to guess), and both
 the primitive generator and the pack importer are required to enforce it
 before a model is allowed into the scene.
 
+**Materials — verified, not guessed.** Inspected this repo's own
+`game/assets/box.glb` binary directly (parsed its glTF JSON chunk) rather
+than trusting prose about the format. Finding: its material is not
+standard glTF PBR (no `baseColorFactor`/metallic-roughness) — it carries
+two custom glTF extensions, `FAST64_materials_n64` and
+`FAST64_materials_f3d`, encoding the N64 RDP's fixed-function combiner
+stages, geometry mode flags, and lights directly. This is what Blender's
+Fast64 plugin emits and what `mkmodel`/`gltf_to_t3d` expect **if** you
+want per-mesh material control. Reverse-engineering that extension
+schema by hand would make the "cheap simple" primitive generator not
+cheap or simple. The actual escape hatch is already sitting in the CLI,
+found earlier when reading `gltf_to_t3d --help`:
+`--ignore-materials` — *"Ignore F3D materials and write dummy data,
+useful for custom material systems."* Procedural primitives should use
+this: emit plain geometry (positions/normals/vertex-colors only, no
+FAST64 extensions) and drive appearance entirely through the scene.json
+`Model` component's inline `material` override — confirmed present in
+this project's own `scene.json` (`prim` color, `lighting`, `env`,
+`fresnel`, `setDepth`, etc.) — rather than baking material state into
+each generated mesh. Curated hero assets, by contrast, should keep their
+Fast64-authored materials intact (don't strip what's already correct).
+
 **Tooling shape** (sketch, not written):
 
 ```
@@ -193,6 +215,53 @@ lesson from past tasks (point it at one hand-written example, don't make
 it guess a schema from prose).
 
 This is design only — nothing above is built or scheduled yet.
+
+## Cross-checked against a second write-up (Grok, 2026-07-18)
+
+Luke shared an independent technical doc (from Grok) covering the same
+territory via the "human" pipeline — Blender + the **Fast64** plugin
+exporting glTF, imported through Pyrite64's editor. Worth folding in:
+Fast64 (`github.com/Fast-64/fast64`) is the canonical tool artists use
+to author N64-correct materials in Blender, and it's *exactly* what
+produced the `FAST64_materials_n64`/`FAST64_materials_f3d` extensions
+found in `box.glb` above — so that doc and this repo's own asset agree
+on the same ground truth. Confirmed matches:
+
+- **Textures are external PNG files**, not embedded in the glTF/glb —
+  matches this repo's own `assets/p64/font.ia4.png` sitting next to its
+  `.conf` as a sibling file, not packed inside a binary asset.
+- **Ares (recent version) is the accurate emulator**, Project64 is not
+  reliable for this engine — matches the workflow already established
+  in this repo's `CLAUDE.md`.
+- Low-poly / TMEM-aware texture budgets — matches the budget-table
+  approach above.
+
+Two claims in that doc contradict direct evidence and should go back to
+Grok as questions rather than be taken on faith:
+
+1. **"No built-in 2D support (WIP)."** This repo's own
+   `game/src/user/DialogueDemo.cpp` calls `DrawLayer::use2D()` today, and
+   `scene.json` has a first-class `layers2D` render layer — 2D rendering
+   is already in active use in a shipped milestone of this project. Ask
+   Grok: is this claim about a missing *2D editor mode* (e.g. no 2D-only
+   scene/tilemap authoring UI) rather than the renderer itself lacking
+   2D drawing? The doc doesn't cite a source for this line.
+2. **"HDR + Bloom" as a world-building tip.** No corroboration found —
+   this repo's `scene.json` render-layer config (`fbFormat`, `blender`
+   int codes) shows no HDR framebuffer or bloom-pass fields, and HDR
+   framebuffers are unusual for real N64 output hardware (no floating
+   point, 8-bit-per-channel color out). Ask Grok for a source/citation;
+   until then, treat as unverified rather than folding it into the
+   budget/quality plan above.
+
+A follow-up worth asking Grok directly: does `mkmodel`/`gltf_to_t3d`
+accept a *plain* PBR glTF material (no `FAST64_materials_*` extensions)
+when **not** passing `--ignore-materials` — i.e. does it degrade
+gracefully, or does the Fast64 extension effectively become mandatory
+the moment you want material data honored at all? That determines
+whether the primitive generator's "skip materials, drive appearance via
+scene.json only" plan above is the *only* cheap path, or merely the
+simplest one.
 
 ## Recommendation
 
