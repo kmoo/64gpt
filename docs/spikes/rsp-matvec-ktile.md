@@ -678,3 +678,32 @@ experience at all, a harder floor than a quality target.
   favorable sub-quadratic curve smaller H suggested. Scaling gets worse
   at bigger H, not better. Screenshot in `talk/`
   (`2026-07-18-ktile-spike-h1024.png`).
+
+  **H=768 result** (swapped via `git checkout a01b5da -- <4 files>` +
+  rebuild, no re-prep needed): `SELFTEST PASS`, XCHK bit-exact PASS,
+  CPU 304,623µs / RSP 105,402µs — **2.89x**, 9.49 ch/s, comfortably
+  clear of the 5 ch/s floor above. `core/ngpt.h` untouched (already at
+  1024 from the H=1024 commit, a strict superset).
+
+  Complete H sweep at chunk=256, checked against the 5 ch/s floor:
+
+  | H | RSP µs | speedup | ch/s | vs. floor |
+  |---|---|---|---|---|
+  | 256 | 15,988 | 2.37x | 62.55 | comfortable |
+  | 512 | 49,261 | 2.77x | 20.30 | comfortable |
+  | 768 | 105,402 | 2.89x | 9.49 | comfortable |
+  | 1024 | 186,160 | 2.93x | 5.37 | passes, ~0 margin |
+
+  Nine bit-exact XCHK passes total across this spike, zero failures.
+  Speedup keeps climbing with H even as ch/s craters — the two numbers
+  answer different questions, and both matter: correctness and DMEM
+  independence hold at every size tested tonight; whether a given size
+  is actually pleasant to use is separate and this data answers it
+  plainly — yes for 768 with real margin, technically-yes-but-no-margin
+  for 1024. Combined with the Banjo-Kazooie-scope reframing above (a
+  realistic RDRAM budget may only support H≈370-410 once real game
+  content exists), **H=768 is the more defensible target if this ever
+  leaves spike status** — real speed margin, real RDRAM margin (2.29MB
+  vs. 1024's 3.60MB), meaningfully past the old wall (368) without
+  betting on the tightest numbers this spike found. Screenshot in
+  `talk/` (`2026-07-18-ktile-spike-h768.png`).
