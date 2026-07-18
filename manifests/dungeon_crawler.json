@@ -36,7 +36,22 @@
       },
       "corpus_ref": "trainer/ngpt_trainer/shadewrath_corpus.py",
       "memory_persistence": "full",
-      "_status": "M10 (2026-07-17), recurring villain -- abducted the elf princess of Ravendale (met by the player once), knows more than he should about the player and the town, real ambition is an alliance not conquest. corpus_ref does not exist yet -- content authoring pending."
+      "_status": "M10 (2026-07-17), recurring villain -- abducted the elf princess of Ravendale (met by the player once), knows more than he should about the player and the town, real ambition is an alliance not conquest. Trained + hardware-verified (SELFTEST/XCHK PASS); currently the least-coherent character in the shared model due to a thin 960-pair training set -- see docs/plan.md Known follow-ups. memory_persistence is aspirational, not yet wired to any actual save/cross-encounter mechanism."
+    },
+    {
+      "id": "korrath",
+      "tier": "mid",
+      "personality": {"warmth": 38, "humor": 10, "impulsivity": 10, "bravery": 75, "focus": 80},
+      "bible": {
+        "public": "A knight in tarnished armor, blocking the path with old-world formality and a weary, dutiful menace.",
+        "private": "He remembers his name from before the binding, and hates what he's become — every word is filtered through exhaustion, not malice.",
+        "secret": "Shadewrath holds a piece of his true name, which is what actually binds him. Break that, and the binding breaks. The binding itself forbids him from saying this outright.",
+        "fear": "That he's been bound so long he wouldn't know how to be anything else, even freed — that the knight he was is already gone.",
+        "desire": "To be released, even if it costs his own end — anything is better than another century guarding someone else's grief."
+      },
+      "corpus_ref": "trainer/ngpt_trainer/korrath_corpus.py",
+      "memory_persistence": "arc",
+      "_status": "M10 (2026-07-17), mid-tier talking boss -- guards the captured elf princess's chamber, bound into unwilling servitude by Shadewrath (who holds a piece of his true name). Persistent within his own arc (this dungeon branch), not the whole game, per the tier's definition. Corpus deliberately ~half Shadewrath's density (per_combo=4 vs 8), tied to his mid-tier scope, not yet empirically validated per m10.md's Data Science Review recommendation (pick the smallest density that clears a distinctness bar -- this is a first-pass estimate)."
     }
   ],
   "archetypes": [
