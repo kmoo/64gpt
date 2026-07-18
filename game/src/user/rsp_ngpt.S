@@ -239,21 +239,21 @@ KChunkLoop:
     jal DMAIn
     nop
 
-    # H_BUF <- this chunk's 32-even + 32-odd slice (two small linear
-    # DMAs; global shuffle convention unchanged from the old kernel, so
-    # even-region starts at s2+0, odd-region starts at s2+256 == H).
+    # H_BUF <- this chunk's 32-even + 32-odd slice, ONE pitched 2D DMA
+    # (merged from two linear DMAs 2026-07-17: the H=256 hardware run
+    # showed DMA-op COUNT, not just bytes moved, dominates overhead --
+    # 312 ops vs the old kernel's 193 cost ~26%, not the ~6% the
+    # byte-traffic-only estimate predicted. Even/odd regions are
+    # exactly H bytes apart in RDRAM -- a valid 2D pitch, the same
+    # trick W_TILE already uses above. DMEM dest is linear, so
+    # height=2 writes H_BUF+0 then H_BUF+64 contiguously, exactly
+    # matching DotRowChunk's existing even-then-odd read layout --
+    # zero change needed on the DotRowChunk side.)
     add s0, s2, t4
     li s4, %lo(H_BUF)
+    li t1, 256                 # pitch = H (odd region starts H bytes after even)
     jal DMAIn
-    li t0, DMA_SIZE(64, 1)
-
-    li t5, 256
-    add s0, s2, t5
-    add s0, s0, t4
-    li s4, %lo(H_BUF)
-    addi s4, 64
-    jal DMAIn
-    li t0, DMA_SIZE(64, 1)
+    li t0, DMA_SIZE(64, 2)
 
     li s5, 0                   # row-in-tile 0..31
 RowLoop:
