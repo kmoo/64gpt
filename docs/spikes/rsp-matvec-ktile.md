@@ -1,8 +1,11 @@
 # Spike: K-dimension tiling for the RSP matvec kernel — decoupling DMEM from H
 
-**Branch:** `worktree-rsp-spike-ktile`. **Status:** kernel code written
-(`DotRowChunk` + 2D-tiled `NgptMatvec` at H=320), not yet
-hardware-verified — see Status log. **Question:** can the RSP matvec
+**Branch:** `worktree-rsp-spike-ktile`. **Status:** hardware-verified,
+five runs, five bit-exact XCHK passes — H=256 and H=512, chunk=64 and
+chunk=128. DMEM independence proven both structurally and empirically;
+best config (chunk=128, H=512) hits 2.50x over CPU-only. See the
+"Hardware verdict" and closing "chunk=128 combined with H=512" Status
+log entries for the real numbers. **Question:** can the RSP matvec
 kernel's DMEM footprint be made independent of H, and how much
 wall-clock does it cost?
 
@@ -500,3 +503,44 @@ instead of a second round of arithmetic that might also be wrong.
   just formula-proven: correctness holds, and the wall is genuinely
   gone. Screenshot and caption in `talk/`
   (`2026-07-17-ktile-spike-h512-xchk.png`).
+
+- 2026-07-17 (same day, closing run): **chunk=128 combined with H=512**
+  — both changes together, no new game-side or `core/` work needed
+  (buffer sizes are H-driven, already correct from the H=512 build).
+  Hardware-verified: `SELFTEST PASS`, XCHK bit-exact PASS, **CPU
+  136,414µs / RSP 54,520µs — 2.50x**, the best result of the night by
+  a clear margin. The two effects don't just stack, they compound
+  *favorably*: chunk=128's improvement over chunk=64 is 13.2% at
+  H=256 but **16.1% at H=512** — bigger at the bigger size, not
+  diminishing.
+
+  Five full runs tonight, five bit-exact XCHK passes:
+
+  | config | CPU µs | RSP µs | speedup | `.bss` |
+  |---|---|---|---|---|
+  | old kernel (H=256, baseline) | 37,667 | 15,710 | 2.40x | 3,104B |
+  | chunk=64  H=256 | 37,522 | 19,719 | 1.90x | 2,432B |
+  | chunk=128 H=256 | 37,518 | 17,118 | 2.19x | 2,624B |
+  | chunk=64  H=512 | 136,419 | 64,962 | 2.10x | 2,432B |
+  | chunk=128 H=512 | 136,414 | 54,520 | **2.50x** | 2,624B |
+
+  Two separate claims worth keeping distinct rather than blending into
+  one "beats the old kernel" line, which isn't quite true either way:
+  at the *same* H=256, even the best K-tiled config is still ~9%
+  slower than the old kernel (17,118 vs. 15,710µs) — chunk=128 closed
+  most of the gap, not all of it. The real win is at H=512, where
+  there is no old-kernel number to compare against *at all* (the whole
+  point of this spike) and K-tiling delivers a real 2.50x over
+  CPU-only at a size the old kernel structurally cannot reach.
+  Screenshot and caption in `talk/`
+  (`2026-07-17-ktile-spike-h512-chunk128-combined-xchk.png`).
+
+  **Where this leaves the spike:** DMEM independence — proven both
+  structurally (fixed `.bss` regardless of H, by construction) and
+  now hardware-verified at two different H values with byte-identical
+  footprints. Correctness — five for five, bit-exact XCHK every run.
+  Speed — real, positive, and still short of full parity with the old
+  kernel at equal H; the remaining gap is a legitimate next-session
+  question (double-buffered DMA and NPC-batching from the "further
+  optimization ideas" section above are the two live candidates), not
+  a blocker to anything this spike set out to prove.

@@ -504,7 +504,7 @@ namespace P64::Script::C64D1A106DE00001
         // must leave the full "XCHK PASS  CPU NNNNN RSP NNNNN US" tail
         // visible, not just fit on screen at a glance.
         snprintf(line, sizeof(line), "%s XCHK %s  CPU %lu RSP %lu US",
-                 rspReady ? "H512 ON" : "H512 OFF",
+                 rspReady ? "K128H512" : "K128H512X",
                  xchkPass ? "PASS" : "FAIL",
                  (unsigned long)cpuStepUs, (unsigned long)rspStepUs);
         Debug::print(24, 106, line);
