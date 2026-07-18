@@ -462,3 +462,41 @@ instead of a second round of arithmetic that might also be wrong.
   ("K128 ON") and re-verifying. Every per-build on-screen tag from here
   on needs to leave the full result line visible, not just look right
   at a glance.
+
+- 2026-07-17 (same day, the headline test): **H=512, chunk=64** — the
+  size the old non-tiled kernel's own DMEM formula (`m9.md` §6)
+  physically cannot reach at all (hard wall ~H=368), not just one it's
+  slower at. There is no old-kernel number to compare against here;
+  that absence is the point. Required two things resolved first, both
+  disclosed rather than assumed away: (1) a worktree-local `core/
+  ngpt.h` bump (`NGPT_GRU_MAX_HIDDEN` 256→512, not on `main`) — see
+  that file's updated comment for the int32 accumulator overflow
+  analysis this rests on (proceeding on a realistic-bound argument,
+  not a full proof; flagged for whoever's driving the H=320 training
+  session too, since they'll hit the same question with real weights);
+  (2) a throwaway H=512 model — right shape, gibberish content,
+  converged on a single 21-char line in 10.6s on CPU (`trainer/
+  make_ktile_h512_spike_blob.py`), specifically converged rather than
+  left randomly-initialized so it reliably hits EOS well inside the
+  ROM self-test's 2000-step runaway guard, which matters more at
+  H=512's ~4x per-step cost.
+
+  Hit one real bug getting there: first boot showed `SELFTEST FAIL`
+  with no XCHK line at all (the pattern for "model blob failed to
+  load," not "ran and failed") — caused by exactly the incremental-
+  build gotcha this project's own `CLAUDE.md` documents: changing the
+  shared `core/ngpt.h` header without a clean rebuild left a stale
+  `.o` with the old struct layout. `rm -rf game/build` fixed it
+  immediately.
+
+  Clean-rebuilt result: **`SELFTEST PASS`, `H512 ON`, `XCHK PASS`
+  (bit-exact), CPU 136,419µs / RSP 64,962µs — a real 2.10x speedup**,
+  slightly *better* than H=256's 1.90x (RSP scales 3.29x for a 2x H
+  increase vs. CPU's 3.64x — sub-quadratic relative to CPU, not just
+  in absolute terms). DMEM: **2,432B — byte-identical to the H=256
+  build's footprint.** That equality, not just "under budget," is the
+  actual proof: nothing in this build's DMEM changed when H doubled.
+  Both headline claims of this spike are now hardware-verified, not
+  just formula-proven: correctness holds, and the wall is genuinely
+  gone. Screenshot and caption in `talk/`
+  (`2026-07-17-ktile-spike-h512-xchk.png`).

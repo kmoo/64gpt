@@ -46,10 +46,28 @@ enum {
  * dims a blob may declare are bounded at load time. M2 shipped H=32, M4's
  * ~100K-param model H=128; M6.1 raises the cap to 256 — the headroom the
  * RSP path buys is for the H=256+/~500K-param generative model (the M7
- * "magic zone"). The int32 hot-loop bound still holds at H=256: a row sum
- * is at most 256 * 127 * 32767 < 2^30, so sum + bias stays inside int32
- * (revalidate against ref_impl when the H=256 blob actually ships). */
-#define NGPT_GRU_MAX_HIDDEN 256
+ * "magic zone").
+ *
+ * WORKTREE-LOCAL BUMP to 512 (docs/spikes/rsp-matvec-ktile.md, 2026-07-17
+ * K-tiling spike) — NOT on main. The int32 hot-loop bound this cap was
+ * originally sized against gets genuinely tight here, worth spelling out
+ * rather than assuming: using the WORST-CASE h range (full int16,
+ * 32767), a row sum of H*127*32767 already sits at 99.2% of the 2^30
+ * comfort target at H=256 (barely fit, per the original comment below)
+ * and *exceeds* it at H=320 (124%) and H=512 (198%) — though H=512
+ * still fits inside int32's actual ceiling (2^31-1), just with far less
+ * headroom left for the subsequent "+ bias" add. Using h's REALISTIC
+ * range instead (Q14-quantized tanh/sigmoid output, |h|<=16384, not the
+ * full int16 range) puts H=512 at 99.2% of the same 2^30 target — i.e.
+ * the same margin H=256 already ships with today, just at 2x the size.
+ * Proceeding on that basis, but this is a disclosed assumption, not a
+ * proof: revalidate against ref_impl with real (not gibberish-model)
+ * weights before trusting this past a spike. The int32 hot-loop bound
+ * held at H=256 (worst case): a row sum is at most 256 * 127 * 32767 <
+ * 2^30, so sum + bias stays inside int32 (revalidated against ref_impl
+ * when the H=256 blob shipped — repeat that revalidation at H=512
+ * before this leaves spike status). */
+#define NGPT_GRU_MAX_HIDDEN 512
 #define NGPT_GRU_MAX_VOCAB  96
 
 /* GRU payload view (model type 1): pointers into the blob, set up once by
