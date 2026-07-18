@@ -76,3 +76,16 @@ target_include_directories(test_npc_service PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_npc_service PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_npc_service PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_npc_service COMMAND test_npc_service)
+
+# M10 seeded dungeon-level NPC placement: same standalone portable-C++
+# treatment as test_context_builder/test_npc_service above.
+add_executable(test_dungeon_generator
+  test_dungeon_generator.cpp
+  ${NGPT_GAME_USER_DIR}/NPCDatabase.cpp
+  ${NGPT_GAME_USER_DIR}/DungeonGenerator.cpp
+  ${NGPT_GAME_USER_DIR}/NpcService.cpp
+)
+target_include_directories(test_dungeon_generator PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_dungeon_generator PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_dungeon_generator PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_dungeon_generator COMMAND test_dungeon_generator)
