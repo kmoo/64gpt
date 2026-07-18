@@ -133,6 +133,32 @@ long survives.
   staying perfectly fluent, which a coherence metric that only checks
   "does this look like garbled text" would miss entirely.
 
+  **Density-fix result (2026-07-18):** raised `SHADEWRATH_PER_COMBO`
+  8→24 (960→2880 pairs) and retrained, per the follow-up flagged above.
+  **Did not clearly fix it.** Val loss landed at 0.0995, slightly worse
+  than the prior M10 retrain's 0.0980. His goldens remain a mixed bag
+  (some clean, several still garbled), and a new, more concerning
+  pattern surfaced: content from *different trust tiers* bleeding
+  together in one response — e.g. tier-2 alliance-offer language
+  ("I AM NOT ASKING YOU TO SURRENDER. I AM ASKING YOU TO CHOOSE.")
+  appearing in a tier-1 response. A dedicated long-horizon eval
+  (`trainer/eval_shadewrath_long_horizon.py`, `docs/milestones/m10.md`
+  section 11) confirmed this isn't a one-off: the scripted 8-step
+  session's climactic tier-2 line came out *more* garbled than the
+  tier-1 line that had already foreshadowed its content, undermining
+  the intended narrative payoff. Conclusion: raw pair count was one
+  lever, correctly identified as worth trying, but it is not the whole
+  story — the deeper issue is more likely that Shadewrath's content is
+  entirely unreinforced by any other character (no shared banks, unlike
+  guard/cast), competing for fixed H=320 capacity in isolation. Next
+  lever to try, if this is revisited: either share more structural
+  content across characters (with the same care taken to avoid the
+  voice-mismatch problem that ruled out reusing Selena's bodies
+  directly), or accept this needs more model capacity than a corpus
+  change alone can buy (see `docs/ideas-model-swap-architecture.md` and
+  the RSP-DMEM-ceiling discussion for why that's a bigger, separate
+  effort).
+
 **Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost
   it.** Closed same-session, follow-up work after M7 (`docs/spikes/

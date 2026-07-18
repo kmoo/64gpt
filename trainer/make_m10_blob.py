@@ -1,25 +1,36 @@
 #!/usr/bin/env python3
 """Build the M10 blob, golden vectors, and ROM self-test header: M9's
 full production mix (Selena + guard + M9.2's compositional cast,
-Kragan's catchphrase bank included) plus M10's two additions -- four new
+Kragan's catchphrase bank included) plus M10's additions -- four new
 town archetypes (pub_patron/blacksmith/wizard/villager, riding the same
 compositional scheme via new representative CHARACTERS entries in
-cast_corpus.py) and Shadewrath, the recurring necromancer villain (full
-tier, bespoke corpus, old N:<id> scheme like Selena). See
+cast_corpus.py), Shadewrath (the recurring necromancer villain, full
+tier, bespoke corpus, old N:<id> scheme like Selena), and Korrath (the
+mid-tier bound-knight boss, same old N: scheme, smaller corpus). See
 docs/milestones/m10.md.
 
-One retrain covers both additions rather than two separate ~30-60 min
-CPU runs -- the town archetypes are cheap (a personality range + a
-shared occupation-flavor bank, no new mechanism) and share this budget
-with Shadewrath's bespoke corpus for free.
+One retrain covers all of it rather than several separate ~30-60 min CPU
+runs -- the town archetypes are cheap (a personality range + a shared
+occupation-flavor bank, no new mechanism) and share this budget with
+Shadewrath's and Korrath's bespoke corpora for free.
+
+Density fix (this pass): the first M10 retrain shipped Shadewrath at
+SHADEWRATH_PER_COMBO=8, and his sampled goldens came out the least
+coherent of any character (5/6 garbled) -- see docs/plan.md's Known
+follow-ups. Raised to 24 here, matching guard's own proven per-combo
+value (docs/milestones/m8.md). Honest caveat: his corpus was already at
+~135K chars at PER_COMBO=8, comparable to guard's ~123K/instance
+benchmark, so raw character volume alone wasn't obviously the problem --
+the more likely lever is per-combo REPETITION count (guard's own fix
+was the same lever, "3->12->24 pairs/combo", not a bigger vocabulary),
+and unlike guard's or the compositional cast's content, none of
+Shadewrath's banks are shared/reinforced by any other character. This
+is one lever pulled, not a guaranteed fix -- measure the real result
+after this retrain rather than assume it worked.
 
 H stays 320 (unchanged from M9/M9.2) -- raising it further would need
 another RSP kernel generalization spike (like H=256->320,
-docs/spikes/rsp-matvec-h320.md), out of scope for this pass. Given the
-corpus grows substantially (7 cast_corpus characters instead of 3, plus
-Shadewrath's own ~50-100K chars), watch the catastrophic-interference
-check below closely -- M9.2 already saw a small val-loss regression
-(0.1036 vs M9's 0.0985) from just the Kragan catchphrase addition.
+docs/spikes/rsp-matvec-h320.md), out of scope for this pass.
 
 Training is cached in trainer/.m10_model.pt (git-ignored); delete it to
 retrain. Run: uv run python make_m10_blob.py   (from trainer/)
@@ -34,6 +45,7 @@ import torch
 
 from ngpt_trainer import cast_corpus as cc
 from ngpt_trainer import guard_corpus as gc
+from ngpt_trainer import korrath_corpus as kc
 from ngpt_trainer import selena_corpus as sc
 from ngpt_trainer import shadewrath_corpus as swc
 from ngpt_trainer.divergence import cross_set_divergence
@@ -52,7 +64,9 @@ SEED = 0
 HIDDEN = 320
 PER_COMBO = 300              # Selena's corpus density, unchanged from M7-M9
 GUARD_PER_COMBO = 24         # unchanged from M8
-SHADEWRATH_PER_COMBO = 8     # ~120K chars, guard's own proven ballpark
+SHADEWRATH_PER_COMBO = 24    # raised from 8 (M10 density-fix pass, see above)
+KORRATH_PER_COMBO = 12       # mid tier: half of Shadewrath's, matching the
+                              # tier's "less density than full" intent
 HOLDOUT_COMBOS = 20          # Selena's own combo-level holdout, unchanged
 SAMPLE_SEED = 0xC0FFEE
 INV_T_Q8 = 384
@@ -67,6 +81,8 @@ GENERALIZATION_SAMPLE_SIZE = 8
 # comparison.
 M9_VAL_LOSS = 0.0985
 M9_2_VAL_LOSS = 0.1036
+M10_V1_VAL_LOSS = 0.0980  # first M10 retrain (town archetypes + Shadewrath
+                           # @ per_combo=8), before this density-fix pass
 
 
 def build_all_pairs():
@@ -78,7 +94,9 @@ def build_all_pairs():
                                                 # town-archetype reps
     cc.assert_no_holdout_leak(cast_pairs)
     shadewrath_pairs = swc.generate_pairs(seed=SEED, per_combo=SHADEWRATH_PER_COMBO)
-    return selena_pairs, thin_pairs, guard_pairs, cast_pairs, shadewrath_pairs
+    korrath_pairs = kc.generate_pairs(seed=SEED, per_combo=KORRATH_PER_COMBO)
+    return (selena_pairs, thin_pairs, guard_pairs, cast_pairs,
+            shadewrath_pairs, korrath_pairs)
 
 
 def combo_split(selena_pairs, seed: int = SEED, holdout: int = HOLDOUT_COMBOS):
@@ -132,16 +150,27 @@ def top1_agreement(model, q, vocab, probe: list[tuple[str, str]]) -> float:
 
 def curated_golden_combos():
     """M7's Selena grid + one representative guard combo + a Shadewrath
-    spread across all 3 trust tiers (his own bespoke arc) -- all TRAINED,
-    proving both schemas (old N: and the compositional one) round-trip
-    through the real quantized engine."""
+    and Korrath spread across all 3 trust tiers (their own bespoke arcs)
+    -- all TRAINED, proving both schemas (old N: and the compositional
+    one) round-trip through the real quantized engine."""
     tm_cycle = [(0, "cheerful"), (2, "embarrassed"), (1, "sassy")]
     combos = [("selena", *tm_cycle[i % len(tm_cycle)], context)
               for i, context in enumerate(sc.CONTEXTS)]
     combos += [(gc.GUARD_IDS[0], 1, "cheerful", "greeting")]
     combos += [("shadewrath", tier, mood, "greeting")
                for tier, mood in ((0, "sassy"), (1, "worried"), (2, "tender"))]
+    combos += [("korrath", tier, mood, "greeting")
+               for tier, mood in ((0, "sassy"), (1, "worried"), (2, "tender"))]
     return combos
+
+
+def korrath_golden_prompts(n: int = 3, seed: int = SAMPLE_SEED) -> list[str]:
+    """A few TRAINED Korrath prompts spanning contexts, same technique as
+    shadewrath_golden_prompts()."""
+    rng = random.Random(seed ^ 0xB055)
+    pairs = kc.generate_pairs(seed=SEED, per_combo=1)
+    sample = rng.sample(pairs, min(n, len(pairs)))
+    return [prompt for prompt, _ in sample]
 
 
 def shadewrath_golden_prompts(n: int = 3, seed: int = SAMPLE_SEED) -> list[str]:
@@ -268,19 +297,22 @@ def emit_selftest_header(pairs: list[tuple[str, str]]) -> str:
 
 
 def main() -> None:
-    selena_pairs, thin_pairs, guard_pairs, cast_pairs, shadewrath_pairs = build_all_pairs()
+    (selena_pairs, thin_pairs, guard_pairs, cast_pairs, shadewrath_pairs,
+     korrath_pairs) = build_all_pairs()
     train_pairs, val_pairs, held_combos = combo_split(selena_pairs)
-    all_train = train_pairs + thin_pairs + guard_pairs + cast_pairs + shadewrath_pairs
+    all_train = (train_pairs + thin_pairs + guard_pairs + cast_pairs
+                + shadewrath_pairs + korrath_pairs)
     full_text = (sc.corpus_text(seed=SEED, per_combo=PER_COMBO)
                 + "".join(p + r for p, r in thin_pairs)
                 + "".join(p + r for p, r in guard_pairs)
                 + cc.corpus_text(seed=SEED)
-                + swc.corpus_text(seed=SEED, per_combo=SHADEWRATH_PER_COMBO))
+                + swc.corpus_text(seed=SEED, per_combo=SHADEWRATH_PER_COMBO)
+                + kc.corpus_text(seed=SEED, per_combo=KORRATH_PER_COMBO))
     vocab = Vocab.from_text(full_text)
     print(f"corpus: {len(selena_pairs)} selena + {len(thin_pairs)} thin-identity + "
          f"{len(guard_pairs)} guard + {len(cast_pairs)} compositional-cast (7 chars) + "
-         f"{len(shadewrath_pairs)} shadewrath pairs ({len(full_text)} chars, "
-         f"{len(full_text)/1e6:.2f} MB)")
+         f"{len(shadewrath_pairs)} shadewrath + {len(korrath_pairs)} korrath pairs "
+         f"({len(full_text)} chars, {len(full_text)/1e6:.2f} MB)")
     print(f"combo split: {len(train_pairs)} train-combo lines, {len(val_pairs)} "
          f"held-out-combo lines, {len(held_combos)} combos held out of Selena's 120")
     print(f"M9/M10 combo-level holdout: {len(cc.holdout_pairs())} (occupation, "
@@ -290,7 +322,8 @@ def main() -> None:
     model = get_model(all_train, val_pairs, vocab)
     q = quantize(model)
     print(f"trained: H={HIDDEN}, val loss {model.final_loss:.4f} "
-         f"(M9 was {M9_VAL_LOSS:.4f}, M9.2 was {M9_2_VAL_LOSS:.4f})")
+         f"(M9 was {M9_VAL_LOSS:.4f}, M9.2 was {M9_2_VAL_LOSS:.4f}, "
+         f"M10 v1 was {M10_V1_VAL_LOSS:.4f})")
 
     probe = val_pairs[::max(1, len(val_pairs) // 150)][:150]
     agree = top1_agreement(model, q, vocab, probe)
@@ -310,6 +343,9 @@ def main() -> None:
         elif npc_id == "shadewrath":
             event = swc.EVENTS_FOR_CONTEXT[context][0]
             prompt = swc.prompt_for(trust, mood, context, event)
+        elif npc_id == "korrath":
+            event = kc.EVENTS_FOR_CONTEXT[context][0]
+            prompt = kc.prompt_for(trust, mood, context, event)
         else:
             prompt = gc.prompt_for(npc_id, trust, mood, context)
         got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
@@ -330,6 +366,15 @@ def main() -> None:
         golden_pairs.append((prompt, got))
 
     for prompt in shadewrath_golden_prompts():
+        got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
+                               inv_t_q8=INV_T_Q8, top_k=TOP_K)
+        print(f"  {prompt}{got}")
+        if not (1 <= len(got) <= MAX_GOLDEN_LEN):
+            print(f"FATAL: degenerate golden for {prompt!r}: {got!r}")
+            sys.exit(1)
+        golden_pairs.append((prompt, got))
+
+    for prompt in korrath_golden_prompts():
         got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
                                inv_t_q8=INV_T_Q8, top_k=TOP_K)
         print(f"  {prompt}{got}")
