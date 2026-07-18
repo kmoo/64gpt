@@ -190,24 +190,67 @@ namespace
     { "bandit",    45, NpcService::Gender::Male, {20, 15, 40, 55, 60} },
   };
 
-  // M8 task #11: which NPC the demo is currently talking to. 0 = Selena
-  // (full character, M7), 1..GUARD_INSTANCE_COUNT = guardInstances[n-1]
-  // (archetype instances, M8), then NEW_CAST_COUNT more = the M9
-  // compositional cast — cycled with START. Context cycling (below)
+  // M10: Shadewrath (full-tier villain) + Korrath (mid-tier boss) — old
+  // N: scheme like Selena, named individuals rather than archetype
+  // instances, so no compositional Profile needed here (see
+  // NPCDatabase::shadewrath/korrath).
+  constexpr int NAMED_EXTRA_COUNT = 2;
+
+  // M10: one showcase instance per new town archetype, spawnInstance()'s
+  // REAL output (not a hardcoded NEW_CAST-style Profile) — proves the
+  // archetype -> compositional-scheme bridge (NpcService::profileFor())
+  // end to end in the shipped demo, not just in host tests.
+  constexpr int NEW_ARCHETYPE_COUNT = 4;
+  const char *const NEW_ARCHETYPE_LABELS[NEW_ARCHETYPE_COUNT] = {
+    "PUB_PATRON", "BLACKSMITH", "WIZARD", "VILLAGER",
+  };
+  const NPCDatabase::Archetype *const NEW_ARCHETYPES[NEW_ARCHETYPE_COUNT] = {
+    &NPCDatabase::PUB_PATRON_ARCHETYPE, &NPCDatabase::BLACKSMITH_ARCHETYPE,
+    &NPCDatabase::WIZARD_ARCHETYPE, &NPCDatabase::VILLAGER_ARCHETYPE,
+  };
+  constexpr uint32_t NEW_ARCHETYPE_SEEDS[NEW_ARCHETYPE_COUNT] = {
+    0x2001, 0x2002, 0x2003, 0x2004,
+  };
+  NPCDatabase::NPC newArchetypeInstances[NEW_ARCHETYPE_COUNT]{};
+
+  void initNewArchetypeInstances()
+  {
+    for(int i = 0; i < NEW_ARCHETYPE_COUNT; ++i)
+      newArchetypeInstances[i] =
+          NPCDatabase::spawnInstance(*NEW_ARCHETYPES[i], NEW_ARCHETYPE_SEEDS[i]);
+  }
+
+  // M8 task #11 (extended M10): which NPC the demo is currently talking
+  // to. Slot layout: 0 = Selena (full character, M7); 1..GUARD_INSTANCE_
+  // COUNT = guardInstances[n-1] (archetype instances, M8); next
+  // NEW_CAST_COUNT = the M9 compositional cast; next NAMED_EXTRA_COUNT =
+  // Shadewrath, Korrath (M10 named individuals, old N: scheme); final
+  // NEW_ARCHETYPE_COUNT = the M10 town-archetype showcase instances
+  // (compositional scheme). Cycled with START. Context cycling (below)
   // stays universal across all 8 CONTEXTS regardless of NPC: guard's own
   // corpus only trained 3 of them (guard_corpus.py's GUARD_CONTEXTS), so
   // an untrained combo on a guard is an honest demonstration of the
   // archetype's limits, not a bug to special-case away — this demo exists
   // to show the mechanism working, not to re-run the trainer's eval.
-  constexpr int NPC_SLOT_COUNT = 1 + NPCDatabase::GUARD_INSTANCE_COUNT + NEW_CAST_COUNT;
+  constexpr int NEW_CAST_START = 1 + NPCDatabase::GUARD_INSTANCE_COUNT;
+  constexpr int NAMED_EXTRA_START = NEW_CAST_START + NEW_CAST_COUNT;
+  constexpr int NEW_ARCHETYPE_START = NAMED_EXTRA_START + NAMED_EXTRA_COUNT;
+  constexpr int NPC_SLOT_COUNT = NEW_ARCHETYPE_START + NEW_ARCHETYPE_COUNT;
   int currentNpc{};
 
-  bool isNewCastSlot() { return currentNpc >= 1 + NPCDatabase::GUARD_INSTANCE_COUNT; }
+  bool isNewCastSlot() { return currentNpc >= NEW_CAST_START && currentNpc < NAMED_EXTRA_START; }
+  bool isNamedExtraSlot() { return currentNpc >= NAMED_EXTRA_START && currentNpc < NEW_ARCHETYPE_START; }
+  bool isNewArchetypeSlot() { return currentNpc >= NEW_ARCHETYPE_START; }
 
   NPCDatabase::NPC &activeNpc()
   {
-    return currentNpc == 0 ? NPCDatabase::selena
-                           : NPCDatabase::guardInstances[currentNpc - 1];
+    if(currentNpc == 0)return NPCDatabase::selena;
+    if(isNamedExtraSlot())
+      return (currentNpc - NAMED_EXTRA_START) == 0 ? NPCDatabase::shadewrath
+                                                    : NPCDatabase::korrath;
+    if(isNewArchetypeSlot())
+      return newArchetypeInstances[currentNpc - NEW_ARCHETYPE_START];
+    return NPCDatabase::guardInstances[currentNpc - 1];
   }
 
   // trustTier (0/1/2, the demo's existing D-pad control) maps onto 3 of
@@ -231,8 +274,20 @@ namespace
   void buildPrompt()
   {
     if(isNewCastSlot()) {
-      const NpcService::Profile &profile =
-        NEW_CAST[currentNpc - 1 - NPCDatabase::GUARD_INSTANCE_COUNT];
+      const NpcService::Profile &profile = NEW_CAST[currentNpc - NEW_CAST_START];
+      NpcService::RelationshipState rel = relationshipForTrustTier(trustTier);
+      NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
+                                    NPCDatabase::MOODS[moodIdx],
+                                    NPCDatabase::CONTEXTS[contextIdx],
+                                    EventBus::lastTag());
+      return;
+    }
+    if(isNewArchetypeSlot()) {
+      // M10: real spawnInstance() output routed through the same
+      // compositional bridge (profileFor()) any new archetype uses --
+      // no bespoke wiring, exactly the point of generalizing the
+      // archetype system onto NpcService.
+      NpcService::Profile profile = NpcService::profileFor(activeNpc());
       NpcService::RelationshipState rel = relationshipForTrustTier(trustTier);
       NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
                                     NPCDatabase::MOODS[moodIdx],
@@ -392,6 +447,7 @@ namespace P64::Script::C64D1A106DE00001
     }
 
     NPCDatabase::initGuardInstances(); // M8 task #11: fixed set, cheap, no ROM/model dependency
+    initNewArchetypeInstances(); // M10: same, cheap, no ROM/model dependency
 
     int blobSize = 0;
     blobData = (uint8_t*)asset_load("rom:/model.bin", &blobSize);
@@ -508,7 +564,14 @@ namespace P64::Script::C64D1A106DE00001
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - SELENA (M7)");
         else if(isNewCastSlot())
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M9 CAST)",
-                   NEW_CAST_NAMES[currentNpc - 1 - NPCDatabase::GUARD_INSTANCE_COUNT]);
+                   NEW_CAST_NAMES[currentNpc - NEW_CAST_START]);
+        else if(isNamedExtraSlot())
+          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10)",
+                   activeNpc().name);
+        else if(isNewArchetypeSlot())
+          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10 %s)",
+                   activeNpc().name,
+                   NEW_ARCHETYPE_LABELS[currentNpc - NEW_ARCHETYPE_START]);
         else
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M8 GUARD)",
                    activeNpc().name);

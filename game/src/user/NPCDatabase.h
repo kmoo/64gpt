@@ -75,6 +75,12 @@ namespace NPCDatabase
 
   extern NPC selena;
 
+  // M10: named full/mid-tier individuals, old N: scheme like Selena
+  // (docs/milestones/m10.md) -- traits match manifests/dungeon_
+  // crawler.json's characters[] entries exactly.
+  extern NPC shadewrath;
+  extern NPC korrath;
+
   // An archetype template (manifest's archetypes[] entry): a
   // personality_ranges box per TRAITS axis, plus a name pool for
   // generated instances. Not itself an NPC — spawnInstance() resolves

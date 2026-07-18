@@ -60,6 +60,24 @@ static void test_npc_database()
   CHECK(strcmp(NPCDatabase::CONTEXTS[0], "greeting") == 0);
 }
 
+// M10: Shadewrath/Korrath, named full/mid-tier individuals on the old N:
+// scheme like Selena -- traits must match manifests/dungeon_crawler.json
+// exactly (same discipline selena's own values are held to).
+static void test_shadewrath_and_korrath_npc_globals()
+{
+  CHECK(strcmp(NPCDatabase::shadewrath.id, "shadewrath") == 0);
+  CHECK(NPCDatabase::shadewrath.tier == NPCDatabase::Tier::FULL);
+  const int shadewrathTraits[] = {8, 20, 12, 88, 95};
+  for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
+    CHECK_EQ_INT(NPCDatabase::shadewrath.personality[i], shadewrathTraits[i]);
+
+  CHECK(strcmp(NPCDatabase::korrath.id, "korrath") == 0);
+  CHECK(NPCDatabase::korrath.tier == NPCDatabase::Tier::MID);
+  const int korrathTraits[] = {38, 10, 10, 75, 80};
+  for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
+    CHECK_EQ_INT(NPCDatabase::korrath.personality[i], korrathTraits[i]);
+}
+
 // M10: the three-tier cast system (full/mid/thin, docs/08-manifest-
 // schema.md, docs/milestones/m10.md section 1) needs an actual field in
 // the NPC Database, not just a manifest convention nothing reads.
@@ -184,6 +202,7 @@ int main()
   test_event_bus();
   test_world_state();
   test_npc_database();
+  test_shadewrath_and_korrath_npc_globals();
   test_npc_tier();
   test_context_builder();
   test_archetype_instance();

@@ -20,6 +20,15 @@ namespace NPCDatabase
              /*personality=*/{90, 85, 70, 55, 30}, /*memorySlot=*/0,
              /*tier=*/Tier::FULL};
 
+  // M10: traits match manifests/dungeon_crawler.json's characters[]
+  // entries exactly (same discipline selena's own values follow).
+  NPC shadewrath{"shadewrath", "SHADEWRATH", /*trustTier=*/0, /*moodIdx=*/0,
+                  /*personality=*/{8, 20, 12, 88, 95}, /*memorySlot=*/0,
+                  /*tier=*/Tier::FULL};
+  NPC korrath{"korrath", "KORRATH", /*trustTier=*/0, /*moodIdx=*/0,
+              /*personality=*/{38, 10, 10, 75, 80}, /*memorySlot=*/0,
+              /*tier=*/Tier::MID};
+
   // Placeholder name pool: manifests/dungeon_crawler.json's guard entry
   // leaves name_gen unset pending real corpus/voice work (M8 task #10);
   // this is the mechanism it will eventually be told to draw from, not a
