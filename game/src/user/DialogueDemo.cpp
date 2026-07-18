@@ -34,6 +34,7 @@
 #include "NPCDatabase.h"
 #include "ContextBuilder.h"
 #include "NpcService.h"
+#include "SaveData.h"
 
 // ---- M6.1 RSP MATVEC BACKEND -------------------------------------------
 // The engine's ngpt_set_matvec hook, backed by the rsp_ngpt overlay
@@ -253,6 +254,21 @@ namespace
     return NPCDatabase::guardInstances[currentNpc - 1];
   }
 
+  bool isShadewrathSlot() { return isNamedExtraSlot() && (currentNpc - NAMED_EXTRA_START) == 0; }
+  bool isKorrathSlot()    { return isNamedExtraSlot() && (currentNpc - NAMED_EXTRA_START) == 1; }
+
+  // M10: entering Shadewrath's or Korrath's slot restores THEIR OWN
+  // persisted trust tier (SaveData) instead of carrying over whatever
+  // trustTier was left from the previously-selected NPC -- the actual
+  // player-visible proof that "the bad guy remembers" (m10.md section
+  // 3), not just the isPersistent() rule existing on paper with nothing
+  // behind it.
+  void loadPersistedTrustTierIfNamedExtra()
+  {
+    if(isShadewrathSlot())trustTier = SaveData::current.shadewrathHighestTier;
+    else if(isKorrathSlot())trustTier = SaveData::current.korrathHighestTier;
+  }
+
   // trustTier (0/1/2, the demo's existing D-pad control) maps onto 3 of
   // NpcService's 6 relationship tiers -- stranger/neutral/best_friend --
   // reusing the existing control scheme rather than adding a 4th D-pad
@@ -448,6 +464,9 @@ namespace P64::Script::C64D1A106DE00001
 
     NPCDatabase::initGuardInstances(); // M8 task #11: fixed set, cheap, no ROM/model dependency
     initNewArchetypeInstances(); // M10: same, cheap, no ROM/model dependency
+    SaveData::init(); // M10: EEPROM save (game/Makefile.custom advertises
+                       // eeprom4k) -- falls back to defaults if no EEPROM
+                       // is present, never blocks boot
 
     int blobSize = 0;
     blobData = (uint8_t*)asset_load("rom:/model.bin", &blobSize);
@@ -475,11 +494,26 @@ namespace P64::Script::C64D1A106DE00001
     bool changed = false;
     if(pressed.d_up)   { trustTier  = cycle(trustTier,  +1, 3); changed = true; }
     if(pressed.d_down) { trustTier  = cycle(trustTier,  -1, 3); changed = true; }
+    // M10: raising trust tier on Shadewrath/Korrath persists a new
+    // high-water mark immediately -- this IS the save, not a separate
+    // deferred step, so there's no window where progress could be lost.
+    if(pressed.d_up || pressed.d_down)
+    {
+      if(isShadewrathSlot())SaveData::recordShadewrathTier((uint8_t)trustTier);
+      else if(isKorrathSlot())SaveData::recordKorrathTier((uint8_t)trustTier);
+    }
     if(pressed.d_right){ moodIdx    = cycle(moodIdx, +1, NPCDatabase::MOOD_COUNT); changed = true; }
     if(pressed.d_left) { moodIdx    = cycle(moodIdx, -1, NPCDatabase::MOOD_COUNT); changed = true; }
     if(pressed.c_right){ contextIdx = cycle(contextIdx, +1, NPCDatabase::CONTEXT_COUNT); changed = true; }
     if(pressed.c_left) { contextIdx = cycle(contextIdx, -1, NPCDatabase::CONTEXT_COUNT); changed = true; }
-    if(pressed.start) { currentNpc = cycle(currentNpc, +1, NPC_SLOT_COUNT); changed = true; }
+    if(pressed.start) {
+      currentNpc = cycle(currentNpc, +1, NPC_SLOT_COUNT);
+      loadPersistedTrustTierIfNamedExtra(); // M10: restore Shadewrath's/
+                                             // Korrath's own remembered
+                                             // progress, don't carry over
+                                             // the previous NPC's trustTier
+      changed = true;
+    }
     if(pressed.a || changed)restartGeneration();
     if(pressed.b) {
       uint32_t next = pageStart + TEXT_CHARS_PER_PAGE;
@@ -559,15 +593,24 @@ namespace P64::Script::C64D1A106DE00001
         Debug::print(24, 24, selftestPass ? "SELFTEST PASS" : "SELFTEST FAIL");
       }
       {
-        char npcLine[40];
+        char npcLine[64]; // M10: grown from 40 -- the new "(M10, MET TR:N)"
+                          // suffix pushes the worst case (longest name +
+                          // longest label) past the old size
         if(currentNpc == 0)
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - SELENA (M7)");
         else if(isNewCastSlot())
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M9 CAST)",
                    NEW_CAST_NAMES[currentNpc - NEW_CAST_START]);
-        else if(isNamedExtraSlot())
-          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10)",
-                   activeNpc().name);
+        else if(isNamedExtraSlot()) {
+          // M10: show the PERSISTED high-water mark, not just the
+          // current dial -- the actual player-visible proof the save
+          // system works, not just an invisible mechanism.
+          uint8_t remembered = isShadewrathSlot()
+            ? SaveData::current.shadewrathHighestTier
+            : SaveData::current.korrathHighestTier;
+          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10, MET TR:%u)",
+                   activeNpc().name, (unsigned)remembered);
+        }
         else if(isNewArchetypeSlot())
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10 %s)",
                    activeNpc().name,

@@ -4,6 +4,10 @@ build
 filesystem
 *.blend1
 
+# M10: Ares' locally-generated EEPROM save file (game/src/user/
+# SaveData.cpp) -- runtime data, not source, machine-local
+*.eeprom
+
 # Auto-generated files
 Makefile
 

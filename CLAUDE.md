@@ -75,6 +75,18 @@ sleep 90   # then screencapture again if still mid-run (screen shows "N/14")
 screencapture -x /tmp/ares_boot.png   # Read the image, look for "SELFTEST PASS"
 ```
 
+Ares' default keyboard mapping (Settings → Input…, Nintendo 64 → Controller
+Port 1 → Gamepad — confirmed by reading the actual dialog, not guessed
+from raw scancodes in `settings.bml`, which don't map to macOS keycodes
+1:1 and will mislead you): **D-pad Up/Down/Left/Right = I/K/J/L, C-Up/
+Down/Left/Right = arrow keys, A = M, B = N, Start = Enter/Return, L = Q,
+R = E, Z = Spacebar.** Drive these via `osascript -e 'tell application
+"System Events" to keystroke "i"'` (letter keys) or `key code 36`
+(Return, for Start) — always `tell application "ares" to activate`
+immediately before sending input or capturing a screenshot, since other
+windows (including other Claude Code terminal tabs) can steal focus
+between calls.
+
 ## Public repo
 
 This repo is public. Nothing private ever gets committed: no absolute

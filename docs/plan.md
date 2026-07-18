@@ -133,6 +133,19 @@ long survives.
   staying perfectly fluent, which a coherence metric that only checks
   "does this look like garbled text" would miss entirely.
 
+  **A second live instance, this time on Shadewrath (2026-07-18,
+  during save-system verification):** booted in Ares, his line under
+  `C:FAREWELL` came out "YOU BLEED LIKE ANYONE ELSE. INTERESTING. YOU
+  ARE BEING WELCOME." — the opening sentence is verbatim his own
+  `_BODIES["damage-taken"]` content, surfacing under a farewell prompt.
+  Same phenomenon as the Kragan/Selena case above, now reproduced on a
+  second character, which is worth noting: this isn't a one-off fluke
+  of one corpus's construction, it's a recurring failure mode across
+  the project's differently-authored characters. (A later reboot,
+  same session, correctly produced the same opening sentence under the
+  *right* context, `C:DAMAGE-TAKEN` — so the phrase itself is reliably
+  memorized; only the axis binding is inconsistent.)
+
   **Density-fix result (2026-07-18):** raised `SHADEWRATH_PER_COMBO`
   8→24 (960→2880 pairs) and retrained, per the follow-up flagged above.
   **Did not clearly fix it.** Val loss landed at 0.0995, slightly worse
