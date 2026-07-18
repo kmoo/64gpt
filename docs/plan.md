@@ -87,7 +87,20 @@ long survives.
   tested, consistent with Fergus's precedent) but not claimed as a fix.
   No ROM built/booted this session (no Mac toolchain/Ares available) —
   the real test (production-mix retrain + live hardware boot) is still
-  open.
+  open. **Follow-up (2026-07-17, Mac-toolchain session):** ran the real
+  test — production-mix retrain (Selena+guard+cast, Kragan bank
+  included), ROM build, Ares boot. SELFTEST PASS, RSP ON, XCHK PASS
+  (so the on-device output below is proven byte-exact, not estimated).
+  Val loss landed at 0.1036 (M9 shipped at 0.0985; delta plausibly
+  training-run variance, not isolated by a controlled full-mix A/B this
+  session). The golden set's `OCC:bandit` (Kragan) line came out
+  garbled on real hardware ("OKAY FORGET INSTIT, LET ME SEE IT... OKAY
+  YEAH, THAT'S A GREAT RIGHT YOU"), and Selena's own live line in the
+  same boot was comparably garbled — **this item stays open**; the
+  catchphrase-bank mitigation does not close it, confirmed at full
+  production scale on real hardware (`docs/milestones/m9.2.md`'s
+  Hardware verification section has the full record). M10/M11 still
+  should not assume reliable coherence from this mechanism.
 
 **Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost

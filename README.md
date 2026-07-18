@@ -84,7 +84,16 @@ The on-console proof is re-verified continuously:
       via START cycling on real hardware. **Known open gap**: generated
       text coherence remains inconsistent, confirmed live on real
       hardware — not silently claimed solved (`docs/milestones/m9.md`,
-      `docs/plan.md` Known follow-ups)
+      `docs/plan.md` Known follow-ups). **M9.2** (`docs/milestones/
+      m9.2.md`): evaluated four ideas from an external N64 project
+      (Legend of Elya) — RSP tiling and float math primitives rejected
+      on the merits (redundant/less-precise, and violates this project's
+      hard no-floats constraint respectively), a narrow Kragan
+      catchphrase bank adopted and A/B tested. Production retrain + ROM
+      build + Ares boot: SELFTEST PASS, RSP ON, XCHK PASS, but the
+      coherence gap persists on real hardware at full production scale —
+      the mitigation didn't close it, recorded honestly rather than
+      oversold
 
 ## Quickstart
 
