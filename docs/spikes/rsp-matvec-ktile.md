@@ -1,13 +1,94 @@
 # Spike: K-dimension tiling for the RSP matvec kernel — decoupling DMEM from H
 
 **Branch:** `worktree-rsp-spike-ktile`. **Status:** hardware-verified,
-five runs, five bit-exact XCHK passes — H=256 and H=512, chunk=64 and
-chunk=128. DMEM independence proven both structurally and empirically;
-best config (chunk=128, H=512) hits 2.50x over CPU-only. See the
-"Hardware verdict" and closing "chunk=128 combined with H=512" Status
-log entries for the real numbers. **Question:** can the RSP matvec
-kernel's DMEM footprint be made independent of H, and how much
-wall-clock does it cost?
+**nine runs, nine bit-exact XCHK passes** — chunk∈{64,128,256} at
+H=256/512, chunk=256 at H=768/1024, plus a chunk=256/H=256 calibration
+run. DMEM independence proven both structurally and empirically at
+four different H values with identical footprints per chunk size. Best
+raw speedup: chunk=256/H=1024 at 2.93x — but see the Handoff section
+immediately below before treating that as "the answer." **Question:**
+can the RSP matvec kernel's DMEM footprint be made independent of H,
+and how much wall-clock does it cost?
+
+## Handoff: what's proven, what's open, read this before anything else
+
+For whoever picks this up next (a future session, or future me) —
+everything below is detailed further in its own section; this is the
+map, not the territory.
+
+**Proven, hardware-verified, not just argued:**
+- DMEM(chunk) is independent of H — structural (`.bss` never
+  references H) and empirically confirmed identical at H=256/512/768/
+  1024 for a given chunk size.
+- Correctness holds at every (chunk, H) combination tested — 9/9
+  bit-exact XCHK passes, zero failures, including a calibration run
+  proving the generalized kernel converges to the specific kernel it
+  generalizes at the degenerate limit (chunk=H).
+- Speed is real and positive at every size, but the *shape* of the
+  win changes with H: speedup keeps climbing (2.37x→2.93x) while
+  actual chars/sec craters (62.6→5.4) — see "Reading the numbers"
+  above if that seems contradictory, it isn't.
+- **H=768, not H=1024, is the defensible practical target** if this
+  ever leaves spike status: real margin against both the ~5 ch/s
+  comfort floor (9.49 ch/s vs. 1024's 5.37) and RDRAM (2.29MB vs.
+  1024's 3.60MB static footprint). 1024 works, but with ~zero margin
+  on two different axes simultaneously — a demo, not a target.
+
+**Real stones not yet turned over — in rough priority order:**
+1. **Every test tonight used a throwaway gibberish model** (one
+   memorized sentence, `trainer/make_ktile_spike_blob.py`). Whether a
+   *real* model at whatever H gets chosen, trained on real corpus,
+   produces *better dialogue* — not just correct/fast inference — is
+   completely untested. This is the biggest open question of all;
+   tonight proved the kernel, not the model.
+2. **The Banjo-Kazooie RDRAM reframing is unresolved.** A real game at
+   that scope needs the bulk of base 4MB RDRAM for its own assets; the
+   model's realistic budget once real content exists might only
+   support H≈370-410, not the 768-1024 tested tonight for "how far
+   can the kernel go." This is a product/scope question, not a kernel
+   question — needs a real decision, not more spike data.
+3. **Expansion Pak (8MB) — raised, not decided.** Would roughly double
+   every RDRAM ceiling in this doc if the project is willing to
+   require it.
+4. **`core/ngpt.h`'s cap is still worktree-local** (currently 1024,
+   never touched on `main`). Leaving spike status needs (a) real
+   `ref_impl` revalidation of the int32 overflow bound against actual
+   trained bias magnitudes, not gibberish, and (b) explicit human
+   sign-off to touch `core/` on `main` — a frozen interface per this
+   project's own hard constraints.
+5. **Coordinate with the other session** (`.claude/worktrees/
+   rsp-spike-h256`) doing real H=320 training independently — they
+   may hit the same `core/ngpt.h` frozen-interface question from a
+   different angle. Reconcile before either merges, so the project
+   doesn't end up with two uncoordinated bumps to the same constant.
+6. **Async double-buffered DMA** — biggest unclaimed speed lever,
+   never implemented in any version of this kernel. Real tradeoff
+   (shrinks `tile_rows` to make buffer room, trading a known op-count
+   cost against an unmeasured latency-hiding gain) — see "Further
+   optimization ideas" below. Not attempted.
+7. **Async CPU/RSP dispatch** — the CPU currently blocks synchronously
+   (`rspq_wait()`) during every matvec — search for it in
+   `DialogueDemo.cpp`'s `rspMatvec()`, the line number drifts across
+   this doc's many H-swap commits. Real,
+   separate lever from #6; testable on the *existing* H=256 kernel
+   with no new model needed, and matters more as H grows (bigger
+   matvec = longer blocked window). See "Beyond the DMEM wall" below.
+   Not attempted.
+8. **Four int32 overflow mitigation strategies recorded, none
+   applied** (widen only the bias-add to int64, saturating add, shift
+   the Q-format down, rescale mid-reduction) — no evidence any are
+   needed yet; H=1024's gibberish model passed XCHK cleanly, but
+   that's not proof a real trained model's bias values won't overflow.
+9. **Pre-shuffled weights and NPC-batching** — both recorded in
+   "Further optimization ideas," both still real, both still
+   unapplied. NPC-batching specifically only makes sense once M10/M11
+   needs multiple NPCs advancing per tick — don't build ahead of that.
+10. **Which speed bar governs a real ship decision is never answered
+    here** — the ~5 ch/s floor (this doc) and M5's own ≥30 ch/s target
+    are both on record, but nothing in this spike decides which one a
+    real product decision should be held to. H=768's 9.49 ch/s clears
+    the floor comfortably and misses the M5 bar by a lot — whether
+    that's acceptable is a call this doc deliberately leaves open.
 
 ## Why this exists
 
