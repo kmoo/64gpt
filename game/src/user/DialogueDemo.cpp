@@ -490,9 +490,18 @@ namespace P64::Script::C64D1A106DE00001
       if(bootPhase == BOOT_READY && loaded) {
         // K-TILE SPIKE MARKER (worktree-rsp-spike-ktile only, not on main):
         // makes this build visually unmistakable in screenshots next to
-        // the unmodified baseline, which still just says "RSP ON".
+        // the unmodified baseline (still just "RSP ON") and next to
+        // every OTHER K-tile variant tonight -- update this string every
+        // time chunk/H changes so a screenshot alone proves which build
+        // produced it, no cross-referencing build logs required. Kept
+        // SHORT deliberately: "K128-H256 ON" pushed the line past the
+        // N64 debug font's right edge and clipped the RSP number itself
+        // (a real draw-width overflow, caught only by trying to read the
+        // clipped digits off a screenshot) -- every tag from here on
+        // must leave the full "XCHK PASS  CPU NNNNN RSP NNNNN US" tail
+        // visible, not just fit on screen at a glance.
         snprintf(line, sizeof(line), "%s XCHK %s  CPU %lu RSP %lu US",
-                 rspReady ? "K-TILE ON" : "K-TILE OFF",
+                 rspReady ? "K128 ON" : "K128 OFF",
                  xchkPass ? "PASS" : "FAIL",
                  (unsigned long)cpuStepUs, (unsigned long)rspStepUs);
         Debug::print(24, 106, line);

@@ -444,3 +444,21 @@ instead of a second round of arithmetic that might also be wrong.
   likely dominant cost — the coarser-chunk experiment (not yet applied)
   is now the higher-confidence next step. Screenshots and captions in
   `talk/` (`2026-07-17-ktile-spike-h256-*.png`).
+
+- 2026-07-17 (same day, later still): tested the coarser-chunk
+  hypothesis directly — CHUNK 64→128 at the same H=256 (`tile_rows`
+  correspondingly 32→16 to hold `W_TILE` at 2,048B; `DotRowChunk` call
+  count halves, 3,072→1,536; `.bss` grows slightly to 2,624B, still
+  well under budget). Hardware-verified: XCHK bit-exact PASS, **RSP
+  19,719µs → 17,118µs, a real 13.2% speedup** — unlike the DMA merge,
+  this one worked, confirming call count (not DMA op count) was the
+  dominant cost. Closes the gap to the old non-tiled kernel from 26%
+  slower to **~9% slower** (17,118 vs. 15,710µs) at equal H, with less
+  DMEM used either way (2,624B vs. 3,656B). Hit one real bug along the
+  way: an on-screen debug label ("K128-H256 ON") pushed the XCHK
+  results line past the N64 debug font's fixed-width screen edge and
+  clipped the RSP number itself off a screenshot — a genuine draw-width
+  overflow, not a capture artifact, fixed by shortening the label
+  ("K128 ON") and re-verifying. Every per-build on-screen tag from here
+  on needs to leave the full result line visible, not just look right
+  at a glance.
