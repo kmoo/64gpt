@@ -19,7 +19,13 @@ from ngpt_trainer.cast_corpus import (
 )
 from ngpt_trainer.npc_service import personality_descriptor
 
-_CANON_DESCRIPTOR = {"guard": "gruff", "innkeeper": "cheerful", "bandit": "cold"}
+_CANON_DESCRIPTOR = {
+    "guard": "gruff", "innkeeper": "cheerful", "bandit": "cold",
+    # M10 town-archetype representatives (pub_patron/blacksmith/wizard/
+    # villager keyed by occupation the same as the original three).
+    "pub_patron": "cheerful", "blacksmith": "gruff",
+    "wizard": "measured", "villager": "playful",
+}
 
 
 def test_character_traits_calibrate_to_intended_descriptor():
@@ -69,7 +75,10 @@ def test_density_per_character_matches_guard_benchmark():
     for prompt, response in pairs:
         occ = prompt.split("OCC:")[1].split(" ")[0]
         per_char_chars[occ] = per_char_chars.get(occ, 0) + len(prompt) + len(response)
-    assert set(per_char_chars) == {"guard", "innkeeper", "bandit"}
+    assert set(per_char_chars) == {
+        "guard", "innkeeper", "bandit",
+        "pub_patron", "blacksmith", "wizard", "villager",
+    }
     for occ, chars in per_char_chars.items():
         assert 80_000 <= chars <= 200_000, (
             f"{occ}: {chars} chars is far from guard's ~123K benchmark")

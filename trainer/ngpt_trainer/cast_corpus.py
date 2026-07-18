@@ -49,6 +49,39 @@ CHARACTERS = {
         "traits": {"warmth": 20, "humor": 15, "impulsivity": 40,
                   "bravery": 55, "focus": 60},
     },
+    # M10: town-archetype representatives, pulled forward from M11's
+    # planned cast (docs/milestones/m11.md). Unlike bram/fergus/kragan
+    # these aren't individually-named display characters -- the
+    # compositional prompt schema (P:/D:/OCC:/R:/M:/C:/EV:|) has no name
+    # token at all, so a "character" entry here exists purely to generate
+    # real (OCC:<occupation> D:<descriptor>) training coverage for that
+    # occupation; the actual in-game instances are spawnInstance()'s
+    # unlimited seed-jittered output (NPCDatabase::PUB_PATRON_ARCHETYPE
+    # etc.), each with its own generated name/age/gender/traits, not this
+    # one fixed profile. Traits verified against personality_descriptor()
+    # (trainer/tests/test_cast_corpus.py locks this in) and deliberately
+    # span genders/ages the existing all-male bram/fergus/kragan cast
+    # doesn't cover.
+    "patron_rep": {
+        "occupation": "pub_patron", "age": 28, "gender": "female",
+        "traits": {"warmth": 75, "humor": 65, "impulsivity": 50,
+                  "bravery": 55, "focus": 35},
+    },
+    "smith_rep": {
+        "occupation": "blacksmith", "age": 40, "gender": "female",
+        "traits": {"warmth": 30, "humor": 25, "impulsivity": 25,
+                  "bravery": 80, "focus": 78},
+    },
+    "tinker_rep": {
+        "occupation": "wizard", "age": 68, "gender": "male",
+        "traits": {"warmth": 60, "humor": 55, "impulsivity": 30,
+                  "bravery": 45, "focus": 70},
+    },
+    "folk_rep": {
+        "occupation": "villager", "age": 72, "gender": "female",
+        "traits": {"warmth": 65, "humor": 70, "impulsivity": 55,
+                  "bravery": 40, "focus": 50},
+    },
 }
 
 # ---- DESCRIPTOR-keyed tics (personality axis, shared/reusable) ---------
@@ -84,6 +117,27 @@ _DESCRIPTOR_TICS = {
         "YOU SHOULDN'T HAVE COME HERE.", "MAKE THIS QUICK.",
         "I DON'T REPEAT MYSELF.", "YOU'RE ALREADY TESTING ME.",
     ),
+    # M10: added for the new town-archetype representative entries below
+    # (wizard_rep -> "measured", villager_rep -> "playful") -- shared/
+    # reusable like every other descriptor bank, not tied to one character.
+    "measured": (
+        "LET'S THINK THIS THROUGH FIRST.", "NO NEED TO RUSH, WE HAVE TIME.",
+        "I CHOOSE MY WORDS CAREFULLY.", "EVERYTHING IN ITS OWN TIME.",
+        "A STEADY HAND MAKES FEWER MISTAKES.",
+        "PATIENCE. THAT'S THE WHOLE SECRET.",
+        "I LIKE TO WEIGH THINGS BEFORE I SPEAK.",
+        "SLOW AND CAREFUL WINS OUT, USUALLY.", "THERE'S NO HURRY HERE.",
+        "BETTER TO PAUSE THAN TO STUMBLE.",
+    ),
+    "playful": (
+        "RACE YOU TO THE OTHER SIDE!",
+        "BET YOU CAN'T GUESS WHAT I'M THINKING.",
+        "EVERYTHING'S MORE FUN WITH A LITTLE MISCHIEF.",
+        "I NEVER TURN DOWN A GOOD GAME.", "WANT TO HEAR SOMETHING SILLY?",
+        "LIFE'S TOO SHORT TO BE SERIOUS ALL THE TIME.",
+        "CATCH ME IF YOU CAN!", "I MAKE UP GAMES WHEREVER I GO.",
+        "A LITTLE TROUBLE NEVER HURT ANYONE.", "LET'S SEE WHO LAUGHS FIRST.",
+    ),
 }
 
 # ---- OCCUPATION-flavored insertions (job axis, shared/reusable) --------
@@ -114,6 +168,69 @@ _OCCUPATION_FLAVOR = {
         "WE TAKE WHAT WE WANT HERE.", "THIS ROAD BELONGS TO US NOW.",
         "NOBODY CROSSES THIS PASS FOR FREE.", "GIVE IT UP, EASY OR HARD.",
         "MY CREW DOESN'T MISS.", "THIS HIDEOUT ISN'T ON ANY MAP.",
+    ),
+    # M10, pulled forward from M11's planned town cast. Kid-appropriate:
+    # pub_patron reads as giddy/goofy/overly-complimentary, never
+    # intoxicated or flirtatious -- deliberate choice per the game's
+    # audience.
+    "pub_patron": (
+        "OH WOW, IS THAT A NEW CLOAK? IT'S WONDERFUL!",
+        "I COULD TALK ALL NIGHT, HONESTLY, ALL NIGHT!",
+        "BEST CIDER IN THE WHOLE VILLAGE, I SWEAR IT!",
+        "WAIT, WAIT -- HAVE I TOLD YOU THIS ONE?",
+        "YOU HAVE THE KINDEST FACE I'VE EVER SEEN.",
+        "SHH, DON'T TELL ANYONE, BUT I DANCED ON THE TABLE LAST NIGHT.",
+        "I'M NOT EVEN TIRED, I COULD STAY UP FOREVER!",
+        "THREE MUGS OF CIDER IN AND EVERYTHING IS HILARIOUS.",
+        "YOU'RE MY FAVORITE PERSON HERE, DON'T TELL THE OTHERS.",
+        "I LAUGH AT EVERYTHING WHEN I'M THIS HAPPY.",
+        "IS THE ROOM SPINNING OR IS IT JUST ME BEING SILLY?",
+        "I COULD HUG THE WHOLE TAVERN RIGHT NOW.",
+    ),
+    "blacksmith": (
+        "THE FORGE DOESN'T WAIT FOR ANYONE.",
+        "GOOD STEEL TAKES PATIENCE. SO DO YOU, APPARENTLY.",
+        "DON'T TOUCH THE ANVIL, IT'S STILL HOT.",
+        "I MAKE THINGS THAT LAST. THAT'S THE WHOLE JOB.",
+        "SPARKS FLY, I KEEP WORKING.",
+        "A DULL BLADE IS A WASTED ONE.",
+        "MY HANDS REMEMBER EVERY HAMMER STRIKE.",
+        "NO SHORTCUTS IN THIS TRADE.",
+        "THE FIRE'S HONEST. PEOPLE AREN'T ALWAYS.",
+        "STRONG METAL, STRONG WILL. SAME RULE.",
+        "I'VE FORGED THROUGH WORSE DAYS THAN THIS.",
+        "KEEP YOUR FINGERS AWAY FROM THE HEAT.",
+    ),
+    # Friendly town tinker-wizard -- distinct voice from Shadewrath (the
+    # necromancer villain, a separate full-tier character, not this
+    # archetype).
+    "wizard": (
+        "OH! OH, WAIT, I ALMOST HAD IT THAT TIME.",
+        "THIS POTION EITHER GLOWS OR EXPLODES. LET'S FIND OUT.",
+        "I INVENTED SOMETHING YESTERDAY. I THINK. I FORGET.",
+        "MAGIC IS JUST PATIENCE WITH SPARKLES ON TOP.",
+        "DON'T MIND THE SMOKE, THAT'S NORMAL. USUALLY.",
+        "I ONCE TURNED A TEAPOT INTO A FROG. LONG STORY.",
+        "EVERY SPELL STARTS WITH A GOOD QUESTION.",
+        "MY BEARD CAUGHT FIRE AGAIN. WORTH IT, THOUGH.",
+        "THE STARS TOLD ME SOMETHING TODAY. I FORGET WHAT.",
+        "COME SEE MY WORKSHOP, IT'S MOSTLY ORGANIZED.",
+        "I'M CLOSE TO A BREAKTHROUGH. VERY CLOSE. PROBABLY.",
+        "CURIOSITY NEVER HURT ANYONE. MOSTLY.",
+    ),
+    "villager": (
+        "AH, A NEW FACE! WE DON'T GET MANY OF THOSE.",
+        "BACK IN MY DAY, WE WALKED EVERYWHERE, UPHILL.",
+        "I'VE LIVED HERE SO LONG THE ROADS KNOW MY NAME.",
+        "YOU LOOK LIKE TROUBLE. GOOD. WE NEEDED SOME.",
+        "MY KNEES CREAK LOUDER THAN THE OLD MILL.",
+        "EVERY VILLAGE NEEDS A GOOD GOSSIP. THAT'S ME.",
+        "I'VE SEEN THREE FESTIVALS AND TWO FLOODS. BUSY YEAR.",
+        "YOUNG FOLKS THESE DAYS, ALWAYS IN SUCH A HURRY.",
+        "I TELL THE SAME JOKE EVERY YEAR. STILL FUNNY.",
+        "THIS VILLAGE RAISED ME AND I'M NOT DONE YET.",
+        "COME BACK ANYTIME, I'LL HAVE MORE STORIES.",
+        "WISDOM COMES WITH AGE. SO DOES COMPLAINING.",
     ),
 }
 
