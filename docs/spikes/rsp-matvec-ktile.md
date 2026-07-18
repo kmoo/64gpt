@@ -544,3 +544,42 @@ instead of a second round of arithmetic that might also be wrong.
   question (double-buffered DMA and NPC-batching from the "further
   optimization ideas" section above are the two live candidates), not
   a blocker to anything this spike set out to prove.
+
+- 2026-07-18: extended the chunk sweep two more points. **CHUNK=256 at
+  H=256** (fully degenerate — CHUNK equals H, `NUM_KCHUNKS`=1) as a
+  calibration check: does the generalized kernel converge back to the
+  specific kernel it generalizes, at the limit where there's no tiling
+  left? `SELFTEST PASS`, XCHK PASS, CPU 37,838µs / RSP 15,988µs — within
+  **1.8%** of the original old-kernel baseline (37,667/15,710), the
+  residual being the generalized loop's `KChunkLoop` entry/exit and
+  per-row accumulate-vs-store branch, overhead that doesn't fully
+  vanish even at the degenerate limit. The generalization is sound, not
+  just fast — this is the check that proves it, not just the speed
+  numbers.
+
+  **CHUNK=256 at H=512** (real tiling here, `NUM_KCHUNKS`=2) completes
+  the sweep: `SELFTEST PASS`, XCHK PASS, **CPU 136,414µs / RSP
+  49,261µs — 2.77x**, the best result of the whole spike. Full H=512
+  chunk trend, six full runs total across both sessions, six bit-exact
+  XCHK passes:
+
+  | chunk | RSP µs | speedup | improvement over prev chunk |
+  |---|---|---|---|
+  | 64 | 64,962 | 2.10x | (baseline) |
+  | 128 | 54,520 | 2.50x | 16.1% faster |
+  | 256 | 49,261 | **2.77x** | 9.6% faster |
+
+  Diminishing returns, visibly and as expected: the 128→256 step gains
+  ~60% as much as 64→128 did. This is the natural end of the sweep, not
+  an arbitrary stop — chunk=512 (the next doubling, fully degenerate at
+  H=512) was checked against the DMEM budget *before* attempting it and
+  does not fit (4,112B needed vs. ~3,544B available), confirming
+  precisely why the old kernel design cannot reach this H at all and
+  putting a real ceiling on how far this particular lever goes.
+
+  Required restoring the real H=256 shipped model (verified via SHA256
+  match against `main`) for the calibration run, then restoring the
+  throwaway H=512 model for the second — both swaps documented in the
+  commit history rather than left as silent state changes, since this
+  worktree now flips between two different models depending on which
+  H is under test.
