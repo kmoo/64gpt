@@ -100,7 +100,16 @@ long survives.
   catchphrase-bank mitigation does not close it, confirmed at full
   production scale on real hardware (`docs/milestones/m9.2.md`'s
   Hardware verification section has the full record). M10/M11 still
-  should not assume reliable coherence from this mechanism.
+  should not assume reliable coherence from this mechanism. **M10 update
+  (2026-07-17):** the pattern repeated for a brand-new character.
+  Shadewrath (necromancer villain, `tier: full`) was folded into the
+  same shared model with only 960 training pairs (vs. Selena's 36,000)
+  — his sampled goldens came out the least coherent of any character in
+  the boot, 5 of 6 containing garbled words. Same root cause as Kragan's
+  gap, now with a cleaner isolating variable: pair count. Not fixed this
+  session — flagged as a concrete, specific follow-up (`docs/milestones/
+  m10.md`): raise `SHADEWRATH_PER_COMBO` in `trainer/make_m10_blob.py`
+  and retrain before trusting his live-hardware coherence.
 
 **Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost
