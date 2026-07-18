@@ -94,6 +94,26 @@ The on-console proof is re-verified continuously:
       coherence gap persists on real hardware at full production scale —
       the mitigation didn't close it, recorded honestly rather than
       oversold
+- [x] **M10** — ROM v1.5: procedural cast — a recurring villain
+      (Shadewrath, `full` tier), a mid-tier talking boss (Korrath) bound
+      into his service, 4 new town archetypes, and
+      `DungeonGenerator::npcsForLevel()` deriving thin-tier NPC placement
+      deterministically from a level seed (30 host-test checks,
+      including a test that reloading a level reproduces identical
+      dialogue *text*, not just seed equality). A real EEPROM save
+      system (`game/src/user/SaveData.h`/`.cpp`, libdragon's `eepfs`)
+      persists the villain's/boss's highest trust tier across a genuine
+      Ares restart — verified live, not just compiled. Wired into the
+      live demo: `R` generates a new dungeon level, `START` cycles its
+      NPCs, `Z` returns to the fixed roster; verified on real hardware
+      with the bad guy's persisted trust tier carrying into a
+      freshly-generated encounter. SELFTEST + XCHK PASS for 27 goldens,
+      RSP ON. **Known open gap, carried forward honestly**:
+      Shadewrath's/Korrath's generated-text coherence remains
+      inconsistent even after a density-raising retrain, which surfaced
+      a new cross-trust-tier content-bleed failure mode rather than
+      resolving the original one (`docs/milestones/m10.md`,
+      `docs/plan.md` Known follow-ups)
 
 ## Quickstart
 

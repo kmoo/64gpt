@@ -35,6 +35,7 @@
 #include "ContextBuilder.h"
 #include "NpcService.h"
 #include "SaveData.h"
+#include "DungeonGenerator.h"
 
 // ---- M6.1 RSP MATVEC BACKEND -------------------------------------------
 // The engine's ngpt_set_matvec hook, backed by the rsp_ngpt overlay
@@ -269,6 +270,48 @@ namespace
     else if(isKorrathSlot())trustTier = SaveData::current.korrathHighestTier;
   }
 
+  // ---- M10: dungeon mode -------------------------------------------------
+  // R generates a procedurally-generated level (DungeonGenerator::
+  // npcsForLevel(), M10's seeded-placement mechanism) and enters dungeon
+  // mode; START cycles that level's NPCs while in it; Z returns to the
+  // normal roster. The bad guy appearing in each freshly-generated level
+  // (his own slot, appended after the level's thin-tier instances) is
+  // "the bad guy in two separate simulated encounters" the DoD asks for
+  // -- press R twice for two levels, and because his trust tier is now
+  // saved (SaveData), the second encounter genuinely remembers the
+  // first's progress rather than resetting, same as his fixed roster slot.
+  bool inDungeonMode{};
+  int dungeonSlot{};
+  uint32_t dungeonLevelNumber{};
+  uint32_t dungeonLevelSeed{};
+  NPCDatabase::NPC dungeonNpcs[DungeonGenerator::NPCS_PER_LEVEL]{};
+  constexpr int DUNGEON_SLOT_COUNT = DungeonGenerator::NPCS_PER_LEVEL + 1; // +1 = Shadewrath
+
+  bool isDungeonBadGuySlot() { return inDungeonMode && dungeonSlot == DungeonGenerator::NPCS_PER_LEVEL; }
+
+  void generateNewDungeonLevel()
+  {
+    ++dungeonLevelNumber;
+    dungeonLevelSeed = dungeonLevelNumber * 0x9E3779B1u; // simple deterministic
+                                                          // spread; never 0
+                                                          // (spawnInstance()
+                                                          // remaps 0 anyway)
+    DungeonGenerator::NpcPlacement placements[DungeonGenerator::NPCS_PER_LEVEL];
+    DungeonGenerator::npcsForLevel(dungeonLevelSeed, placements);
+    for(int i = 0; i < DungeonGenerator::NPCS_PER_LEVEL; ++i)
+      dungeonNpcs[i] = NPCDatabase::spawnInstance(*placements[i].archetype,
+                                                   placements[i].instanceSeed);
+    inDungeonMode = true;
+    dungeonSlot = 0;
+    trustTier = 0; moodIdx = 0; contextIdx = 0;
+  }
+
+  NPCDatabase::NPC &dungeonActiveNpc()
+  {
+    if(isDungeonBadGuySlot())return NPCDatabase::shadewrath;
+    return dungeonNpcs[dungeonSlot];
+  }
+
   // trustTier (0/1/2, the demo's existing D-pad control) maps onto 3 of
   // NpcService's 6 relationship tiers -- stranger/neutral/best_friend --
   // reusing the existing control scheme rather than adding a 4th D-pad
@@ -289,6 +332,28 @@ namespace
   // scene exists to show the live mechanism working, not to re-run eval.
   void buildPrompt()
   {
+    if(inDungeonMode) {
+      NpcService::RelationshipState rel = relationshipForTrustTier(trustTier);
+      if(isDungeonBadGuySlot()) {
+        // Same old N: scheme as his fixed roster slot -- a level
+        // encounter with him is conditioned identically either way.
+        NPCDatabase::NPC &npc = dungeonActiveNpc();
+        npc.trustTier = trustTier;
+        npc.moodIdx = moodIdx;
+        WorldState::setContext(NPCDatabase::CONTEXTS[contextIdx]);
+        ContextBuilder::build(prompt, sizeof(prompt), npc,
+                              WorldState::currentContext(), EventBus::lastTag());
+        return;
+      }
+      // Thin-tier level NPC: same compositional bridge every archetype
+      // instance uses, dungeon-spawned or not.
+      NpcService::Profile profile = NpcService::profileFor(dungeonActiveNpc());
+      NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
+                                    NPCDatabase::MOODS[moodIdx],
+                                    NPCDatabase::CONTEXTS[contextIdx],
+                                    EventBus::lastTag());
+      return;
+    }
     if(isNewCastSlot()) {
       const NpcService::Profile &profile = NEW_CAST[currentNpc - NEW_CAST_START];
       NpcService::RelationshipState rel = relationshipForTrustTier(trustTier);
@@ -497,23 +562,41 @@ namespace P64::Script::C64D1A106DE00001
     // M10: raising trust tier on Shadewrath/Korrath persists a new
     // high-water mark immediately -- this IS the save, not a separate
     // deferred step, so there's no window where progress could be lost.
+    // Works identically whether he's reached via the fixed roster slot
+    // or a dungeon-generated encounter (isDungeonBadGuySlot()) -- same
+    // save, same memory, either path.
     if(pressed.d_up || pressed.d_down)
     {
-      if(isShadewrathSlot())SaveData::recordShadewrathTier((uint8_t)trustTier);
-      else if(isKorrathSlot())SaveData::recordKorrathTier((uint8_t)trustTier);
+      if(isShadewrathSlot() || isDungeonBadGuySlot())
+        SaveData::recordShadewrathTier((uint8_t)trustTier);
+      else if(isKorrathSlot())
+        SaveData::recordKorrathTier((uint8_t)trustTier);
     }
     if(pressed.d_right){ moodIdx    = cycle(moodIdx, +1, NPCDatabase::MOOD_COUNT); changed = true; }
     if(pressed.d_left) { moodIdx    = cycle(moodIdx, -1, NPCDatabase::MOOD_COUNT); changed = true; }
     if(pressed.c_right){ contextIdx = cycle(contextIdx, +1, NPCDatabase::CONTEXT_COUNT); changed = true; }
     if(pressed.c_left) { contextIdx = cycle(contextIdx, -1, NPCDatabase::CONTEXT_COUNT); changed = true; }
     if(pressed.start) {
-      currentNpc = cycle(currentNpc, +1, NPC_SLOT_COUNT);
-      loadPersistedTrustTierIfNamedExtra(); // M10: restore Shadewrath's/
-                                             // Korrath's own remembered
-                                             // progress, don't carry over
-                                             // the previous NPC's trustTier
+      if(inDungeonMode) {
+        dungeonSlot = cycle(dungeonSlot, +1, DUNGEON_SLOT_COUNT);
+        if(isDungeonBadGuySlot())
+          trustTier = SaveData::current.shadewrathHighestTier; // M10: same
+                          // remembered-progress restore as the fixed slot
+      } else {
+        currentNpc = cycle(currentNpc, +1, NPC_SLOT_COUNT);
+        loadPersistedTrustTierIfNamedExtra(); // M10: restore Shadewrath's/
+                                               // Korrath's own remembered
+                                               // progress, don't carry over
+                                               // the previous NPC's trustTier
+      }
       changed = true;
     }
+    // M10: R generates a fresh procedurally-generated dungeon level
+    // (DungeonGenerator::npcsForLevel()) and enters/refreshes dungeon
+    // mode -- each press is a new "encounter" (m10.md DoD). Z returns
+    // to the normal fixed roster.
+    if(pressed.r) { generateNewDungeonLevel(); changed = true; }
+    if(pressed.z) { inDungeonMode = false; changed = true; }
     if(pressed.a || changed)restartGeneration();
     if(pressed.b) {
       uint32_t next = pageStart + TEXT_CHARS_PER_PAGE;
@@ -524,7 +607,8 @@ namespace P64::Script::C64D1A106DE00001
     #if NGPT_ATTRACT_MODE
     bool anyInput = pressed.d_up || pressed.d_down || pressed.d_left ||
                     pressed.d_right || pressed.c_left || pressed.c_right ||
-                    pressed.a || pressed.b || pressed.start;
+                    pressed.a || pressed.b || pressed.start ||
+                    pressed.r || pressed.z;
     if(anyInput) {
       idleTime = 0.0f;
       attract = false;
@@ -596,7 +680,21 @@ namespace P64::Script::C64D1A106DE00001
         char npcLine[64]; // M10: grown from 40 -- the new "(M10, MET TR:N)"
                           // suffix pushes the worst case (longest name +
                           // longest label) past the old size
-        if(currentNpc == 0)
+        if(inDungeonMode) {
+          // M10: proves the actual DoD ask -- a procedurally-generated
+          // level (LV:N, its seed) showing a thin-tier instance or the
+          // bad guy remembering his own persisted progress, either way.
+          if(isDungeonBadGuySlot())
+            snprintf(npcLine, sizeof(npcLine), "LV:%lu SHADEWRATH (MET TR:%u)",
+                     (unsigned long)dungeonLevelNumber,
+                     (unsigned)SaveData::current.shadewrathHighestTier);
+          else
+            snprintf(npcLine, sizeof(npcLine), "LV:%lu %s (SEED %04X)",
+                     (unsigned long)dungeonLevelNumber,
+                     dungeonActiveNpc().name,
+                     (unsigned)(dungeonLevelSeed & 0xFFFFu));
+        }
+        else if(currentNpc == 0)
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - SELENA (M7)");
         else if(isNewCastSlot())
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M9 CAST)",
