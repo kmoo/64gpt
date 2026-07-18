@@ -190,7 +190,21 @@ that's a call for after both gates report a verdict, not before.
 
 ## Status log
 
-- 2026-07-17: design doc written, no kernel code yet. Next: prototype
-  Design A at H=320 in this worktree, get a real `tile_rows`/chunk-size
-  pick, then implement and run the G1/G2/G3-style gate sequence the
-  H=128 and H=256 spikes used.
+- 2026-07-17: design doc written. `game/src/user/rsp_ngpt.S` rewritten
+  for Design A at H=320, chunk=64 (`DotRowChunk` + a 2D-tiled
+  `NgptMatvec`: 30 row-tiles x 5 K-chunks, using the RSP DMA engine's
+  native pitched-transfer support to pull each row-tile's K-chunk
+  column-slice straight out of the H-wide RDRAM matrix — no RDRAM
+  pre-restructuring needed). **Not yet hardware-verified — blocked on
+  a trained H=320 model.** No H=320 blob/goldens exist yet (M9 hasn't
+  trained anything); game-side wiring (`DialogueDemo.cpp`'s
+  `rspWhh`/`rspHShuf`/`rspMvOut` sizes and `rspBackendInit`'s `H!=256`
+  guard) is still H=256-shaped and untouched. Deliberately not pushed
+  further tonight — `.claude/worktrees/rsp-spike-h256/trainer` has an
+  unrelated retrain in progress, and producing a real H=320 training
+  artifact isn't something to rush alongside it.
+  Remaining before a verdict: (1) an H=320 trained blob + goldens,
+  (2) game-side buffer/guard updates to match, (3) build + Ares boot,
+  (4) SELFTEST + XCHK (CPU vs RSP, bit-exact) + speed number vs CPU-only
+  H=320. Then, if clean, the mechanical H=320->H=512 constant swap this
+  doc's Decision section describes.
