@@ -1,10 +1,10 @@
 # Spike: K-dimension tiling for the RSP matvec kernel — decoupling DMEM from H
 
-**Branch:** `worktree-rsp-spike-ktile`. **Status:** design-only, no kernel
-code written yet — this doc exists to pick a design before touching
-`rsp_ngpt.S`, per the project's "detailed files before implementation"
-request. **Question:** can the RSP matvec kernel's DMEM footprint be made
-independent of H, and how much wall-clock does it cost?
+**Branch:** `worktree-rsp-spike-ktile`. **Status:** kernel code written
+(`DotRowChunk` + 2D-tiled `NgptMatvec` at H=320), not yet
+hardware-verified — see Status log. **Question:** can the RSP matvec
+kernel's DMEM footprint be made independent of H, and how much
+wall-clock does it cost?
 
 ## Why this exists
 
@@ -187,6 +187,91 @@ commit rather than its own milestone). If step 2 also lands clean, H=512
 is capability beyond anything M9/M10/M11 currently scope, and a new
 milestone number (M12 would be next free) becomes a real question — but
 that's a call for after both gates report a verdict, not before.
+
+## Beyond the DMEM wall: what K-tiling also unlocks
+
+The DMEM formula in "Why this exists" is the headline result, but it's
+not the only thing this design changes. Checked against the actual
+dispatch code (`game/src/user/DialogueDemo.cpp:94-96`) rather than
+assumed, three further threads are worth recording now so they don't
+get rediscovered later.
+
+### 1. The CPU isn't actually freed today — that's a deliberate
+simplification the K-tiled kernel makes worth revisiting
+
+```cpp
+rspq_write(rspOvlId, 0, 0, PhysicalAddr(rspWhh), PhysicalAddr(rspHShuf), PhysicalAddr(rspMvOut));
+rspq_wait(); // never reached from initDelete — see boot sequence below
+```
+
+The CPU dispatches the matvec and then **blocks** until the RSP
+finishes — the surrounding comment says so explicitly ("the RSP path
+blocks, so it can never run in `initDelete`"). So every one of the
+"~4-6ms per step" the RSP spends on a matvec today (H=256; grows as
+`3H²`, so materially longer at H=320/512) is currently spent with the
+CPU idle on `rspq_wait()`, not doing anything else. The closing line of
+the original spike — "the CPU is also freed during inference, which is
+what the M7 world-simulation vision needs" (`docs/spikes/rsp-matvec.md`)
+— describes the architecture's *potential*, not something the code
+currently exploits.
+
+The fix is a swap, not new invention: the self-test harness already
+proved a non-blocking pattern works on this hardware ("hang-proof lazy
+dispatch from `update()` with non-blocking syncpoints and a frame
+budget," same doc). Replacing `rspq_wait()` with an `rspq_syncpoint`
++ poll lets the CPU do other work during the matvec window instead of
+blocking on it. This is **orthogonal to K-tiling** — it applies just as
+well to the existing H=256 kernel on `main`, needs no new trained model,
+and is a reasonable thing to prototype separately while this spike is
+blocked on an H=320 training artifact.
+
+It matters more *because of* this spike, though: `3H²` scaling means
+the matvec window (and thus the CPU idle time being wasted) grows
+quadratically as H climbs toward the capacity this spike is chasing —
+the bigger the model gets, the more there is to gain from not blocking
+on it.
+
+### 2. K-tiling's own DMEM headroom pays for a real RSP-side speedup
+
+At H=320 the K-tiled kernel uses 2,432B of the 4,096B budget — 1,664B
+free, versus the ~190B the non-tiled M9 §6 plan would have had at the
+same H. That's enough room for the **double-buffered tile DMA** the
+very first spike named as unclaimed headroom ("overlap the next 2KB
+tile's DMA with this tile's MACs... realistic target 5×+ [vs. today's
+2.8x floor]," `docs/spikes/rsp-matvec.md`) — previously unaffordable
+because H-scaling ate the budget before double-buffering could get a
+second `W_TILE`-sized buffer.
+
+K-tiling also changes the shape of the opportunity, not just its
+existence: this design runs 150 DMA/compute cycles per matvec (5
+K-chunks × 30 row-tiles) instead of the non-tiled kernel's ~6-30 — more,
+smaller transfers, meaning more chances to overlap DMA latency with the
+previous chunk's vector compute. Not implemented in this spike (scope
+is the DMEM decoupling itself), but the headroom to attempt it now
+exists where it didn't before, and should be the next optimization pass
+once H=320 clears its gates.
+
+### 3. The kernel generalized into a reusable tiled-matvec primitive, not a GRU-only accelerator
+
+`NgptMatvec` is now parametrized entirely by tile geometry (H, chunk,
+row-tile size) rather than baked around one fixed problem shape. M9's
+own roadmap already has other small-linear-algebra-shaped needs — item
+3, "relationship state: persistent, and randomized for testing," and
+M10's procedural-cast scoring are both candidates. Once H=320 is
+hardware-verified, the same RSP overlay is a plausible fit for those
+too, instead of each subsystem growing its own bespoke CPU-only path.
+Recorded as a direction, not a commitment — worth revisiting once those
+milestones have real shape.
+
+### The honest caveat
+
+(1) and (3) only pay off once there's other CPU work actually queued to
+run during the freed window. Today's demo is one NPC, turn-based,
+nothing competing for the CPU — so async dispatch alone won't show a
+measurable win yet. The real payoff arrives with M10/M11's world-sim
+work. This section is "unlocks the option," not "doubles perf today" —
+worth being precise about that distinction before it turns into an
+overclaim later.
 
 ## Status log
 
