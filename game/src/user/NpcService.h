@@ -86,4 +86,13 @@ namespace NpcService
                               const RelationshipState &relationship,
                               const char *mood, const char *context,
                               const char *event);
+
+  // M10: bridges an NPCDatabase::NPC (spawnInstance()'s output) to a
+  // Profile, so any archetype with an occupation+ageRange set (see
+  // NPCDatabase::Archetype) can feed buildPromptFields() directly --
+  // a new archetype needs a corpus, not new wiring. npc.occupation must
+  // be non-null (set by spawnInstance() from the archetype; old-scheme
+  // NPCs like selena/guard that go through ContextBuilder instead never
+  // call this).
+  Profile profileFor(const NPCDatabase::NPC &npc);
 }

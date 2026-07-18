@@ -22,12 +22,28 @@
       },
       "corpus_ref": "trainer/ngpt_trainer/selena_corpus.py",
       "memory_persistence": "full"
+    },
+    {
+      "id": "shadewrath",
+      "tier": "full",
+      "personality": {"warmth": 8, "humor": 20, "impulsivity": 12, "bravery": 88, "focus": 95},
+      "bible": {
+        "public": "A necromancer wrapped in shadow — taunts from the dark at the edge of torchlight, vanishes before a blade or a question can land. The dungeon feels rearranged whenever he's been near.",
+        "private": "Genuinely respects the player's bloodline more than he lets on — sees an heir, not just prey, and is testing them as much as tormenting them.",
+        "secret": "He is chasing a truth the town has forgotten: Ravendale sits atop the last door to another world, one the player's bloodline — the last of an ancient race — was born to open. He means to open it, with or without them.",
+        "fear": "That he's wrong — that the door is already sealed for good, and centuries of patience were spent on a world that will never answer.",
+        "desire": "Not the player's death but their consent — to stand beside him and open what only their blood can open, freely, because he's decided that matters more than taking it by force."
+      },
+      "corpus_ref": "trainer/ngpt_trainer/shadewrath_corpus.py",
+      "memory_persistence": "full",
+      "_status": "M10 (2026-07-17), recurring villain -- abducted the elf princess of Ravendale (met by the player once), knows more than he should about the player and the town, real ambition is an alliance not conquest. corpus_ref does not exist yet -- content authoring pending."
     }
   ],
   "archetypes": [
     {
       "id": "guard",
       "tier": "thin",
+      "occupation": "guard",
       "personality_ranges": {
         "warmth": [20, 45],
         "humor": [5, 30],
@@ -37,7 +53,55 @@
       },
       "corpus_ref": null,
       "name_gen": "game/src/user/NPCDatabase.cpp:GUARD_NAMES",
-      "_status": "ranges are a first-pass sketch (stern/professional profile), not yet validated against a trained model. corpus_ref is unset until M8 task #10 (guard corpus + retrain) exists. name_gen resolved to a compiled-in name array (NPCDatabase::GUARD_ARCHETYPE), not a loaded text file — same pattern as MOODS/CONTEXTS in the same file."
+      "_status": "ranges are a first-pass sketch (stern/professional profile), not yet validated against a trained model. corpus_ref is unset until M8 task #10 (guard corpus + retrain) exists. name_gen resolved to a compiled-in name array (NPCDatabase::GUARD_ARCHETYPE), not a loaded text file — same pattern as MOODS/CONTEXTS in the same file. Still on the old N:<id> conditioning scheme (ContextBuilder), not yet migrated to the compositional scheme new M10 archetypes below use -- migrating it would require retraining guard's existing, shipped, hardware-verified corpus, out of scope for M10's town-cast pass."
+    },
+    {
+      "id": "pub_patron",
+      "tier": "thin",
+      "occupation": "pub_patron",
+      "personality_ranges": {
+        "warmth": [55, 85], "humor": [55, 90], "impulsivity": [45, 85],
+        "bravery": [40, 75], "focus": [20, 55]
+      },
+      "corpus_ref": null,
+      "name_gen": "game/src/user/NPCDatabase.cpp:PUB_PATRON_NAMES",
+      "_status": "M10, pulled forward from M11's planned cast (docs/milestones/m11.md). Kid-appropriate: high-impulsivity end reads as giddy/goofy/silly, not intoxicated. corpus_ref pending."
+    },
+    {
+      "id": "blacksmith",
+      "tier": "thin",
+      "occupation": "blacksmith",
+      "personality_ranges": {
+        "warmth": [20, 45], "humor": [15, 40], "impulsivity": [15, 40],
+        "bravery": [65, 90], "focus": [65, 90]
+      },
+      "corpus_ref": null,
+      "name_gen": "game/src/user/NPCDatabase.cpp:BLACKSMITH_NAMES",
+      "_status": "M10, pulled forward from M11's planned cast. corpus_ref pending."
+    },
+    {
+      "id": "wizard",
+      "tier": "thin",
+      "occupation": "wizard",
+      "personality_ranges": {
+        "warmth": [45, 75], "humor": [40, 70], "impulsivity": [40, 75],
+        "bravery": [30, 60], "focus": [55, 85]
+      },
+      "corpus_ref": null,
+      "name_gen": "game/src/user/NPCDatabase.cpp:WIZARD_NAMES",
+      "_status": "M10, pulled forward from M11's planned cast. Friendly town tinker-wizard -- distinct from shadewrath (the necromancer villain, characters[] tier full), same occupation word but a deliberately different vibe/role. corpus_ref pending."
+    },
+    {
+      "id": "villager",
+      "tier": "thin",
+      "occupation": "villager",
+      "personality_ranges": {
+        "warmth": [40, 80], "humor": [40, 85], "impulsivity": [30, 70],
+        "bravery": [20, 60], "focus": [30, 70]
+      },
+      "corpus_ref": null,
+      "name_gen": "game/src/user/NPCDatabase.cpp:VILLAGER_NAMES",
+      "_status": "M10, pulled forward from M11's planned cast. Wide age range (8-85) deliberately covers 'a few funny old people' via the elderly_man/elderly_woman age-gender token rather than a dedicated elder archetype. corpus_ref pending."
     }
   ]
 }

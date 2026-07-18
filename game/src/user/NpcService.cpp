@@ -120,4 +120,15 @@ namespace NpcService
     uint32_t len = (uint32_t)n;
     return len < outCap ? len : outCap - 1; // snprintf truncated; report actual written length
   }
+
+  Profile profileFor(const NPCDatabase::NPC &npc)
+  {
+    Profile p;
+    p.occupation = npc.occupation;
+    p.age = npc.age;
+    p.gender = npc.isFemale ? Gender::Female : Gender::Male;
+    for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
+      p.traits[i] = npc.personality[i];
+    return p;
+  }
 }

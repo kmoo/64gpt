@@ -61,6 +61,16 @@ namespace NPCDatabase
     Tier tier = Tier::THIN;       // default matches spawnInstance()'s only
                                    // valid tier; characters[]-shaped NPCs
                                    // (selena) override explicitly
+    const char *occupation = nullptr; // M10: one of NpcService::OCCUPATIONS,
+                                   // set by spawnInstance() from the
+                                   // archetype; nullptr for old-scheme NPCs
+                                   // (selena/guard) that don't feed
+                                   // NpcService::buildPromptFields()
+    int age = 0;                  // M10: years, jittered from the
+                                   // archetype's ageRange; 0 = unset
+    bool isFemale = false;        // M10: avoids this header depending on
+                                   // NpcService::Gender (NpcService already
+                                   // depends on NPCDatabase, not the reverse)
   };
 
   extern NPC selena;
@@ -78,9 +88,25 @@ namespace NPCDatabase
     PersonalityRange ranges[TRAIT_COUNT];  // keyed by TRAITS, same order
     const char *const *namePool;
     int namePoolSize;
+    const char *occupation;    // M10: one of NpcService::OCCUPATIONS,
+                                // lowercase — lets spawnInstance() feed
+                                // NpcService::buildPromptFields() directly,
+                                // instead of every new archetype needing
+                                // its own bespoke ContextBuilder-style wiring
+    PersonalityRange ageRange; // M10: inclusive, years — jittered same as
+                                // the personality traits
   };
 
   extern const Archetype GUARD_ARCHETYPE;
+
+  // M10: town archetypes, pulled forward from M11's originally-planned
+  // cast (docs/milestones/m11.md) -- same mechanism as GUARD_ARCHETYPE,
+  // just a different personality range/name pool/occupation. See
+  // NPCDatabase.cpp for the ranges and reasoning.
+  extern const Archetype PUB_PATRON_ARCHETYPE;
+  extern const Archetype BLACKSMITH_ARCHETYPE;
+  extern const Archetype WIZARD_ARCHETYPE;   // town tinker-wizard, not Shadewrath
+  extern const Archetype VILLAGER_ARCHETYPE; // generic townsfolk incl. elders
 
   // M8 task #11: the fixed set of guard instances the demo/game actually
   // ships with (guard_corpus.py's GUARD_IDS — the model was only ever

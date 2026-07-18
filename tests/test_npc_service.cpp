@@ -150,6 +150,102 @@ int main()
     }
   }
 
+  // M10: the archetype->Profile bridge -- any spawnInstance() output must
+  // carry enough (occupation/age/gender) to feed buildPromptFields()
+  // directly, so a NEW archetype (blacksmith, pub_patron, ...) doesn't
+  // need its own bespoke wiring the way guard's old N: scheme did.
+  {
+    static const char *const TEST_NAMES[] = {"TESTNAME"};
+    NPCDatabase::Archetype testArchetype{
+      "tester",
+      {{10, 20}, {30, 40}, {50, 60}, {70, 80}, {90, 100}},
+      TEST_NAMES, 1,
+      "blacksmith",     // occupation
+      {30, 50},         // ageRange
+    };
+    NPCDatabase::NPC npc = NPCDatabase::spawnInstance(testArchetype, 0x77);
+
+    if(strcmp(npc.occupation, "blacksmith") != 0)
+    {
+      printf("FAIL [archetype occupation] got %s\n", npc.occupation);
+      ++failures;
+    }
+    if(npc.age < 30 || npc.age > 50)
+    {
+      printf("FAIL [archetype age range] got %d, want [30,50]\n", npc.age);
+      ++failures;
+    }
+
+    Profile p = profileFor(npc);
+    bool ok = strcmp(p.occupation, npc.occupation) == 0 && p.age == npc.age;
+    for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
+      ok = ok && p.traits[i] == npc.personality[i];
+    if(!ok)
+    {
+      printf("FAIL [profileFor] bridge mismatch\n");
+      ++failures;
+    }
+    else
+    {
+      printf("ok   [profileFor] occupation=%s age=%d gender=%s\n", p.occupation,
+             p.age, p.gender == Gender::Female ? "female" : "male");
+    }
+
+    /* same seed -> byte-identical bridge output, same discipline as
+     * spawnInstance()'s own determinism guarantee */
+    NPCDatabase::NPC npc2 = NPCDatabase::spawnInstance(testArchetype, 0x77);
+    if(npc.age != npc2.age || npc.isFemale != npc2.isFemale)
+    {
+      printf("FAIL [archetype determinism] age/gender differ across identical seeds\n");
+      ++failures;
+    }
+  }
+
+  // M10: every real town archetype's occupation must be a declared
+  // OCCUPATIONS entry (a typo'd occupation string would silently train
+  // an unrecognized OCC: value nothing else catches), and a spawned
+  // instance must round-trip through profileFor() -> buildPromptFields()
+  // into a well-formed, non-degenerate prompt string.
+  {
+    struct Entry { const char *label; const NPCDatabase::Archetype *arch; uint32_t seed; };
+    const Entry entries[] = {
+      {"pub_patron", &NPCDatabase::PUB_PATRON_ARCHETYPE, 0x1234},
+      {"blacksmith", &NPCDatabase::BLACKSMITH_ARCHETYPE, 0x5678},
+      {"wizard",     &NPCDatabase::WIZARD_ARCHETYPE,     0x9abc},
+      {"villager",   &NPCDatabase::VILLAGER_ARCHETYPE,   0xdef0},
+    };
+    for(const Entry &e : entries)
+    {
+      bool declared = false;
+      for(int i = 0; i < OCCUPATION_COUNT; ++i)
+        if(strcmp(OCCUPATIONS[i], e.arch->occupation) == 0) declared = true;
+      if(!declared)
+      {
+        printf("FAIL [%s occupation] %s not in NpcService::OCCUPATIONS\n",
+               e.label, e.arch->occupation);
+        ++failures;
+        continue;
+      }
+
+      NPCDatabase::NPC npc = NPCDatabase::spawnInstance(*e.arch, e.seed);
+      Profile p = profileFor(npc);
+      RelationshipState r{fx(0.5), fx(0.5), fx(0.5), fx(0.5), fx(0.0)};
+      char out[128];
+      uint32_t len = buildPromptFields(out, sizeof(out), p, r, "cheerful", "greeting", "");
+      bool ok = len > 0 && len < sizeof(out) && strstr(out, "OCC:") != nullptr
+             && strstr(out, e.arch->occupation) != nullptr;
+      if(!ok)
+      {
+        printf("FAIL [%s prompt] malformed: %s\n", e.label, out);
+        ++failures;
+      }
+      else
+      {
+        printf("ok   [%s] %s\n", e.label, out);
+      }
+    }
+  }
+
   if(failures)
   {
     printf("\n%d FAILURE(S)\n", failures);

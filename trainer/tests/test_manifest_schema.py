@@ -83,3 +83,30 @@ def test_archetypes_are_thin_tier():
     for archetype in manifest["archetypes"]:
         assert archetype["tier"] == "thin", (
             f"{archetype['id']}: archetypes[] entries must be thin-tier")
+
+
+def test_archetype_occupation_is_declared_in_npc_service():
+    # M10: an archetype's occupation feeds NpcService::buildPromptFields()'s
+    # OCC: field directly (NPCDatabase::Archetype.occupation ->
+    # spawnInstance() -> profileFor()) -- a typo'd occupation string would
+    # silently train an OCC: value the shared vocabulary doesn't recognize.
+    from ngpt_trainer.npc_service import OCCUPATIONS
+    manifest = _load()
+    for archetype in manifest["archetypes"]:
+        assert "occupation" in archetype, f"{archetype['id']}: missing occupation"
+        assert archetype["occupation"] in OCCUPATIONS, (
+            f"{archetype['id']}: occupation {archetype['occupation']!r} not in "
+            f"npc_service.OCCUPATIONS")
+
+
+def test_full_tier_characters_have_a_bible():
+    # full tier means hand-authored individual (docs/08-manifest-schema.md)
+    # -- a bible is the whole point of that tier, not optional content.
+    manifest = _load()
+    for character in manifest["characters"]:
+        if character["tier"] != "full":
+            continue
+        bible = character.get("bible")
+        assert bible, f"{character['id']}: full-tier character missing a bible"
+        for field in ("public", "private", "secret", "fear", "desire"):
+            assert bible.get(field), f"{character['id']}: bible missing {field!r}"
