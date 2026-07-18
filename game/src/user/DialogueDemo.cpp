@@ -488,8 +488,11 @@ namespace P64::Script::C64D1A106DE00001
         Debug::print(24, 90, line);
       }
       if(bootPhase == BOOT_READY && loaded) {
+        // K-TILE SPIKE MARKER (worktree-rsp-spike-ktile only, not on main):
+        // makes this build visually unmistakable in screenshots next to
+        // the unmodified baseline, which still just says "RSP ON".
         snprintf(line, sizeof(line), "%s XCHK %s  CPU %lu RSP %lu US",
-                 rspReady ? "RSP ON" : "RSP OFF",
+                 rspReady ? "K-TILE ON" : "K-TILE OFF",
                  xchkPass ? "PASS" : "FAIL",
                  (unsigned long)cpuStepUs, (unsigned long)rspStepUs);
         Debug::print(24, 106, line);

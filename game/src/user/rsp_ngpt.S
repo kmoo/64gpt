@@ -2,11 +2,23 @@
 # rsp_ngpt.S — 64GPT GRU matvec on the RSP (rspq overlay)
 #
 # One command:
-#   0 NgptMatvec — 960 rows x 320 cols int8xint16 matvec, DMA-tiled in
+#   0 NgptMatvec — 768 rows x 256 cols int8xint16 matvec, DMA-tiled in
 #                  BOTH dimensions (K-chunked spike, see
 #                  docs/spikes/rsp-matvec-ktile.md), bit-exact vs the
 #                  CPU engine (unverified on hardware as of this write —
 #                  see that doc's Decision section for the gate plan)
+#
+# QUICK HARDWARE VALIDATION NOTE: this build targets H=256, NOT the
+# H=320 the design doc's Decision section calls for. Reason: core/'s
+# NGPT_GRU_MAX_HIDDEN cap (frozen at 256 since M2) rejects any H=320
+# blob before the RSP kernel is ever exercised — a frozen-interface
+# change that needs explicit sign-off before touching core/, separate
+# from this spike. Retargeting to H=256 instead validates the K-tiling
+# MECHANISM (DMA correctness, chunk-accumulation logic, real speed)
+# against the exact model/goldens already shipping on main — a true
+# apples-to-apples old-kernel-vs-new-kernel comparison at identical H,
+# no core/ or game-side changes needed. H=320/512 remain the next step,
+# gated on that separate sign-off.
 #
 # The filename MUST start with "rsp": n64.mk keys RSP-ucode assembly
 # off that prefix. Hard-won lessons encoded below (full ledger in
@@ -45,26 +57,26 @@
 # = 2048/H shrinks toward 1 as H grows — a second, quieter wall this
 # generalization also removes).
 #
-# H=320 HARDCODED for this spike (matches M9's own target, chosen so
-# H/CHUNK and 3H/TILE_ROWS both divide evenly: 320/64 = 5 K-chunks,
-# 960/32 = 30 row-tiles, zero wasted DMA bytes either way). Per this
-# project's established pattern (H=128 -> H=256 also hardcoded per
-# generation, not parametrized), pushing to H=512 next is a small,
-# mechanical constant swap (H, NUM_KCHUNKS, NUM_ROW_TILES, tile-base
-# stride) — see docs/spikes/rsp-matvec-ktile.md's Decision section.
+# H=256 HARDCODED for THIS validation build (H/CHUNK and 3H/TILE_ROWS
+# both divide evenly: 256/64 = 4 K-chunks, 768/32 = 24 row-tiles, zero
+# wasted DMA bytes). H=320 (320/64=5, 960/32=30) and H=512 (512/64=8,
+# 1536/32=48) are the same mechanical constant swap (H, NUM_KCHUNKS,
+# NUM_ROW_TILES, tile-base stride) once the core/ cap is raised — see
+# docs/spikes/rsp-matvec-ktile.md's Decision section.
 #
-# DMEM budget at H=320: W_TILE 2048 + W16_BUF 128 + H_BUF 128 +
-# OUT_TILE 128 = 2432B .bss — independent of H by construction, vs.
-# 3,906B for the non-tiled formula at the same H (docs/milestones/
-# m9.md §6). This is the headline result this spike exists to get a
-# real number for.
+# DMEM budget: W_TILE 2048 + W16_BUF 128 + H_BUF 128 + OUT_TILE 128 =
+# 2432B .bss, independent of H by construction (unaffected by which H
+# this particular build targets) — vs. 3,656B for the existing
+# non-tiled H=256 kernel this is being A/B'd against
+# (docs/spikes/rsp-matvec-h256.md). This is the headline result this
+# spike exists to get a real number for.
 ########################################################
 #include <rsp_queue.inc>   /* already provides the rsp_dma.inc routines */
 
 .data
 
 RSPQ_BeginOverlayHeader
-    RSPQ_DefineCommand NgptMatvec, 16 # cmd, dram_w(960x320), dram_h, dram_out
+    RSPQ_DefineCommand NgptMatvec, 16 # cmd, dram_w(768x256), dram_h, dram_out
 RSPQ_EndOverlayHeader
 
 RSPQ_EmptySavedState
@@ -178,28 +190,28 @@ OddLoop:
     .endfunc
 
 ########################################################
-# NgptMatvec: 960 rows x 320 cols, 2D-tiled — 30 row-tiles (32 rows
-# each) x 5 K-chunks (64 cols each) per row-tile.
-#   a1 = RDRAM addr of 960x320 int8 weights, row-major, 8-byte aligned
-#        (real row stride is 320B — the K-chunk DMA below reads a
+# NgptMatvec: 768 rows x 256 cols, 2D-tiled — 24 row-tiles (32 rows
+# each) x 4 K-chunks (64 cols each) per row-tile.
+#   a1 = RDRAM addr of 768x256 int8 weights, row-major, 8-byte aligned
+#        (real row stride is 256B — the K-chunk DMA below reads a
 #        32-row x 64-col RECTANGLE out of this via the RSP DMA engine's
 #        native pitch support, not a restructured/pre-tiled layout)
-#   a2 = RDRAM addr of shuffled h (640B: 160 evens then 160 odds, the
+#   a2 = RDRAM addr of shuffled h (512B: 128 evens then 128 odds, the
 #        SAME global shuffle convention as the old kernel — chunking
 #        slices 32 contiguous elements out of each half per K-chunk,
 #        it does not require the CPU to shuffle per-chunk)
-#   a3 = RDRAM addr of 960 int32 outputs (3840B)
+#   a3 = RDRAM addr of 768 int32 outputs (3072B)
 #
 # Register map (s0-s7 fully committed, matches the old kernel's
 # allocation plus one — s6 is new):
 #   s0 = DMA scratch: current transfer's RDRAM source address
-#   s1 = row-tile base address into a1, advances by TILE_ROWS*H (10240)
+#   s1 = row-tile base address into a1, advances by TILE_ROWS*H (8192)
 #        after all K-chunks for a row-tile are done
 #   s2 = h base address (a2), fixed for the whole call
 #   s3 = output cursor into a3, advances by TILE_ROWS*4 (128) per tile
 #   s4 = DMA scratch: DMEM destination address
 #   s5 = row-in-tile counter, 0..31
-#   s6 = K-chunk counter, 0..4 (NEW vs. the non-chunked kernel)
+#   s6 = K-chunk counter, 0..3 (NEW vs. the non-chunked kernel)
 #   s7 = saved ra (jal clobbers ra = RSPQ_Loop)
 ########################################################
     .func NgptMatvec
@@ -209,28 +221,33 @@ NgptMatvec:
     move s2, a2
     move s3, a3
 
-    li t9, 30                 # 30 row-tiles x 32 rows = 960
+    li t9, 24                 # 24 row-tiles x 32 rows = 768
 TileLoop:
-    li s6, 0                  # K-chunk 0..4 (H=320 / CHUNK=64 = 5)
+    li s6, 0                  # K-chunk 0..3 (H=256 / CHUNK=64 = 4)
 KChunkLoop:
-    # W_TILE <- pitched 2D DMA: 32 rows x 64B, pitch 320B (H), starting
+    # W_TILE <- pitched 2D DMA: 32 rows x 64B, pitch 256B (H), starting
     # at this row-tile's base + this chunk's 64B column offset.
     sll t4, s6, 6              # t4 = chunk * 64 (byte column offset)
     add s0, s1, t4
     li s4, %lo(W_TILE)
-    li t1, 320                 # pitch = H (real RDRAM row width)
-    jal DMAIn
+    li t1, 256                 # pitch = H (real RDRAM row width)
+    # DMA_SIZE(64,32) doesn't fit a single 16-bit li (height=32 pushes
+    # it past 0xFFFF) -- the li macro would expand to 2 instructions,
+    # illegal in a branch-delay slot, so set t0 BEFORE the jal instead
+    # of in its delay slot (unlike every other DMA call in this file).
     li t0, DMA_SIZE(64, 32)
+    jal DMAIn
+    nop
 
     # H_BUF <- this chunk's 32-even + 32-odd slice (two small linear
     # DMAs; global shuffle convention unchanged from the old kernel, so
-    # even-region starts at s2+0, odd-region starts at s2+320 == H).
+    # even-region starts at s2+0, odd-region starts at s2+256 == H).
     add s0, s2, t4
     li s4, %lo(H_BUF)
     jal DMAIn
     li t0, DMA_SIZE(64, 1)
 
-    li t5, 320
+    li t5, 256
     add s0, s2, t5
     add s0, s0, t4
     li s4, %lo(H_BUF)
@@ -262,7 +279,7 @@ RowLoopNext:
     nop
 
     addi s6, 1
-    slti t0, s6, 5
+    slti t0, s6, 4
     bnez t0, KChunkLoop
     nop
 
@@ -271,8 +288,8 @@ RowLoopNext:
     jal DMAOut
     li t0, DMA_SIZE(128, 1)
 
-    addi s1, 10240              # TILE_ROWS(32) * H(320)
-    addi s3, 128                # TILE_ROWS(32) * 4
+    addi s1, 8192                # TILE_ROWS(32) * H(256)
+    addi s3, 128                 # TILE_ROWS(32) * 4
     addi t9, -1
     bnez t9, TileLoop
     nop

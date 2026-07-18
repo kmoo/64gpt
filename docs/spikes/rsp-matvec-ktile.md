@@ -273,6 +273,43 @@ work. This section is "unlocks the option," not "doubles perf today" —
 worth being precise about that distinction before it turns into an
 overclaim later.
 
+## Hardware verdict at H=256 (2026-07-17): correct, DMEM-independent, NOT yet faster
+
+Retargeted the kernel to H=256 (chunk=64 unchanged, only the H-derived
+outer-loop constants) to A/B directly against the shipped kernel on the
+exact same model — no `core/` change needed for this test (see the
+milestone-placement section's blocker). Both booted in Ares:
+
+| | CPU (µs/step) | RSP (µs/step) | speedup | DMEM (.bss) |
+|---|---|---|---|---|
+| Baseline (`main`, non-tiled) | 37,667 | 15,710 | 2.40x | 3,104B |
+| K-tiled (this spike) | 37,507 | 19,763 | 1.90x | **2,432B** |
+
+XCHK bit-exact PASS on both. Two real, separable results:
+
+- **DMEM independence: hardware-confirmed and structural**, not just
+  measured — 2,432B is fixed by `.bss` declarations that never
+  reference H, so it holds at H=320/512/etc. by construction, the same
+  way it held here.
+- **Speed: the Design A section's ~6% estimate was wrong** — real
+  overhead is ~26% (19,763µs vs 15,710µs). Root cause, counted exactly:
+  K-tiling does **312 DMA operations vs the old kernel's 193**, and
+  **3,072 `DotRowChunk` calls vs 768 `DotRow` calls** (each 1/4-width) —
+  the byte-traffic estimate accounted for bytes moved but not the fixed
+  per-transfer/per-call overhead (DMA busy-wait, `jal`/`jr`, loop
+  setup), which chunk=64 pays 4x as often for the same total work.
+  Still beats CPU-only by 1.9x, just not the old kernel's 2.4x at this H.
+
+**Next, before any more hardware time:** two cheap fixes identified but
+not yet applied or re-verified — (1) merge the two per-chunk `H_BUF`
+DMAs (even-slice, odd-slice) into one pitched `DMA_SIZE(64,2)` transfer
+(they're offset by exactly `H`, i.e. a valid 2D pitch, the same trick
+`W_TILE` already uses), roughly halving H_BUF DMA count; (2) try a
+coarser chunk (128?) to directly cut the 4x call/DMA multiplier, trading
+back some of the DMEM headroom (2,432B has 1,664B of slack before
+hitting budget) for fewer, larger operations. Worth doing both before
+spending more Ares time.
+
 ## Status log
 
 - 2026-07-17: design doc written. `game/src/user/rsp_ngpt.S` rewritten
