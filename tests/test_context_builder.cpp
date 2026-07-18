@@ -60,6 +60,27 @@ static void test_npc_database()
   CHECK(strcmp(NPCDatabase::CONTEXTS[0], "greeting") == 0);
 }
 
+// M10: the three-tier cast system (full/mid/thin, docs/08-manifest-
+// schema.md, docs/milestones/m10.md section 1) needs an actual field in
+// the NPC Database, not just a manifest convention nothing reads.
+static void test_npc_tier()
+{
+  /* Selena is a characters[]-shaped, hand-authored individual: full tier. */
+  CHECK(NPCDatabase::selena.tier == NPCDatabase::Tier::FULL);
+
+  /* Archetype-spawned instances are always thin tier -- ephemeral, no
+   * durable memory beyond the current encounter (m10.md section 3). */
+  NPCDatabase::NPC g = NPCDatabase::spawnInstance(NPCDatabase::GUARD_ARCHETYPE, 0x4f2a);
+  CHECK(g.tier == NPCDatabase::Tier::THIN);
+
+  /* full and mid tier NPCs persist across dungeon-loop iterations; thin
+   * does not -- the explicit decision rule m10.md section 3 calls for,
+   * not left implicit. */
+  CHECK(NPCDatabase::isPersistent(NPCDatabase::Tier::FULL));
+  CHECK(NPCDatabase::isPersistent(NPCDatabase::Tier::MID));
+  CHECK(!NPCDatabase::isPersistent(NPCDatabase::Tier::THIN));
+}
+
 static void test_context_builder()
 {
   NPCDatabase::NPC npc{"selena", "", 2, 0, {90, 85, 70, 55, 30}, 0}; /* trust tier 2, mood[0]=cheerful */
@@ -163,6 +184,7 @@ int main()
   test_event_bus();
   test_world_state();
   test_npc_database();
+  test_npc_tier();
   test_context_builder();
   test_archetype_instance();
   test_guard_instance_registry();

@@ -17,7 +17,8 @@ namespace NPCDatabase
   };
 
   NPC selena{"selena", "", /*trustTier=*/0, /*moodIdx=*/0,
-             /*personality=*/{90, 85, 70, 55, 30}, /*memorySlot=*/0};
+             /*personality=*/{90, 85, 70, 55, 30}, /*memorySlot=*/0,
+             /*tier=*/Tier::FULL};
 
   // Placeholder name pool: manifests/dungeon_crawler.json's guard entry
   // leaves name_gen unset pending real corpus/voice work (M8 task #10);
@@ -80,6 +81,9 @@ namespace NPCDatabase
     npc.trustTier = 0;
     npc.moodIdx = 0;
     npc.memorySlot = 0; // empty until M9+ wires actual memory persistence
+    npc.tier = Tier::THIN; // every archetype-spawned instance is thin tier
+                            // (m10.md: archetypes[] entries are generators,
+                            // not hand-authored individuals)
 
     return npc;
   }

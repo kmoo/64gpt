@@ -28,6 +28,23 @@ namespace NPCDatabase
   constexpr int MAX_ID_LEN = 20;   // "shopkeeper#ffff" + NUL, room to spare
   constexpr int MAX_NAME_LEN = 16;
 
+  // M10: the cast tier (docs/08-manifest-schema.md, docs/milestones/
+  // m10.md section 1) — full (hand-authored individual, e.g. Selena) and
+  // mid (a named boss, smaller corpus, persistent within its own arc) are
+  // both characters[]-shaped; thin (archetype instances, e.g. guard) is
+  // always spawnInstance()'s output, never hand-authored. mid has no
+  // concrete instance in code yet (m10.md: "don't build against it
+  // expecting specific semantics until M10 writes them") — the enum
+  // value exists so isPersistent() can express the real rule now.
+  enum class Tier { FULL, MID, THIN };
+
+  // full and mid tier NPCs persist across dungeon-loop iterations (the
+  // bad guy remembers you across separate runs); thin-tier archetype
+  // instances are ephemeral, no durable memory beyond the current
+  // encounter. Explicit decision rule per m10.md section 3, not left
+  // implicit in scattered call sites.
+  inline bool isPersistent(Tier tier) { return tier != Tier::THIN; }
+
   struct NPC
   {
     char id[MAX_ID_LEN];         // conditioning N: tag: fixed ("selena")
@@ -41,6 +58,9 @@ namespace NPCDatabase
                                    // a character, jittered for an instance
     uint32_t memorySlot;          // opaque per-instance memory handle,
                                    // M9+ scope; 0 = empty/unused
+    Tier tier = Tier::THIN;       // default matches spawnInstance()'s only
+                                   // valid tier; characters[]-shaped NPCs
+                                   // (selena) override explicitly
   };
 
   extern NPC selena;

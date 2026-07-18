@@ -51,3 +51,35 @@ def test_ids_are_unique_across_characters_and_archetypes():
     manifest = _load()
     ids = [c["id"] for c in manifest["characters"]] + [a["id"] for a in manifest["archetypes"]]
     assert len(ids) == len(set(ids))
+
+
+def test_tier_is_declared_and_valid_for_every_entry():
+    # M10: full/mid/thin is meta-schema (docs/08-manifest-schema.md), not
+    # per-project content -- every characters[]/archetypes[] entry must
+    # declare one, and it must be a real tier, not an unvalidated string.
+    manifest = _load()
+    entries = manifest["characters"] + manifest["archetypes"]
+    for entry in entries:
+        assert "tier" in entry, f"{entry['id']}: missing tier"
+        assert entry["tier"] in ("full", "mid", "thin"), (
+            f"{entry['id']}: invalid tier {entry['tier']!r}")
+
+
+def test_characters_are_full_or_mid_tier_not_thin():
+    # characters[] entries are hand-authored individuals (a fixed
+    # personality point, a bible) -- thin tier is archetypes[]-only by
+    # definition (docs/08-manifest-schema.md's tier table).
+    manifest = _load()
+    for character in manifest["characters"]:
+        assert character["tier"] in ("full", "mid"), (
+            f"{character['id']}: characters[] entries can't be thin-tier")
+
+
+def test_archetypes_are_thin_tier():
+    # archetypes[] entries are generators (a range + shared corpus), not
+    # authored individuals -- full/mid tier implies a fixed personality
+    # point and a bible, which archetypes[] doesn't have a shape for yet.
+    manifest = _load()
+    for archetype in manifest["archetypes"]:
+        assert archetype["tier"] == "thin", (
+            f"{archetype['id']}: archetypes[] entries must be thin-tier")
