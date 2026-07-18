@@ -40,6 +40,42 @@ the standard trick when neither matrix dimension fits in fast memory —
 applied to a case (matvec, N=1) simple enough that it may not need the
 full generality real BLAS kernels use.
 
+## Reading the numbers: speedup vs. ch/s are different questions
+
+Every hardware verdict in this doc reports two metrics side by side.
+They can move in *opposite* directions as H grows — that's not a
+contradiction, they answer different questions:
+
+- **Speedup = CPU_time ÷ RSP_time.** A *ratio* against a hypothetical
+  worse alternative (CPU-only) at the *same* H. Answers "is the RSP
+  worth using at all, at this size?"
+- **ch/s = 1,000,000 ÷ RSP_time (µs).** An *absolute* measurement —
+  how many characters per second actually stream to the screen.
+  Answers "will this feel good to use?" Doesn't compare against
+  anything; it's just the real wall-clock cost.
+
+Both CPU time and RSP time grow as H grows (more hidden-state width is
+genuinely more arithmetic, no way around that) — but they don't grow at
+the *same rate*. Across every H tested in this spike, CPU time's growth
+consistently outpaces RSP time's growth by a small margin (e.g. H
+768→1024: CPU grew 1.79x, RSP grew only 1.77x). Since RSP's growth
+lags CPU's growth at every step, the *ratio* between them (speedup)
+climbs — the RSP kernel's fixed per-operation overhead gets amortized
+over more real work at bigger H, so its relative efficiency edge over
+the CPU actually improves with scale. But RSP's own absolute time is
+still climbing, just less steeply than CPU's — so the real wall-clock
+cost per character keeps getting worse, and ch/s keeps falling.
+
+Analogy: a car and a bicycle both making increasingly longer trips. The
+car pulls further ahead of the bike in *relative* terms each time (3x
+as fast, then 4x, then 5x) — but the car's own trip time still gets
+longer as distance grows. "The car's advantage over the bike is
+improving" and "the trip is taking longer" are both true at once,
+because one statement is about the ratio and the other is about the
+raw time. A bigger model can honestly get a *better* answer to "is RSP
+worth it here" while getting a *worse* answer to "will this feel good"
+— at the same time, without contradiction.
+
 ## Baseline: what stays true regardless of design
 
 - Weight DMA traffic is `3H²` packed int8 bytes, fixed by the math
