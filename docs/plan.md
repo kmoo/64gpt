@@ -111,6 +111,28 @@ long survives.
   m10.md`): raise `SHADEWRATH_PER_COMBO` in `trainer/make_m10_blob.py`
   and retrain before trusting his live-hardware coherence.
 
+  **A sharper, distinct failure mode found live on hardware post-M10
+  (2026-07-17):** not all of this gap is character-level word-garbling —
+  some of it is fluent text pulled from the *wrong conditioning axis*.
+  Booted attract-mode showed Kragan (`OCC:bandit`, `M:worried`,
+  `C:damage-taken`) produce "HEY SO QUICK QUESTION, ARE WE OKAY? I'VE
+  GOT A GREAT ONE ABOUT A GOBLIN. GIVE ME A SECOND, IT'S COMING." —
+  traced to source: the opener is a real `selena_corpus._OPENERS
+  ["worried"]` line (mood axis correct), but the body is verbatim
+  `selena_corpus._BODIES["joke"][1]` (context axis wrong — should have
+  been `damage-taken`). Not a corpus-labeling bug (checked — training
+  pairs are generated with the correct context/body pairing); the model
+  itself blends the `C:` signal at sampling time for this character. It
+  reads as "Selena telling a joke" specifically because Kragan's body
+  clause reuses her shared context-body bank directly (`cast_corpus.py`'s
+  design) — when the context axis misfires, what surfaces is her exact
+  memorized phrasing. Same underlying cause (Kragan/bandit thin relative
+  to the compositional scheme's demands on him), but worth keeping as a
+  separate observation from plain word-garbling: it's evidence the
+  model can fail to keep conditioning axes independent even while
+  staying perfectly fluent, which a coherence metric that only checks
+  "does this look like garbled text" would miss entirely.
+
 **Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost
   it.** Closed same-session, follow-up work after M7 (`docs/spikes/
