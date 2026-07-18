@@ -300,15 +300,96 @@ XCHK bit-exact PASS on both. Two real, separable results:
   setup), which chunk=64 pays 4x as often for the same total work.
   Still beats CPU-only by 1.9x, just not the old kernel's 2.4x at this H.
 
-**Next, before any more hardware time:** two cheap fixes identified but
-not yet applied or re-verified — (1) merge the two per-chunk `H_BUF`
-DMAs (even-slice, odd-slice) into one pitched `DMA_SIZE(64,2)` transfer
-(they're offset by exactly `H`, i.e. a valid 2D pitch, the same trick
-`W_TILE` already uses), roughly halving H_BUF DMA count; (2) try a
-coarser chunk (128?) to directly cut the 4x call/DMA multiplier, trading
-back some of the DMEM headroom (2,432B has 1,664B of slack before
-hitting budget) for fewer, larger operations. Worth doing both before
-spending more Ares time.
+**Next, before any more hardware time:** two cheap fixes identified —
+(1) merge the two per-chunk `H_BUF` DMAs (even-slice, odd-slice) into
+one pitched `DMA_SIZE(64,2)` transfer (they're offset by exactly `H`, a
+valid 2D pitch, the same trick `W_TILE` already uses), roughly halving
+H_BUF DMA count — **applied**, compiles clean, `.bss` unchanged at
+2,432B as expected, **not yet hardware-verified** (see Status log); (2)
+try a coarser chunk to directly cut the 4x call/DMA multiplier — not yet
+applied, see the DMEM-competition analysis below for why this isn't as
+simple as "just do it."
+
+## Further optimization ideas (recorded, not applied — see verdicts below)
+
+Three more levers came up discussing tonight's result. One is real and
+should be tried once there's hardware time; the other two looked free
+on paper but turn out to compete with each other and with the K-tiling
+mechanism itself for the same scarce 4,096B DMEM budget — worth being
+precise about that before implementing either blind.
+
+### Async double-buffered DMA — the real lever, still unclaimed by ANY version of this kernel
+
+`rsp_dma.inc` provides `DMAInAsync`/`DMAWaitReady`: the DMA engine and
+the vector unit are separate hardware, so today's kernel — this one AND
+the shipped one — burns the *entire* transfer latency idle before doing
+any math. Overlapping next-tile's DMA with this-tile's compute attacks
+a different bottleneck than tonight's finding (latency-hiding, not
+op-count) and was named as headroom toward "5x+" all the way back in
+the original H=128 spike, never implemented once.
+
+**The real cost, not glossed over this time:** double-buffering needs a
+second `W_TILE`-sized buffer so the next transfer can land somewhere
+other than where the current one is still being read. At today's
+2,048B tile size, two of them is 4,096B — the *entire* DMEM budget,
+leaving nothing for `W16_BUF`/`H_BUF`/`OUT_TILE`. Making room means
+shrinking the tile (e.g. `tile_rows` 32->16), which — per the op-count
+math this whole spike turned on tonight — roughly *doubles* the
+W_TILE/OUT_TILE DMA op count. So this isn't a free stack-on-top: it
+trades a known op-count cost against an unmeasured latency-hiding gain.
+Plausibly still a net win (latency-hiding on a shrunk tile could easily
+outweigh double the op count), but "plausibly" is exactly the word —
+this needs to be measured, not assumed, especially after tonight's
+~6%-estimated/~26%-actual miss on the same kind of arithmetic.
+
+### Pre-shuffled weights in the blob — corrected: NOT free, actively competes with tile size
+
+Originally described (by me, last message, quoting the H=128 spike's
+optimistic framing) as "zero runtime cost." That framing predates
+tonight's lesson and doesn't survive contact with it. Pre-shuffling
+means `W_TILE` holds already-unpacked int16 instead of packed int8 —
+**doubling the bytes per element**:
+
+```
+tile_rows=32, chunk=64: W_TILE at int8  (today)     = 2,048B
+                        W_TILE at int16 (shuffled)   = 4,096B  <- the ENTIRE DMEM budget
+to fit back in 2,048B, tile_rows must drop to 16      <- doubles row-tile count
+```
+
+Saves real work per `DotRowChunk` call (the ~24-instruction unpack
+phase disappears entirely), but halving `tile_rows` to make room
+doubles `NUM_ROW_TILES`, which doubles the W_TILE/OUT_TILE DMA op
+count — the exact quantity tonight's finding says is expensive. Net
+effect is genuinely unclear without measuring both terms; not
+implementing this blind.
+
+### NPC batching — the one actually novel idea, not a spike-backlog item
+
+Design B (K-chunk-outer, RDRAM-backed partial sums) was rejected above
+specifically because "matvec has N=1, so reusing an H-chunk across many
+outputs doesn't apply." That reasoning inverts the moment N stops being
+1. If M10/M11's living-NPC world ever needs several NPCs' dialogue
+advancing in the same tick, batching them into one wider call turns
+this into a small-N GEMM: today's per-call/per-DMA overhead — the same
+26% — gets amortized across N NPCs instead of paid once each, and
+Design B's rejected-for-N=1 advantage becomes real for the first time.
+Not appropriate to build ahead of that use case existing, but worth
+remembering this spike's own Design B section stops being the final
+word the moment the problem shape changes.
+
+### Why not just do two of these tonight
+
+All three trade against the *same* scarce budget the DMEM-independence
+result depends on — double-buffering wants tile-space, pre-shuffling
+wants per-element space, and both compete with simply growing
+`tile_rows`/`chunk` (item 2 in "Next," above) for the identical 2,048B
+`W_TILE` allowance. Stacking two of these blind, on top of an
+already-uncertain 26%-miss night, means compounding unverified risk
+instead of measuring one change at a time. The `H_BUF` merge above was
+worth doing now because it's unambiguous — same bytes, half the ops,
+no tradeoff against anything else. These three aren't that; they need
+the merged-DMA number first, then a real decision informed by data
+instead of a second round of arithmetic that might also be wrong.
 
 ## Status log
 
