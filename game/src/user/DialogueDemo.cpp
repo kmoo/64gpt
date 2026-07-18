@@ -48,18 +48,18 @@ namespace
   // W_hh copied out of the blob once at init: the blob offset is not
   // 8-aligned and DMA from an unaligned RDRAM source lands shifted in
   // DMEM. Written uncached so RDRAM is coherent before the RSP reads it.
-  // H=1024 K-TILE SPIKE (docs/spikes/rsp-matvec-ktile.md, 2026-07-18):
+  // H=768 K-TILE SPIKE (docs/spikes/rsp-matvec-ktile.md, 2026-07-18):
   // sizes doubled-then-squared where the math requires it -- W_hh is
-  // 3H x H so it's 4x, not 2x, at double the hidden size (3MB, RDRAM
-  // not DMEM -- the RSP kernel itself streams this via DMA, never
-  // holds it all in the 4KB DMEM budget, that's the whole point of the
-  // K-tiling this spike exists to test). RDRAM is genuinely tight at
-  // this H (~3.75MB of 4MB base N64 RDRAM by estimate) -- if this
-  // build fails to link or crashes at runtime, that IS the answer to
-  // "how large can it be," not a bug to chase.
-  int8_t rspWhh[3 * 1024 * 1024] __attribute__((aligned(16)));   // 3 MB
-  int16_t rspHShuf[1024] __attribute__((aligned(16)));           // 2048 B
-  int32_t rspMvOut[3072] __attribute__((aligned(16)));           // 12288 B
+  // 3H x H so it's 4x, not 2x, at double the hidden size (1.69MB,
+  // RDRAM not DMEM -- the RSP kernel itself streams this via DMA,
+  // never holds it all in the 4KB DMEM budget, that's the whole point
+  // of the K-tiling this spike exists to test). Meaningfully safer
+  // than the H=1024 build on both fronts checked there: int32 margin
+  // is 74.4% of the hard ceiling (not 99.2%), RDRAM total should land
+  // well under 3MB (not ~3.75MB).
+  int8_t rspWhh[3 * 768 * 768] __attribute__((aligned(16)));   // 1.69 MB
+  int16_t rspHShuf[768] __attribute__((aligned(16)));          // 1536 B
+  int32_t rspMvOut[2304] __attribute__((aligned(16)));         // 9216 B
   const uint8_t *rspWhhSrc{};   // the blob W_hh this copy mirrors
   bool rspReady{};
   uint32_t rspOvlId{};
@@ -67,9 +67,9 @@ namespace
   void rspBackendInit(const ngpt_model *m)
   {
     if(rspReady)return;
-    if(m->gru.H != 1024)return; // the kernel is written for 1024 columns
+    if(m->gru.H != 768)return; // the kernel is written for 768 columns
     volatile int8_t *dst = (volatile int8_t *)UncachedAddr(rspWhh);
-    for(uint32_t i = 0; i < 3u * 1024 * 1024; ++i)dst[i] = (int8_t)m->gru.w_hh[i];
+    for(uint32_t i = 0; i < 3u * 768 * 768; ++i)dst[i] = (int8_t)m->gru.w_hh[i];
     rspWhhSrc = m->gru.w_hh;
     rspOvlId = rspq_overlay_register(&rsp_ngpt);
     rspReady = true;
@@ -82,7 +82,7 @@ namespace
   void rspMatvec(const uint8_t *w, uint32_t rows, uint32_t cols,
                  const int16_t *h, int32_t *out)
   {
-    if(!rspReady || w != rspWhhSrc || rows != 3072 || cols != 1024) {
+    if(!rspReady || w != rspWhhSrc || rows != 2304 || cols != 768) {
       for(uint32_t i = 0; i < rows; ++i) {
         int32_t sum = 0;
         const uint8_t *row = w + i * cols;
@@ -91,16 +91,16 @@ namespace
       }
       return;
     }
-    // h shuffled even-indices-first (h[0,2,..1022], then h[1,3,..1023])
+    // h shuffled even-indices-first (h[0,2,..766], then h[1,3,..767])
     // to match the ucode's lqv byte-pair unpack; dot products are
     // order-invariant so the sums are unchanged.
     volatile int16_t *hs = (volatile int16_t *)UncachedAddr(rspHShuf);
-    for(uint32_t j = 0; j < 1024; ++j)hs[(j & 1) ? 512 + j / 2 : j / 2] = h[j];
+    for(uint32_t j = 0; j < 768; ++j)hs[(j & 1) ? 384 + j / 2 : j / 2] = h[j];
     volatile int32_t *mo = (volatile int32_t *)UncachedAddr(rspMvOut);
     rspq_write(rspOvlId, 0, 0, PhysicalAddr(rspWhh), PhysicalAddr(rspHShuf),
                PhysicalAddr(rspMvOut));
     rspq_wait(); // never reached from initDelete — see boot sequence below
-    for(uint32_t i = 0; i < 3072; ++i)out[i] = mo[i];
+    for(uint32_t i = 0; i < 2304; ++i)out[i] = mo[i];
   }
 }
 // ---- M6.1 RSP MATVEC BACKEND (END) --------------------------------------
@@ -507,7 +507,7 @@ namespace P64::Script::C64D1A106DE00001
         // must leave the full "XCHK PASS  CPU NNNNN RSP NNNNN US" tail
         // visible, not just fit on screen at a glance.
         snprintf(line, sizeof(line), "%s XCHK %s  CPU %lu RSP %lu US",
-                 rspReady ? "H1024" : "H1024X",
+                 rspReady ? "H768" : "H768X",
                  xchkPass ? "PASS" : "FAIL",
                  (unsigned long)cpuStepUs, (unsigned long)rspStepUs);
         Debug::print(24, 106, line);

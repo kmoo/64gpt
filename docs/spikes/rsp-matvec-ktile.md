@@ -446,6 +446,19 @@ overflow rather than just being slow, is to confirm that's really the
 cause before picking one of the above — same discipline as everything
 else in this doc.
 
+## Product constraint: ~5 ch/s is the floor of comfortable streaming speed
+
+Stated once, not written down until now — recording it properly since
+it's a real product threshold, not just an engineering curiosity, and
+it directly bears on reading tonight's H=1024 result (5.37 ch/s)
+correctly: that's a PASS against this floor, but barely, with no margin
+for anything slower. Any future H choice should be checked against this
+number explicitly, not just against "does it boot" or "is XCHK bit-exact."
+This is the number the M5 milestone's own "≥30 ch/s" target was
+protecting against degrading toward — 5 ch/s is not that bar, it's the
+point past which the demo stops being a comfortable dialogue-streaming
+experience at all, a harder floor than a quality target.
+
 ## Status log
 
 - 2026-07-17: design doc written. `game/src/user/rsp_ngpt.S` rewritten

@@ -2,27 +2,18 @@
 # rsp_ngpt.S — 64GPT GRU matvec on the RSP (rspq overlay)
 #
 # One command:
-#   0 NgptMatvec — 3072 rows x 1024 cols int8xint16 matvec, DMA-tiled in
+#   0 NgptMatvec — 2304 rows x 768 cols int8xint16 matvec, DMA-tiled in
 #                  BOTH dimensions (K-chunked spike, see
 #                  docs/spikes/rsp-matvec-ktile.md), bit-exact vs the
 #                  CPU engine
 #
-# CHUNK=256 AT H=1024 (2026-07-18, pushing the H sweep past 512 to find
-# where this genuinely stops being "reasonable," not just where it
-# stops being convenient). CHUNK=256 is the proven-best chunk from the
-# H=512 sweep (2.77x there) and, since chunk/tile_rows are H-independent
-# knobs, the same choice applies unchanged at any H -- NUM_KCHUNKS=4
-# here instead of 2, that's the only difference the DMA/DotRowChunk
-# side of the kernel sees.
-#
-# Two real risks accepted deliberately for this specific test, spelled
-# out in core/ngpt.h and docs/spikes/rsp-matvec-ktile.md, not repeated
-# here: the CPU reference's int32 accumulator has essentially zero
-# margin left at this H (99.2% of the HARD ceiling, not just a comfort
-# target), and RDRAM is tight (~3.75MB of 4MB base). If this build
-# fails to link, crashes, or produces a wrong (not just slow) XCHK
-# result, that IS the answer to "how large can it be" -- not a bug to
-# chase before reporting it.
+# CHUNK=256 AT H=768 (2026-07-18, the middle point of the H sweep --
+# H=1024 was pushed and prepared first; this is the safer fallback,
+# meaningfully better margin on both fronts H=1024 stressed: int32
+# accumulator at 74.4% of the hard ceiling (not 99.2%), RDRAM well
+# under 3MB (not ~3.75MB). Same proven chunk=256 choice from the H=512
+# sweep (2.77x there) — chunk/tile_rows are H-independent knobs, so
+# nothing about the DMA/DotRowChunk side changes except NUM_KCHUNKS=3.
 #
 # The filename MUST start with "rsp": n64.mk keys RSP-ucode assembly
 # off that prefix. Hard-won lessons encoded below (full ledger in
@@ -44,20 +35,19 @@
 # CHUNK = 256 elements. TILE_ROWS = 2048/CHUNK = 8, a CONSTANT
 # regardless of H — that's what makes chunk and H independent knobs.
 #
-# H=1024 for this build: H/CHUNK and 3H/TILE_ROWS both divide evenly:
-# 1024/256 = 4 K-chunks, 3072/8 = 384 row-tiles, zero wasted DMA bytes.
+# H=768 for this build: H/CHUNK and 3H/TILE_ROWS both divide evenly:
+# 768/256 = 3 K-chunks, 2304/8 = 288 row-tiles, zero wasted DMA bytes.
 #
 # DMEM budget: W_TILE 2048 + W16_BUF 512 + H_BUF 512 + OUT_TILE 32 =
 # 3104B .bss — byte-IDENTICAL to every other chunk=256 build tonight,
-# regardless of H. DMEM independence continues to hold; it was never
-# the constraint that would stop this from going further.
+# regardless of H.
 ########################################################
 #include <rsp_queue.inc>   /* already provides the rsp_dma.inc routines */
 
 .data
 
 RSPQ_BeginOverlayHeader
-    RSPQ_DefineCommand NgptMatvec, 16 # cmd, dram_w(3072x1024), dram_h, dram_out
+    RSPQ_DefineCommand NgptMatvec, 16 # cmd, dram_w(2304x768), dram_h, dram_out
 RSPQ_EndOverlayHeader
 
 RSPQ_EmptySavedState
@@ -170,22 +160,22 @@ OddLoop:
     .endfunc
 
 ########################################################
-# NgptMatvec: 3072 rows x 1024 cols, 2D-tiled — 384 row-tiles (8 rows
-# each) x 4 K-chunks (256 cols each) per row-tile.
-#   a1 = RDRAM addr of 3072x1024 int8 weights, row-major, 8-byte aligned
-#   a2 = RDRAM addr of shuffled h (2048B: 512 evens then 512 odds)
-#   a3 = RDRAM addr of 3072 int32 outputs (12288B)
+# NgptMatvec: 2304 rows x 768 cols, 2D-tiled — 288 row-tiles (8 rows
+# each) x 3 K-chunks (256 cols each) per row-tile.
+#   a1 = RDRAM addr of 2304x768 int8 weights, row-major, 8-byte aligned
+#   a2 = RDRAM addr of shuffled h (1536B: 384 evens then 384 odds)
+#   a3 = RDRAM addr of 2304 int32 outputs (9216B)
 #
 # Register map (s0-s7 fully committed, matches the old kernel's
 # allocation plus one — s6 is new):
 #   s0 = DMA scratch: current transfer's RDRAM source address
-#   s1 = row-tile base address into a1, advances by TILE_ROWS*H (8192)
+#   s1 = row-tile base address into a1, advances by TILE_ROWS*H (6144)
 #        after all K-chunks for a row-tile are done
 #   s2 = h base address (a2), fixed for the whole call
 #   s3 = output cursor into a3, advances by TILE_ROWS*4 (32) per tile
 #   s4 = DMA scratch: DMEM destination address
 #   s5 = row-in-tile counter, 0..7
-#   s6 = K-chunk counter, 0..3
+#   s6 = K-chunk counter, 0..2
 #   s7 = saved ra (jal clobbers ra = RSPQ_Loop)
 ########################################################
     .func NgptMatvec
@@ -195,16 +185,16 @@ NgptMatvec:
     move s2, a2
     move s3, a3
 
-    li t9, 384                # 384 row-tiles x 8 rows = 3072
+    li t9, 288                # 288 row-tiles x 8 rows = 2304
 TileLoop:
-    li s6, 0                  # K-chunk 0..3 (H=1024 / CHUNK=256 = 4)
+    li s6, 0                  # K-chunk 0..2 (H=768 / CHUNK=256 = 3)
 KChunkLoop:
-    # W_TILE <- pitched 2D DMA: 8 rows x 256B, pitch 1024B (H), starting
+    # W_TILE <- pitched 2D DMA: 8 rows x 256B, pitch 768B (H), starting
     # at this row-tile's base + this chunk's 256B column offset.
     sll t4, s6, 8              # t4 = chunk * 256 (byte column offset)
     add s0, s1, t4
     li s4, %lo(W_TILE)
-    li t1, 1024                # pitch = H (real RDRAM row width)
+    li t1, 768                 # pitch = H (real RDRAM row width)
     li t0, DMA_SIZE(256, 8)
     jal DMAIn
     nop
@@ -215,7 +205,7 @@ KChunkLoop:
     # matching DotRowChunk's read layout).
     add s0, s2, t4
     li s4, %lo(H_BUF)
-    li t1, 1024                # pitch = H (odd region starts H bytes after even)
+    li t1, 768                 # pitch = H (odd region starts H bytes after even)
     jal DMAIn
     li t0, DMA_SIZE(256, 2)
 
@@ -243,7 +233,7 @@ RowLoopNext:
     nop
 
     addi s6, 1
-    slti t0, s6, 4
+    slti t0, s6, 3
     bnez t0, KChunkLoop
     nop
 
@@ -252,7 +242,7 @@ RowLoopNext:
     jal DMAOut
     li t0, DMA_SIZE(32, 1)
 
-    addi s1, 8192                # TILE_ROWS(8) * H(1024)
+    addi s1, 6144                # TILE_ROWS(8) * H(768)
     addi s3, 32                  # TILE_ROWS(8) * 4
     addi t9, -1
     bnez t9, TileLoop
