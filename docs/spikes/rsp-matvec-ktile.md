@@ -1,6 +1,10 @@
 # Spike: K-dimension tiling for the RSP matvec kernel — decoupling DMEM from H
 
-**Branch:** `worktree-rsp-spike-ktile`. **Status:** hardware-verified,
+**Branch:** `spike/rsp-matvec-ktile` (renamed 2026-07-18 from
+`worktree-rsp-spike-ktile` to match the project's public spike-branch
+convention, `spike/rsp-matvec` — the local worktree at
+`.claude/worktrees/rsp-spike-ktile` is unaffected by the rename, git
+worktrees track by path not branch name). **Status:** hardware-verified,
 **nine runs, nine bit-exact XCHK passes** — chunk∈{64,128,256} at
 H=256/512, chunk=256 at H=768/1024, plus a chunk=256/H=256 calibration
 run. DMEM independence proven both structurally and empirically at
