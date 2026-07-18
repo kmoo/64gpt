@@ -620,3 +620,48 @@ else in this doc.
   commit history rather than left as silent state changes, since this
   worktree now flips between two different models depending on which
   H is under test.
+
+- 2026-07-18 (continued, after a real-world scope check): the target
+  game turns out to be Banjo-Kazooie-scale 3D, which reframes the "how
+  large can it be" question — a game of that complexity needs the bulk
+  of the base 4MB N64 RDRAM for its own assets (textures, models,
+  audio, level geometry), the reason that generation of games needed
+  aggressive streaming systems in the first place. Once real game
+  content exists, the model's actual RDRAM budget may be a few hundred
+  KB, not the multi-MB this spike's test ROM has entirely to itself —
+  which would push a realistic target H back toward ~370-410, barely
+  past the old kernel's wall, not toward 1024. Recorded here because it
+  changes what "reasonable ceiling" means without changing what this
+  spike is actually testing (the kernel's correctness/speed/DMEM
+  behavior, which doesn't care what H eventually ships). Decision:
+  test H=1024 and H=768 anyway — the data is useful regardless of
+  final scope, and the work was already done.
+
+  Prepared both as complete, independently committed builds before
+  touching Ares (H=1024 at `9bd9d37`, H=768 at `a01b5da`) specifically
+  so swapping between them is `git checkout <sha> -- <4 files>` +
+  rebuild, not redoing model generation or kernel retargeting each
+  time — worth doing whenever multiple hardware-verification points
+  are queued up and Ares access is itself the scarce, shared resource
+  (true for most of tonight, per the other live session in
+  `rsp-spike-h256`).
+
+  **H=1024 result:** bumped `core/ngpt.h` to 1024 with the overflow
+  risk spelled out plainly this time (99.2% of the HARD int32 ceiling,
+  not a comfort target — see that file and the mitigation-strategies
+  section above). Neither elevated risk (overflow, RDRAM) actually
+  bit: build linked clean at 3.60MB (measuring the ELF's static
+  text+data+bss only — NOT stack/heap/framebuffers/streamed assets,
+  worth being precise about since that distinction is exactly what
+  matters once real game content exists), and boot gave `SELFTEST
+  PASS`, XCHK bit-exact PASS, **CPU 544,872µs / RSP 186,160µs — 2.93x**,
+  the best speedup of the whole spike. Only 5.37 ch/s though — genuinely
+  slow for live dialogue, confirming the earlier concern.
+
+  Correcting my own extrapolation from the H=512 data point: predicted
+  ~151,779µs assuming the H^1.62 exponent measured from 256→512 held;
+  actual is 186,160µs, 22.7% slower than that prediction. Real measured
+  exponent 512→1024 is **H^1.92** — close to pure quadratic, not the
+  favorable sub-quadratic curve smaller H suggested. Scaling gets worse
+  at bigger H, not better. Screenshot in `talk/`
+  (`2026-07-18-ktile-spike-h1024.png`).
