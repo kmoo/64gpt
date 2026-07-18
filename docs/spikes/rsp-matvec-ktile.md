@@ -409,6 +409,43 @@ no tradeoff against anything else. These three aren't that; they need
 the merged-DMA number first, then a real decision informed by data
 instead of a second round of arithmetic that might also be wrong.
 
+## int32 overflow: mitigation strategies (recorded, not applied — no evidence yet that they're needed)
+
+`core/ngpt.h`'s comment quantifies the risk precisely (see that file):
+H=512 sits at 99.2% of a self-imposed *comfort* target with real margin
+below int32's actual ceiling; H=1024 reaches 99.2% of the *hard ceiling
+itself*, leaving essentially no room for the bias add. Four real options
+if a genuine overflow ever surfaces, none applied yet because there's no
+evidence any of them are needed — the realistic-bound analysis is a
+worst-case argument, not a measurement of what a real trained model's
+bias values actually do:
+
+1. **Widen only the bias-add step to int64, not the whole hot loop.**
+   The M5 comment's "int64 is a slower R4300i instruction" concern was
+   about the inner multiply-accumulate, executed `3H²` times per step;
+   the bias add happens `3H` times per step — three orders of magnitude
+   less often. Likely recovers all the lost margin for a fraction of
+   what int64 would cost if applied everywhere.
+2. **Saturating add instead of raw `+`.** Clamp to `INT32_MIN`/`MAX`
+   explicitly before the operation would wrap, turning a rare real
+   overflow into a defined (if slightly wrong) number instead of
+   undefined behavior. Cheap, and probably invisible in practice if
+   real overflows are as rare as the worst-case-vs-realistic gap
+   suggests.
+3. **Shift the Q-format down for larger H** (Q14 → Q12, e.g.) — trades
+   a little fixed-point precision for headroom, no accumulator width
+   change anywhere. A free dial nothing here has touched yet.
+4. **Rescale mid-reduction instead of only at the end** — chunk the sum
+   and round down periodically. Structurally this is exactly what the
+   RSP kernel already does for *DMEM*; the CPU reference could borrow
+   the same trick for numeric *range* instead of memory.
+
+None of these get implemented speculatively. The right next step, if
+H=1024 (or any size) actually produces a wrong or FAIL result tied to
+overflow rather than just being slow, is to confirm that's really the
+cause before picking one of the above — same discipline as everything
+else in this doc.
+
 ## Status log
 
 - 2026-07-17: design doc written. `game/src/user/rsp_ngpt.S` rewritten
