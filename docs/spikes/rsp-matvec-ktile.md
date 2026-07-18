@@ -300,15 +300,30 @@ XCHK bit-exact PASS on both. Two real, separable results:
   setup), which chunk=64 pays 4x as often for the same total work.
   Still beats CPU-only by 1.9x, just not the old kernel's 2.4x at this H.
 
-**Next, before any more hardware time:** two cheap fixes identified —
-(1) merge the two per-chunk `H_BUF` DMAs (even-slice, odd-slice) into
-one pitched `DMA_SIZE(64,2)` transfer (they're offset by exactly `H`, a
-valid 2D pitch, the same trick `W_TILE` already uses), roughly halving
-H_BUF DMA count — **applied**, compiles clean, `.bss` unchanged at
-2,432B as expected, **not yet hardware-verified** (see Status log); (2)
-try a coarser chunk to directly cut the 4x call/DMA multiplier — not yet
-applied, see the DMEM-competition analysis below for why this isn't as
-simple as "just do it."
+**Update, same day, after hardware-verifying the `H_BUF` merge:** applied,
+compiled clean, booted — XCHK still bit-exact PASS, but **RSP time
+barely moved: 19,719µs vs 19,763–19,772µs pre-merge**, a ~0.2%
+difference indistinguishable from run-to-run noise (compare CPU-side
+numbers across all three runs tonight: 37,507 / 37,522 / 37,523 —
+±16µs of jitter on a number nothing here should be changing). This is
+a real result, not a null test: DMA op count dropped a genuine ~31%
+(312→216, from merging the even/odd `H_BUF` transfer), and it bought
+essentially nothing.
+
+**That redirects the diagnosis.** DMA operation count is not the
+dominant cost here after all. What the merge *didn't* touch is
+`DotRowChunk` call count — still 3,072 calls vs. the old kernel's 768,
+each paying `UnpackLoop`/`EvenLoop`/`OddLoop`'s fixed loop-entry and
+branch overhead against only 1/4 as much productive vector work per
+call. That's the more likely dominant term, and it's exactly what a
+coarser chunk would cut directly (chunk=128 halves call count to
+1,536; chunk=256 — back to the old kernel's granularity — would drop
+it to 768, matching the old kernel's call count exactly, which is a
+useful sanity-check target in itself). The "two cheap fixes" framing
+from earlier tonight put the DMA-merge and the chunk-size change on
+equal footing; tonight's measurement says they weren't equal — the
+chunk-size experiment is now the higher-confidence next step, not a
+parallel option.
 
 ## Further optimization ideas (recorded, not applied — see verdicts below)
 
@@ -411,3 +426,21 @@ instead of a second round of arithmetic that might also be wrong.
   (4) SELFTEST + XCHK (CPU vs RSP, bit-exact) + speed number vs CPU-only
   H=320. Then, if clean, the mechanical H=320->H=512 constant swap this
   doc's Decision section describes.
+
+- 2026-07-17 (same day, later): retargeted to H=256 for a same-model
+  A/B against the shipped kernel (no `core/` change needed — see the
+  milestone-placement section). Hardware-verified, twice: baseline
+  CPU 37,667µs/RSP 15,710µs (2.40x, .bss 3,104B) vs. K-tiled CPU
+  37,507µs/RSP 19,763µs (1.90x, .bss **2,432B**). Correct (XCHK
+  bit-exact both times) and DMEM-independent (structural, not just
+  measured) — the two headline claims hold. Speed does not yet beat
+  the kernel it would replace: ~26% slower at equal H, and the design
+  doc's own ~6% overhead estimate was wrong before hardware corrected
+  it. Applied the `H_BUF` DMA merge (two linear transfers → one pitched
+  `DMA_SIZE(64,2)`) and re-verified: RSP 19,719µs — **no meaningful
+  change** (~0.2%, within run-to-run noise), despite a real ~31% drop
+  in DMA op count. Diagnosis redirected: `DotRowChunk` call count
+  (3,072 vs. the old kernel's 768), not DMA op count, is the more
+  likely dominant cost — the coarser-chunk experiment (not yet applied)
+  is now the higher-confidence next step. Screenshots and captions in
+  `talk/` (`2026-07-17-ktile-spike-h256-*.png`).
