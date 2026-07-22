@@ -109,6 +109,20 @@ namespace
 
 namespace
 {
+  // The on-screen build version -- ONE constant, bump it every milestone
+  // that ships a ROM. Fixes a real recurring bug: every NPC-slot display
+  // line used to hard-code its OWN "V1.2 (M7)"/"(M8 GUARD)"/"(M9 CAST)"/
+  // "(M10 ...)" string, frozen at whichever milestone first added that
+  // slot -- Selena's line still said "(M7)" on the M11 gossip-mechanism
+  // ROM, which reads as "this build is M7" even on a much later build.
+  // Nobody was updating 6 separate hard-coded strings every milestone,
+  // so they silently went stale. Fixed at the root: one shared version
+  // string, and slot labels below carry ROLE info only (SELENA/CAST/
+  // GUARD/MET TR:N/etc.), never a bare milestone number that reads as a
+  // build-version claim. Keep in sync with root README.md's own
+  // "ROM vX.Y" column when tagging a milestone.
+  constexpr const char *NGPT_VERSION = "V1.6";
+
   // M6.1: one step ~4-6ms with the matvec on the RSP (was ~9.9ms all-CPU
   // in M5); one char/frame streams 60 chars/sec with VPS held at 60.
   constexpr int CHARS_PER_FRAME = 1;
@@ -776,34 +790,34 @@ namespace P64::Script::C64D1A106DE00001
                      (unsigned)(dungeonLevelSeed & 0xFFFFu));
         }
         else if(currentNpc == 0)
-          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - SELENA (M7)");
+          snprintf(npcLine, sizeof(npcLine), "64GPT %s - SELENA", NGPT_VERSION);
         else if(isNewCastSlot())
-          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M9 CAST)",
-                   NEW_CAST_NAMES[currentNpc - NEW_CAST_START]);
+          snprintf(npcLine, sizeof(npcLine), "64GPT %s - %s (CAST)",
+                   NGPT_VERSION, NEW_CAST_NAMES[currentNpc - NEW_CAST_START]);
         else if(isNamedExtraSlot()) {
-          // M10: show the PERSISTED high-water mark, not just the
-          // current dial -- the actual player-visible proof the save
-          // system works, not just an invisible mechanism.
+          // Show the PERSISTED high-water mark, not just the current
+          // dial -- the actual player-visible proof the save system
+          // works, not just an invisible mechanism.
           uint8_t remembered = isShadewrathSlot()
             ? SaveData::current.shadewrathHighestTier
             : SaveData::current.korrathHighestTier;
-          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10, MET TR:%u)",
-                   activeNpc().name, (unsigned)remembered);
+          snprintf(npcLine, sizeof(npcLine), "64GPT %s - %s (MET TR:%u)",
+                   NGPT_VERSION, activeNpc().name, (unsigned)remembered);
         }
         else if(isNewArchetypeSlot()) {
           if(NpcService::isGossipHub(activeNpc().occupation) &&
              WorldState::currentGossip()[0])
-            snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10 %s) NEWS",
-                     activeNpc().name,
+            snprintf(npcLine, sizeof(npcLine), "64GPT %s - %s (%s) NEWS",
+                     NGPT_VERSION, activeNpc().name,
                      NEW_ARCHETYPE_LABELS[currentNpc - NEW_ARCHETYPE_START]);
           else
-            snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10 %s)",
-                     activeNpc().name,
+            snprintf(npcLine, sizeof(npcLine), "64GPT %s - %s (%s)",
+                     NGPT_VERSION, activeNpc().name,
                      NEW_ARCHETYPE_LABELS[currentNpc - NEW_ARCHETYPE_START]);
         }
         else
-          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M8 GUARD)",
-                   activeNpc().name);
+          snprintf(npcLine, sizeof(npcLine), "64GPT %s - %s (GUARD)",
+                   NGPT_VERSION, activeNpc().name);
         Debug::print(24, 40, npcLine);
       }
 
