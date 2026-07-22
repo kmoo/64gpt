@@ -318,7 +318,7 @@ _CATCHPHRASES = {"fergus": _FERGUS_CATCHPHRASES, "kragan": _KRAGAN_CATCHPHRASES}
 # MUST match game/src/user/WorldState.cpp's GOSSIP_EVENTS exactly --
 # these are the only EV: values a gossip-hub occupation was ever shown
 # during training, so any other tag reaching them is out-of-distribution.
-GOSSIP_EVENTS = ("shadewrath_allied", "korrath_pleaded")
+GOSSIP_EVENTS = ("shadewrath_allied", "korrath_pleaded", "princess_freed")
 
 # Only these two occupations' corpora get gossip content -- pub_patron and
 # villager are the town's natural gossip hubs ("EVERY VILLAGE NEEDS A GOOD
@@ -344,6 +344,13 @@ _GOSSIP_LINES = {
         "WORD IS THE KNIGHT FINALLY SPOKE HIS TRUE WISH. IT BREAKS MY HEART.",
         "SOMEONE TOLD ME THE BOUND KNIGHT ASKED FOR HIS FREEDOM. I HOPE HE FINDS PEACE.",
         "I HEARD HE'S NOT JUST STANDING GUARD ANYMORE. HE ASKED FOR A WAY OUT.",
+    ),
+    "princess_freed": (
+        "DID YOU HEAR? THE PRINCESS FROM RAVENDALE IS FREE. IT'S ALL ANYONE'S TALKING ABOUT.",
+        "THEY SAY SOMEONE ACTUALLY GOT HER OUT OF THAT DUNGEON. GOOD NEWS FOR ONCE.",
+        "WORD IS THE ELF PRINCESS IS HEADING HOME AT LAST.",
+        "SOMEONE TOLD ME SHE'S BEEN RESCUED. I ALMOST DIDN'T BELIEVE IT.",
+        "I HEARD RAVENDALE'S PRINCESS IS SAFE NOW. THAT'S THE BEST THING I'VE HEARD IN AGES.",
     ),
 }
 

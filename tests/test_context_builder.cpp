@@ -57,9 +57,10 @@ static void test_world_state()
 static void test_world_state_gossip()
 {
   CHECK(strcmp(WorldState::currentGossip(), "") == 0);
-  CHECK_EQ_INT(WorldState::GOSSIP_EVENT_COUNT, 2);
+  CHECK_EQ_INT(WorldState::GOSSIP_EVENT_COUNT, 3);
   CHECK(strcmp(WorldState::GOSSIP_EVENTS[0], "shadewrath_allied") == 0);
   CHECK(strcmp(WorldState::GOSSIP_EVENTS[1], "korrath_pleaded") == 0);
+  CHECK(strcmp(WorldState::GOSSIP_EVENTS[2], "princess_freed") == 0);
 
   WorldState::setGossip("shadewrath_allied");
   CHECK(strcmp(WorldState::currentGossip(), "shadewrath_allied") == 0);
@@ -101,6 +102,13 @@ static void test_shadewrath_and_korrath_npc_globals()
   const int korrathTraits[] = {38, 10, 10, 75, 80};
   for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
     CHECK_EQ_INT(NPCDatabase::korrath.personality[i], korrathTraits[i]);
+
+  // M11: Elowen, the rescued princess -- same discipline.
+  CHECK(strcmp(NPCDatabase::princess.id, "elowen") == 0);
+  CHECK(NPCDatabase::princess.tier == NPCDatabase::Tier::MID);
+  const int princessTraits[] = {78, 45, 55, 60, 50};
+  for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
+    CHECK_EQ_INT(NPCDatabase::princess.personality[i], princessTraits[i]);
 }
 
 // M10: the three-tier cast system (full/mid/thin, docs/08-manifest-

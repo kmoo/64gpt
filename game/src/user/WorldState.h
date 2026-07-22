@@ -23,7 +23,7 @@ namespace WorldState
   // history or a decay timer -- "keep it simple for v1" per the plan;
   // add propagation/decay only when a second real need shows up, same
   // premature-abstraction discipline EventBus's own header note uses.
-  constexpr int GOSSIP_EVENT_COUNT = 2;
+  constexpr int GOSSIP_EVENT_COUNT = 3;
   extern const char *const GOSSIP_EVENTS[GOSSIP_EVENT_COUNT]; // must match
                                     // trainer/ngpt_trainer/cast_corpus.py's
                                     // GOSSIP_EVENTS exactly -- these are the

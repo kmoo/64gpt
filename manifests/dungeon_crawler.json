@@ -52,6 +52,21 @@
       "corpus_ref": "trainer/ngpt_trainer/korrath_corpus.py",
       "memory_persistence": "arc",
       "_status": "M10 (2026-07-17), mid-tier talking boss -- guards the captured elf princess's chamber, bound into unwilling servitude by Shadewrath (who holds a piece of his true name). Persistent within his own arc (this dungeon branch), not the whole game, per the tier's definition. Corpus deliberately ~half Shadewrath's density (per_combo=4 vs 8), tied to his mid-tier scope, not yet empirically validated per m10.md's Data Science Review recommendation (pick the smallest density that clears a distinctness bar -- this is a first-pass estimate)."
+    },
+    {
+      "id": "elowen",
+      "tier": "mid",
+      "personality": {"warmth": 78, "humor": 45, "impulsivity": 55, "bravery": 60, "focus": 50},
+      "bible": {
+        "public": "The elf princess of Ravendale, held captive in a chamber deep in the Everhollow -- hopeful and warm to anyone who shows her real kindness, with a dry wit captivity hasn't quite killed.",
+        "private": "Genuinely scared, more of the time than she lets show -- she's learned to keep hoping quietly rather than openly, since open hope has been used against her before.",
+        "secret": "She's overheard Shadewrath talking to himself about a door beneath Ravendale, and has been quietly piecing together what he's actually planning -- she knows more than either of her captors realizes.",
+        "fear": "That she's been down here long enough that being free wouldn't feel like anything anymore -- that hope is the thing that's actually being worn away, not her.",
+        "desire": "To go home to Ravendale, and to matter to someone as a person again, not as a prize or a piece in someone else's plan."
+      },
+      "corpus_ref": "trainer/ngpt_trainer/princess_corpus.py",
+      "memory_persistence": "arc",
+      "_status": "M11 (2026-07-22), the rescued-good-character content the game vision calls for (docs/ideas-briar-glen-world.md: 'a princess + wizard + etc. you find in the dungeon'). Dungeon-only -- no fixed roster slot, unlike Shadewrath/Korrath. Her trust tier IS the rescue arc: reaching TR:2 for the first time is the actual in-game rescue event (game/src/user/SaveData.h's princessHighestTier), same mechanism Shadewrath/Korrath's own tiers already use. Corpus deliberately comparable to Korrath's density (per_combo=4), both mid tier. Shares the Ravendale-lore quality-push bank (trainer/ngpt_trainer/ravendale_lore.py) with Shadewrath/Korrath -- the three are narratively linked through the same binding/captivity backstory."
     }
   ],
   "archetypes": [

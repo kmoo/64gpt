@@ -188,7 +188,7 @@ def test_gossip_events_match_worldstate_cpp():
     # own header comment notes for its Python/C++ parity -- pinned by
     # literal value here instead, same discipline test_guard_instances.py
     # uses for its EXPECTED dict).
-    assert GOSSIP_EVENTS == ("shadewrath_allied", "korrath_pleaded")
+    assert GOSSIP_EVENTS == ("shadewrath_allied", "korrath_pleaded", "princess_freed")
 
 
 def test_gossip_hub_occupations_are_pub_patron_and_villager():

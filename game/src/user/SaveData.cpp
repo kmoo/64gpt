@@ -61,4 +61,13 @@ namespace SaveData
       save();
     }
   }
+
+  void recordPrincessTier(uint8_t tier)
+  {
+    if(isNewHighWaterMark(tier, current.princessHighestTier))
+    {
+      current.princessHighestTier = tier;
+      save();
+    }
+  }
 }

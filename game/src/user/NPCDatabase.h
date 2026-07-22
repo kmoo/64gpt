@@ -81,6 +81,10 @@ namespace NPCDatabase
   extern NPC shadewrath;
   extern NPC korrath;
 
+  // M11: Elowen, the rescued elf princess -- mid tier like Korrath,
+  // dungeon-only (no fixed roster slot; docs/ideas-briar-glen-world.md).
+  extern NPC princess;
+
   // An archetype template (manifest's archetypes[] entry): a
   // personality_ranges box per TRAITS axis, plus a name pool for
   // generated instances. Not itself an NPC — spawnInstance() resolves

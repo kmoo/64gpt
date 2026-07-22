@@ -322,9 +322,12 @@ namespace
   uint32_t dungeonLevelNumber{};
   uint32_t dungeonLevelSeed{};
   NPCDatabase::NPC dungeonNpcs[DungeonGenerator::NPCS_PER_LEVEL]{};
-  constexpr int DUNGEON_SLOT_COUNT = DungeonGenerator::NPCS_PER_LEVEL + 1; // +1 = Shadewrath
+  // M11: +2 = Elowen, the rescued princess -- appended one slot past
+  // Shadewrath, same "fixed slot after the generated ones" pattern.
+  constexpr int DUNGEON_SLOT_COUNT = DungeonGenerator::NPCS_PER_LEVEL + 2; // +1 = Shadewrath, +2 = princess
 
   bool isDungeonBadGuySlot() { return inDungeonMode && dungeonSlot == DungeonGenerator::NPCS_PER_LEVEL; }
+  bool isDungeonPrincessSlot() { return inDungeonMode && dungeonSlot == DungeonGenerator::NPCS_PER_LEVEL + 1; }
 
   void generateNewDungeonLevel()
   {
@@ -346,6 +349,7 @@ namespace
   NPCDatabase::NPC &dungeonActiveNpc()
   {
     if(isDungeonBadGuySlot())return NPCDatabase::shadewrath;
+    if(isDungeonPrincessSlot())return NPCDatabase::princess;
     return dungeonNpcs[dungeonSlot];
   }
 
@@ -371,9 +375,11 @@ namespace
   {
     if(inDungeonMode) {
       NpcService::RelationshipState rel = relationshipForTrustTier(trustTier);
-      if(isDungeonBadGuySlot()) {
-        // Same old N: scheme as his fixed roster slot -- a level
-        // encounter with him is conditioned identically either way.
+      if(isDungeonBadGuySlot() || isDungeonPrincessSlot()) {
+        // M11: Elowen's on the same old N: scheme as Shadewrath -- a
+        // named mid-tier individual, not an archetype instance, so no
+        // compositional Profile needed here (same as Korrath's fixed
+        // roster slot uses ContextBuilder, not NpcService).
         NPCDatabase::NPC &npc = dungeonActiveNpc();
         npc.trustTier = trustTier;
         npc.moodIdx = moodIdx;
@@ -648,10 +654,21 @@ namespace P64::Script::C64D1A106DE00001
         EventBus::publish(WorldState::GOSSIP_EVENTS[1]); // "korrath_pleaded"
         WorldState::setGossip(WorldState::GOSSIP_EVENTS[1]);
       }
+      // M11: Elowen is dungeon-only (no fixed roster slot), so unlike
+      // Shadewrath/Korrath this check is just isDungeonPrincessSlot() --
+      // reaching her max trust tier for the first time IS the rescue.
+      else if(isDungeonPrincessSlot() && trustTier == SaveData::MAX_TRUST_TIER &&
+              SaveData::isNewHighWaterMark(tierU8, SaveData::current.princessHighestTier))
+      {
+        EventBus::publish(WorldState::GOSSIP_EVENTS[2]); // "princess_freed"
+        WorldState::setGossip(WorldState::GOSSIP_EVENTS[2]);
+      }
       if(isShadewrathSlot() || isDungeonBadGuySlot())
         SaveData::recordShadewrathTier((uint8_t)trustTier);
       else if(isKorrathSlot())
         SaveData::recordKorrathTier((uint8_t)trustTier);
+      else if(isDungeonPrincessSlot())
+        SaveData::recordPrincessTier((uint8_t)trustTier);
     }
     if(pressed.d_right){ moodIdx    = cycle(moodIdx, +1, NPCDatabase::MOOD_COUNT); changed = true; }
     if(pressed.d_left) { moodIdx    = cycle(moodIdx, -1, NPCDatabase::MOOD_COUNT); changed = true; }
@@ -663,6 +680,10 @@ namespace P64::Script::C64D1A106DE00001
         if(isDungeonBadGuySlot())
           trustTier = SaveData::current.shadewrathHighestTier; // M10: same
                           // remembered-progress restore as the fixed slot
+        else if(isDungeonPrincessSlot())
+          trustTier = SaveData::current.princessHighestTier; // M11: same idea --
+                          // landing on her slot shows whether she's
+                          // already been rescued, not a reset dial
       } else {
         currentNpc = cycle(currentNpc, +1, NPC_SLOT_COUNT);
         loadPersistedTrustTierIfNamedExtra(); // M10: restore Shadewrath's/
@@ -776,6 +797,20 @@ namespace P64::Script::C64D1A106DE00001
             snprintf(npcLine, sizeof(npcLine), "LV:%lu SHADEWRATH (MET TR:%u)",
                      (unsigned long)dungeonLevelNumber,
                      (unsigned)SaveData::current.shadewrathHighestTier);
+          // M11: RESCUED once she's reached max trust -- the on-screen,
+          // screenshot-checkable proof of the rescue event, same
+          // discipline as MET TR:N proving Shadewrath's persistence.
+          // Two separate snprintf calls (not a ternary picking the format
+          // STRING) -- the two formats take a different number of
+          // arguments, and n64.mk builds with -Wall -Werror, which a
+          // dynamically-selected format literal can trip up.
+          else if(isDungeonPrincessSlot() &&
+                  SaveData::current.princessHighestTier >= SaveData::MAX_TRUST_TIER)
+            snprintf(npcLine, sizeof(npcLine), "LV:%lu ELOWEN (RESCUED)",
+                     (unsigned long)dungeonLevelNumber);
+          else if(isDungeonPrincessSlot())
+            snprintf(npcLine, sizeof(npcLine), "LV:%lu ELOWEN (TR:%u)",
+                     (unsigned long)dungeonLevelNumber, (unsigned)trustTier);
           // M11: NEWS suffix is the on-screen, visually-verifiable proof
           // gossip reached this NPC's conditioning -- generated dialogue
           // quality is subjective, but this flag is exact and checkable

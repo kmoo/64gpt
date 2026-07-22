@@ -114,6 +114,25 @@ The on-console proof is re-verified continuously:
       a new cross-trust-tier content-bleed failure mode rather than
       resolving the original one (`docs/milestones/m10.md`,
       `docs/plan.md` Known follow-ups)
+- [x] **M11** — ROM v1.6: town cast + Elowen — the gossip mechanism
+      (a player-caused event reaches nearby town NPCs' conditioning
+      secondhand, verified: a hand-authored gossip line reproduced
+      verbatim mid-generation), 2 more town archetypes (merchant/
+      healer), and Elowen, a rescued elf princess found in the dungeon
+      (mid tier, dungeon-only, her own persisted trust tier doubling as
+      the in-game rescue event). SELFTEST + XCHK PASS for 36 goldens,
+      RSP ON. **Honest negative result, shipped anyway**: this
+      milestone's quality push (a shared lore bank meant to fix
+      Shadewrath's/Korrath's standing coherence gap) was combined with
+      the new content into one retrain — agreement dropped
+      0.9771→0.9536 and garbling spread beyond Shadewrath/Korrath to
+      previously-clean characters including Selena, evidence the
+      combined-retrain approach (not the lore-bank idea itself) was the
+      mistake. Recorded plainly rather than reworked until it looked
+      like a win (`docs/milestones/m11.md` has the full record and a
+      retrospective correction to this project's own prior "one
+      retrain covers all of it" advice). M11.1 retries with proper
+      single-variable isolation
 
 ## Quickstart
 

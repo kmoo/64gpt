@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """M10 Data Science Review: long-horizon consistency eval for Shadewrath
 (docs/milestones/m10.md, "New eval category: long-horizon consistency").
+Updated M11 (2026-07-22) to load the current checkpoint (.m11_model.pt,
+matching make_m11_blob.py's now-larger corpus mix -- merchant/healer
+archetypes, Elowen, the shared Ravendale-lore bank) instead of pinning
+to M10's -- this is a diagnostic tool meant to track whatever the latest
+trained model is, not preserve M10-specific behavior.
 
 Nothing tested before M10 covers a character across MANY separate
 encounters spread over a long session -- Selena's M7 eval is continuous
@@ -19,8 +24,8 @@ eyeball check M4/M7 already do). The trust-tier progression IS the
 returning across separate encounters, same mapping DialogueDemo.cpp's
 D-pad already uses (relationshipForTrustTier()).
 
-Requires the model already trained by make_m10_blob.py (loads its cache,
-trainer/.m10_model.pt -- run that first if it doesn't exist).
+Requires the model already trained by make_m11_blob.py (loads its cache,
+trainer/.m11_model.pt -- run that first if it doesn't exist).
 Run: uv run python eval_shadewrath_long_horizon.py   (from trainer/)
 """
 import random
@@ -35,7 +40,7 @@ from ngpt_trainer.quantize import quantize
 from ngpt_trainer.ref_impl import generate_sampled
 from ngpt_trainer.vocab import Vocab
 
-CACHE = Path(__file__).resolve().parent / ".m10_model.pt"
+CACHE = Path(__file__).resolve().parent / ".m11_model.pt"
 SAMPLE_SEED = 0xC0FFEE
 INV_T_Q8 = 384
 TOP_K = 5
@@ -59,19 +64,20 @@ SESSION = [
 def main() -> None:
     if not CACHE.exists():
         raise SystemExit(
-            f"{CACHE} not found -- run make_m10_blob.py first to train the model "
+            f"{CACHE} not found -- run make_m11_blob.py first to train the model "
             "this eval loads."
         )
     d = torch.load(CACHE, weights_only=True)
 
-    # Rebuild the same vocab make_m10_blob.py used -- must match exactly
+    # Rebuild the same vocab make_m11_blob.py used -- must match exactly
     # or ids won't line up. Cheapest correct way: reconstruct from the
     # same corpus assembly (small/fast, no training).
-    from make_m10_blob import (KORRATH_PER_COMBO, PER_COMBO,
-                                GUARD_PER_COMBO, SEED, SHADEWRATH_PER_COMBO)
+    from make_m11_blob import (KORRATH_PER_COMBO, PER_COMBO, GUARD_PER_COMBO,
+                                PRINCESS_PER_COMBO, SEED, SHADEWRATH_PER_COMBO)
     from ngpt_trainer import cast_corpus as cc
     from ngpt_trainer import guard_corpus as gc
     from ngpt_trainer import korrath_corpus as kc
+    from ngpt_trainer import princess_corpus as pc
     from ngpt_trainer import selena_corpus as sc
 
     full_text = (sc.corpus_text(seed=SEED, per_combo=PER_COMBO)
@@ -79,7 +85,8 @@ def main() -> None:
                 + "".join(p + r for p, r in gc.generate_pairs(seed=SEED, per_combo=GUARD_PER_COMBO))
                 + cc.corpus_text(seed=SEED)
                 + swc.corpus_text(seed=SEED, per_combo=SHADEWRATH_PER_COMBO)
-                + kc.corpus_text(seed=SEED, per_combo=KORRATH_PER_COMBO))
+                + kc.corpus_text(seed=SEED, per_combo=KORRATH_PER_COMBO)
+                + pc.corpus_text(seed=SEED, per_combo=PRINCESS_PER_COMBO))
     vocab = Vocab.from_text(full_text)
 
     model = CharGRU(vocab_size=len(vocab), hidden=d["hidden"])
@@ -87,7 +94,7 @@ def main() -> None:
     model.eval()
     q = quantize(model)
 
-    print(f"Loaded cached M10 model (val loss {d['val_loss']:.4f}, H={d['hidden']})\n")
+    print(f"Loaded cached M11 model (val loss {d['val_loss']:.4f}, H={d['hidden']})\n")
     print("=" * 78)
     print("SHADEWRATH -- scripted long-horizon session")
     print("Human-eyeball review target: does he stay recognizably the same")

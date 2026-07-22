@@ -10,7 +10,7 @@ namespace WorldState
   }
 
   const char *const GOSSIP_EVENTS[GOSSIP_EVENT_COUNT] = {
-    "shadewrath_allied", "korrath_pleaded",
+    "shadewrath_allied", "korrath_pleaded", "princess_freed",
   };
 
   const char *currentContext()

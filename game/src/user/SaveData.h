@@ -32,7 +32,12 @@ namespace SaveData
   {
     uint8_t shadewrathHighestTier; // 0..2, highest trust tier ever reached
     uint8_t korrathHighestTier;    // 0..2
-    uint8_t _pad[6];               // pad to the 8-byte EEPROM block size
+    uint8_t princessHighestTier;   // 0..2 -- M11: reaching MAX_TRUST_TIER
+                                    // for the first time IS the rescue
+                                    // event (she's dungeon-only, no fixed
+                                    // roster slot, so this doubles as
+                                    // "has she been freed")
+    uint8_t _pad[5];               // pad to the 8-byte EEPROM block size
   };
   static_assert(sizeof(SaveFile) == 8, "must fit one EEPROM block exactly");
 
@@ -55,6 +60,7 @@ namespace SaveData
   // already stored.
   void recordShadewrathTier(uint8_t tier);
   void recordKorrathTier(uint8_t tier);
+  void recordPrincessTier(uint8_t tier);
 
   // The TR: field's ceiling -- NPCDatabase's trust tiers are always
   // 0..2 (game/src/user/NPCDatabase.h). Named so "fully won over" isn't

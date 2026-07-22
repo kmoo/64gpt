@@ -29,6 +29,13 @@ namespace NPCDatabase
               /*personality=*/{38, 10, 10, 75, 80}, /*memorySlot=*/0,
               /*tier=*/Tier::MID};
 
+  // M11: Elowen, the rescued elf princess -- traits match trainer/
+  // ngpt_trainer/princess_corpus.py's module docstring and manifests/
+  // dungeon_crawler.json's characters[] entry exactly.
+  NPC princess{"elowen", "ELOWEN", /*trustTier=*/0, /*moodIdx=*/0,
+               /*personality=*/{78, 45, 55, 60, 50}, /*memorySlot=*/0,
+               /*tier=*/Tier::MID};
+
   // Placeholder name pool: manifests/dungeon_crawler.json's guard entry
   // leaves name_gen unset pending real corpus/voice work (M8 task #10);
   // this is the mechanism it will eventually be told to draw from, not a

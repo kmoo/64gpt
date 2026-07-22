@@ -1,25 +1,20 @@
 #!/usr/bin/env python3
-"""Build the M11 blob, golden vectors, and ROM self-test header: M10's
-full production mix (Selena + guard + compositional cast + Shadewrath +
-Korrath), unchanged, plus M11 section 2's gossip mechanism -- pub_patron
-and villager (cast_corpus.py's GOSSIP_HUB_OCCUPATIONS) now see a fraction
-of their combos tagged with a gossip EV: value (GOSSIP_EVENTS:
-shadewrath_allied/korrath_pleaded) and a secondhand-reaction response,
-instead of only ever their own direct EVENTS_FOR_CONTEXT events. See
-docs/milestones/m11.md section 2.
-
-Only cast_corpus.py changed (pub_patron/villager's generate_pairs() output
-now includes gossip-tagged combos); every other corpus module, density
-constant, and H=320 sizing is untouched from M10's second retrain
-(docs/milestones/m10.md). One retrain rather than layering onto the M10
-checkpoint -- this repo's established discipline is a full retrain per
-manifest/corpus change, not continued training (m11.md section 4b flags
-that tradeoff as a decision M11's manifest-update skill still needs to
-make explicitly; this one-off script doesn't need to decide it, it just
-follows the existing norm).
+"""Build the M11 blob, golden vectors, and ROM self-test header. Edited
+in place across M11's own session (same discipline M10 used for its
+density-fix pass -- not a new script per retrain, since M11 isn't tagged/
+shipped yet): started as M10's full production mix, gained M11 section
+2's gossip mechanism, and now gains the milestone's remaining scope
+(docs/milestones/m11.md): two new town archetypes (merchant/healer,
+folded into cast_corpus.py's CHARACTERS automatically), Elowen the
+rescued princess (princess_corpus.py, mid tier like Korrath, dungeon-
+only), and the quality-push shared Ravendale-lore bank spliced into
+Shadewrath's/Korrath's/Elowen's corpora (ravendale_lore.py).
 
 Training is cached in trainer/.m11_model.pt (git-ignored); delete it to
-retrain. Run: uv run python make_m11_blob.py   (from trainer/)
+retrain -- deleted this pass since the corpus mix changed (new content
+must retrain from scratch, same "full retrain per corpus change"
+discipline every prior milestone uses, not continued training).
+Run: uv run python make_m11_blob.py   (from trainer/)
 """
 import random
 import struct
@@ -32,6 +27,7 @@ import torch
 from ngpt_trainer import cast_corpus as cc
 from ngpt_trainer import guard_corpus as gc
 from ngpt_trainer import korrath_corpus as kc
+from ngpt_trainer import princess_corpus as pc
 from ngpt_trainer import selena_corpus as sc
 from ngpt_trainer import shadewrath_corpus as swc
 from ngpt_trainer.divergence import cross_set_divergence
@@ -52,6 +48,7 @@ PER_COMBO = 300              # Selena's corpus density, unchanged from M7-M10
 GUARD_PER_COMBO = 24         # unchanged from M8
 SHADEWRATH_PER_COMBO = 24    # unchanged from M10's density-fix pass
 KORRATH_PER_COMBO = 12       # unchanged from M10
+PRINCESS_PER_COMBO = 4       # M11: matches Korrath's own mid-tier density exactly
 HOLDOUT_COMBOS = 20          # Selena's own combo-level holdout, unchanged
 SAMPLE_SEED = 0xC0FFEE
 INV_T_Q8 = 384
@@ -67,21 +64,27 @@ GENERALIZATION_SAMPLE_SIZE = 8
 M9_VAL_LOSS = 0.0985
 M9_2_VAL_LOSS = 0.1036
 M10_V1_VAL_LOSS = 0.0980
-M10_VAL_LOSS = 0.0995  # M10's shipped retrain (density-fix pass)
+M10_VAL_LOSS = 0.0995      # M10's shipped retrain (density-fix pass)
+M11_GOSSIP_VAL_LOSS = 0.0992  # M11's gossip-only retrain, before this pass's
+                               # new content (merchant/healer/princess/lore)
 
 
 def build_all_pairs():
     selena_pairs = sc.generate_pairs(seed=SEED, per_combo=PER_COMBO)
     thin_pairs = sc.generate_thin_identity_pairs(seed=1000)
     guard_pairs = gc.generate_pairs(seed=SEED, per_combo=GUARD_PER_COMBO)
-    cast_pairs = cc.generate_pairs(seed=SEED)  # 7 characters; pub_patron/
-                                                # villager now carry gossip-
-                                                # tagged combos (M11 sec. 2)
+    cast_pairs = cc.generate_pairs(seed=SEED)  # 9 characters now: bram/
+                                                # fergus/kragan + 6 town-
+                                                # archetype reps (merchant/
+                                                # healer new this pass);
+                                                # pub_patron/villager carry
+                                                # gossip-tagged combos
     cc.assert_no_holdout_leak(cast_pairs)
     shadewrath_pairs = swc.generate_pairs(seed=SEED, per_combo=SHADEWRATH_PER_COMBO)
     korrath_pairs = kc.generate_pairs(seed=SEED, per_combo=KORRATH_PER_COMBO)
+    princess_pairs = pc.generate_pairs(seed=SEED, per_combo=PRINCESS_PER_COMBO)
     return (selena_pairs, thin_pairs, guard_pairs, cast_pairs,
-            shadewrath_pairs, korrath_pairs)
+            shadewrath_pairs, korrath_pairs, princess_pairs)
 
 
 def combo_split(selena_pairs, seed: int = SEED, holdout: int = HOLDOUT_COMBOS):
@@ -147,6 +150,8 @@ def curated_golden_combos():
                for tier, mood in ((0, "sassy"), (1, "worried"), (2, "tender"))]
     combos += [("korrath", tier, mood, "greeting")
                for tier, mood in ((0, "sassy"), (1, "worried"), (2, "tender"))]
+    combos += [("elowen", tier, mood, "greeting")
+               for tier, mood in ((0, "sassy"), (1, "worried"), (2, "tender"))]
     return combos
 
 
@@ -155,6 +160,15 @@ def korrath_golden_prompts(n: int = 3, seed: int = SAMPLE_SEED) -> list[str]:
     shadewrath_golden_prompts()."""
     rng = random.Random(seed ^ 0xB055)
     pairs = kc.generate_pairs(seed=SEED, per_combo=1)
+    sample = rng.sample(pairs, min(n, len(pairs)))
+    return [prompt for prompt, _ in sample]
+
+
+def princess_golden_prompts(n: int = 3, seed: int = SAMPLE_SEED) -> list[str]:
+    """A few TRAINED Elowen prompts spanning contexts, same technique as
+    korrath_golden_prompts()."""
+    rng = random.Random(seed ^ 0xE10E)
+    pairs = pc.generate_pairs(seed=SEED, per_combo=1)
     sample = rng.sample(pairs, min(n, len(pairs)))
     return [prompt for prompt, _ in sample]
 
@@ -172,12 +186,13 @@ def shadewrath_golden_prompts(n: int = 3, seed: int = SAMPLE_SEED) -> list[str]:
 def cast_golden_prompts(cast_pairs: list[tuple[str, str]], n: int = 6,
                         seed: int = SAMPLE_SEED) -> list[str]:
     """A spread of TRAINED (not held-out) compositional-cast prompts --
-    all 7 cast_corpus characters (bram/fergus/kragan + the 4 town-
-    archetype reps), same technique as M9's own m9_golden_prompts(). Not
-    guaranteed to include a gossip-tagged prompt (GOSSIP_FRACTION=0.3 on
-    2 of 7 characters) -- gossip_golden_prompts() below covers that on
-    purpose, so the self-test proves the gossip mechanism specifically
-    rather than leaving it to chance."""
+    all 9 cast_corpus characters (bram/fergus/kragan + the 6 town-
+    archetype reps, merchant/healer new this pass), same technique as
+    M9's own m9_golden_prompts(). Not guaranteed to include a gossip-
+    tagged prompt (GOSSIP_FRACTION=0.3 on 2 of 9 characters) --
+    gossip_golden_prompts() below covers that on purpose, so the
+    self-test proves the gossip mechanism specifically rather than
+    leaving it to chance."""
     rng = random.Random(seed)
     sample = rng.sample(cast_pairs, min(n, len(cast_pairs)))
     return [prompt for prompt, _ in sample]
@@ -186,13 +201,14 @@ def cast_golden_prompts(cast_pairs: list[tuple[str, str]], n: int = 6,
 def gossip_golden_prompts(cast_pairs: list[tuple[str, str]],
                           seed: int = SAMPLE_SEED) -> list[str]:
     """M11 section 2: exactly ONE TRAINED prompt per gossip tag
-    (cast_corpus.GOSSIP_EVENTS) -- the actual on-hardware proof that a
-    gossip-tagged EV: value produces real (not out-of-distribution)
-    output through the shipped ROM, not just an offline pytest assertion
-    that the corpus contains the tag. One per tag rather than a random
-    sample of several: guarantees both tags are covered instead of
-    leaving it to chance, while adding only 2 more goldens to the boot-
-    time budget (~7s/golden on the RSP path) instead of 4+."""
+    (cast_corpus.GOSSIP_EVENTS -- now 3: shadewrath_allied/korrath_pleaded/
+    princess_freed) -- the actual on-hardware proof that a gossip-tagged
+    EV: value produces real (not out-of-distribution) output through the
+    shipped ROM, not just an offline pytest assertion that the corpus
+    contains the tag. One per tag rather than a random sample of several:
+    guarantees every tag is covered instead of leaving it to chance,
+    while keeping the added boot-time cost to exactly len(GOSSIP_EVENTS)
+    goldens (~7s/golden on the RSP path) instead of padding with extras."""
     rng = random.Random(seed ^ 0x9055)
     prompts = []
     for tag in cc.GOSSIP_EVENTS:
@@ -306,24 +322,25 @@ def emit_selftest_header(pairs: list[tuple[str, str]]) -> str:
 
 def main() -> None:
     (selena_pairs, thin_pairs, guard_pairs, cast_pairs, shadewrath_pairs,
-     korrath_pairs) = build_all_pairs()
+     korrath_pairs, princess_pairs) = build_all_pairs()
     train_pairs, val_pairs, held_combos = combo_split(selena_pairs)
     all_train = (train_pairs + thin_pairs + guard_pairs + cast_pairs
-                + shadewrath_pairs + korrath_pairs)
+                + shadewrath_pairs + korrath_pairs + princess_pairs)
     full_text = (sc.corpus_text(seed=SEED, per_combo=PER_COMBO)
                 + "".join(p + r for p, r in thin_pairs)
                 + "".join(p + r for p, r in guard_pairs)
                 + cc.corpus_text(seed=SEED)
                 + swc.corpus_text(seed=SEED, per_combo=SHADEWRATH_PER_COMBO)
-                + kc.corpus_text(seed=SEED, per_combo=KORRATH_PER_COMBO))
+                + kc.corpus_text(seed=SEED, per_combo=KORRATH_PER_COMBO)
+                + pc.corpus_text(seed=SEED, per_combo=PRINCESS_PER_COMBO))
     vocab = Vocab.from_text(full_text)
     gossip_count = sum(1 for p, _ in cast_pairs
                        if p.split("EV:")[1].split("|")[0] in cc.GOSSIP_EVENTS)
     print(f"corpus: {len(selena_pairs)} selena + {len(thin_pairs)} thin-identity + "
-         f"{len(guard_pairs)} guard + {len(cast_pairs)} compositional-cast (7 chars, "
+         f"{len(guard_pairs)} guard + {len(cast_pairs)} compositional-cast (9 chars, "
          f"{gossip_count} gossip-tagged) + {len(shadewrath_pairs)} shadewrath + "
-         f"{len(korrath_pairs)} korrath pairs ({len(full_text)} chars, "
-         f"{len(full_text)/1e6:.2f} MB)")
+         f"{len(korrath_pairs)} korrath + {len(princess_pairs)} elowen pairs "
+         f"({len(full_text)} chars, {len(full_text)/1e6:.2f} MB)")
     print(f"combo split: {len(train_pairs)} train-combo lines, {len(val_pairs)} "
          f"held-out-combo lines, {len(held_combos)} combos held out of Selena's 120")
     print(f"M9-M11 combo-level holdout: {len(cc.holdout_pairs())} (occupation, "
@@ -334,7 +351,8 @@ def main() -> None:
     q = quantize(model)
     print(f"trained: H={HIDDEN}, val loss {model.final_loss:.4f} "
          f"(M9 was {M9_VAL_LOSS:.4f}, M9.2 was {M9_2_VAL_LOSS:.4f}, "
-         f"M10 v1 was {M10_V1_VAL_LOSS:.4f}, M10 shipped was {M10_VAL_LOSS:.4f})")
+         f"M10 v1 was {M10_V1_VAL_LOSS:.4f}, M10 shipped was {M10_VAL_LOSS:.4f}, "
+         f"M11 gossip-only was {M11_GOSSIP_VAL_LOSS:.4f})")
 
     probe = val_pairs[::max(1, len(val_pairs) // 150)][:150]
     agree = top1_agreement(model, q, vocab, probe)
@@ -357,6 +375,9 @@ def main() -> None:
         elif npc_id == "korrath":
             event = kc.EVENTS_FOR_CONTEXT[context][0]
             prompt = kc.prompt_for(trust, mood, context, event)
+        elif npc_id == "elowen":
+            event = pc.EVENTS_FOR_CONTEXT[context][0]
+            prompt = pc.prompt_for(trust, mood, context, event)
         else:
             prompt = gc.prompt_for(npc_id, trust, mood, context)
         got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
@@ -395,6 +416,15 @@ def main() -> None:
         golden_pairs.append((prompt, got))
 
     for prompt in korrath_golden_prompts():
+        got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
+                               inv_t_q8=INV_T_Q8, top_k=TOP_K)
+        print(f"  {prompt}{got}")
+        if not (1 <= len(got) <= MAX_GOLDEN_LEN):
+            print(f"FATAL: degenerate golden for {prompt!r}: {got!r}")
+            sys.exit(1)
+        golden_pairs.append((prompt, got))
+
+    for prompt in princess_golden_prompts():
         got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
                                inv_t_q8=INV_T_Q8, top_k=TOP_K)
         print(f"  {prompt}{got}")
