@@ -172,6 +172,28 @@ long survives.
   the RSP-DMEM-ceiling discussion for why that's a bigger, separate
   effort).
 
+  **Still unresolved, confirmed live by the user post-M11 (2026-07-22):**
+  playing the M11 gossip-retrain ROM in Ares, Shadewrath at `TR:2
+  M:cheerful C:joke` produced "THINGS ARE FALLING ISTONG TO QUIET.
+  ASKING YOU TO CHART? NOTHING WE HAVE GONE WE HAVE NOT HAD YET. SOON,
+  PEOPLE DAY HAVEND EVENTHAR. THISK IS MIGHT POUND. AH, THE HID TO QUIET
+  WHAT I ACCIALLY. AH, THE HER" — invented non-words ("ISTONG,"
+  "HAVEND," "EVENTHAR," "THISK," "ACCIALLY") rather than just awkward
+  phrasing, the same category of failure as the density-fix retrain's
+  goldens ("HOMESTELD," "USPECTID," "ASWACT"). M11's gossip work did not
+  touch Shadewrath's own corpus or training mix at all (§2's changes are
+  scoped to `pub_patron`/`villager` only) and the retrain's overall val
+  loss (0.0992) landed flat versus M10's shipped 0.0995 — so this is the
+  same standing, unresolved gap, now independently reconfirmed by a human
+  actually playing the ROM rather than only surfacing in a training log
+  or a screenshot Claude took. Flagged per user request (2026-07-22); no
+  new fix attempted this round. Next real lever, if picked back up: the
+  two options already on record above (shared structural content, or
+  more model capacity — watch the concurrent `rsp-spike-ktile` 2D-tiling
+  work, which would remove the H≈390 RSP-DMEM ceiling this fix is
+  currently blocked behind if it turns out the corpus-density lever is
+  genuinely exhausted).
+
 **Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost
   it.** Closed same-session, follow-up work after M7 (`docs/spikes/
