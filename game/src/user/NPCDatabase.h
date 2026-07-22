@@ -114,6 +114,13 @@ namespace NPCDatabase
   extern const Archetype WIZARD_ARCHETYPE;   // town tinker-wizard, not Shadewrath
   extern const Archetype VILLAGER_ARCHETYPE; // generic townsfolk incl. elders
 
+  // M11: Briar Glen's General Store and Herbalist (docs/ideas-briar-
+  // glen-world.md) -- same mechanism, occupation strings ("merchant"/
+  // "healer") already declared in NpcService::OCCUPATIONS, no new
+  // vocabulary needed.
+  extern const Archetype MERCHANT_ARCHETYPE;
+  extern const Archetype HEALER_ARCHETYPE;
+
   // M8 task #11: the fixed set of guard instances the demo/game actually
   // ships with (guard_corpus.py's GUARD_IDS — the model was only ever
   // trained on these 4 seeds, per M8's "fixed-set, not runtime-generalizing"

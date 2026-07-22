@@ -208,6 +208,14 @@ long survives.
 
 Goal (non-negotiable): a character-level GRU (~100K params, int8) generating short NPC dialogue **on a real N64** at the end, integrated via the Pyrite64 engine. Text-only demo: a dialogue box streams AI-generated text; buttons cycle conditioning (`NPC=guard / Mood=angry / Event=stole_sword`).
 
+**Long-term game vision (recorded 2026-07-22, not a roadmap):** the
+dungeon-crawler content this project ships (Shadewrath, Korrath,
+the town archetypes) is a slice of a much larger planned game, "Briar
+Glen and the Everhollow" — a cozy 8-region unlock-gated overworld with
+a real spatial map, currently unbuilt (no tile/room/movement system
+exists anywhere in this project). Full design + how it maps onto
+what's actually built so far: `docs/ideas-briar-glen-world.md`.
+
 **Method:** never build the AI in isolation and port at the end. Ship a bootable ROM at **every** milestone, starting with a fake "model" that says one canned line, then swap in the smallest real piece at a time (GRU overfit on ONE line → a dozen lines → full corpus). Each milestone = red tests → implement → green tests → **bootable ROM + README update + git tag**.
 
 **Emulator-first workflow (per user):** Ares (v147+, hardware-accurate) is the per-milestone gate — every ROM must boot there with `SELFTEST PASS`. The user has an EverDrive-64; real-console runs are **occasional spot-checks**, recommended at M2 (first neural net on silicon) and required for final v1.0 (M6). Bit-exact integer math makes this safe: host-green ⟹ Ares-green ⟹ silicon-green.

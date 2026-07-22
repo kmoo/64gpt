@@ -82,6 +82,22 @@ CHARACTERS = {
         "traits": {"warmth": 65, "humor": 70, "impulsivity": 55,
                   "bravery": 40, "focus": 50},
     },
+    # M11: Briar Glen's General Store keeper and Herbalist
+    # (docs/ideas-briar-glen-world.md). Same "representative point inside
+    # NPCDatabase's archetype trait box" pattern as the M10 reps above --
+    # midpoints of MERCHANT_ARCHETYPE/HEALER_ARCHETYPE's ranges
+    # (game/src/user/NPCDatabase.cpp), verified to land on "measured"/
+    # "gentle" respectively (trainer/tests/test_cast_corpus.py).
+    "merchant_rep": {
+        "occupation": "merchant", "age": 50, "gender": "male",
+        "traits": {"warmth": 55, "humor": 42, "impulsivity": 24,
+                  "bravery": 42, "focus": 77},
+    },
+    "healer_rep": {
+        "occupation": "healer", "age": 45, "gender": "female",
+        "traits": {"warmth": 80, "humor": 42, "impulsivity": 27,
+                  "bravery": 27, "focus": 72},
+    },
 }
 
 # ---- DESCRIPTOR-keyed tics (personality axis, shared/reusable) ---------
@@ -137,6 +153,17 @@ _DESCRIPTOR_TICS = {
         "LIFE'S TOO SHORT TO BE SERIOUS ALL THE TIME.",
         "CATCH ME IF YOU CAN!", "I MAKE UP GAMES WHEREVER I GO.",
         "A LITTLE TROUBLE NEVER HURT ANYONE.", "LET'S SEE WHO LAUGHS FIRST.",
+    ),
+    # M11: added for healer_rep -> "gentle" (docs/ideas-briar-glen-world.md).
+    "gentle": (
+        "LET ME TAKE A LOOK AT THAT FOR YOU.",
+        "THERE, THERE, THE WORST IS OVER NOW.",
+        "REST A MOMENT, YOU'VE EARNED IT.",
+        "NO NEED TO BE BRAVE ABOUT IT WITH ME.",
+        "I'VE GOT SOMETHING FOR THAT, DON'T WORRY.",
+        "SLOW BREATHS, THAT'S IT.", "YOU'RE SAFE HERE, I PROMISE.",
+        "LET IT HEAL IN ITS OWN TIME.", "I'M RIGHT HERE, TAKE YOUR TIME.",
+        "A LITTLE KINDNESS GOES A LONG WAY.",
     ),
 }
 
@@ -231,6 +258,32 @@ _OCCUPATION_FLAVOR = {
         "THIS VILLAGE RAISED ME AND I'M NOT DONE YET.",
         "COME BACK ANYTIME, I'LL HAVE MORE STORIES.",
         "WISDOM COMES WITH AGE. SO DOES COMPLAINING.",
+    ),
+    # M11: Briar Glen's General Store and Herbalist
+    # (docs/ideas-briar-glen-world.md).
+    "merchant": (
+        "EVERYTHING'S PRICED FAIR, ASK ANYONE.",
+        "I KEEP A LEDGER FOR A REASON.",
+        "GOOD STOCK MOVES ITSELF, IF YOU LET IT.",
+        "I DON'T HAGGLE, BUT I DO LISTEN.",
+        "A SHOP THAT KEEPS ITS WORD KEEPS ITS CUSTOMERS.",
+        "COUNT YOUR CHANGE, I DON'T MIND.",
+        "I RESTOCK EVERY MORNING, RAIN OR SHINE.",
+        "THE SHELVES TELL YOU WHAT SELLS. I JUST LISTEN TO THEM.",
+        "NOTHING LEAVES THIS SHOP WITHOUT A FAIR PRICE.",
+        "I REMEMBER EVERY REGULAR'S ORDER.",
+    ),
+    "healer": (
+        "SIT DOWN, LET ME LOOK AT THAT.",
+        "THIS ONE'S BITTER, BUT IT WORKS.",
+        "THE GARDEN OUT BACK GROWS MOST OF WHAT I NEED.",
+        "REST IS PART OF THE CURE, NOT JUST THE HERBS.",
+        "I'VE TREATED WORSE. YOU'LL BE FINE.",
+        "DRINK IT SLOWLY, NOT ALL AT ONCE.",
+        "EVERY PLANT IN THIS ROOM HAS A PURPOSE.",
+        "COME BACK IF IT DOESN'T EASE BY MORNING.",
+        "I LEARNED MOST OF THIS FROM MY OWN MOTHER.",
+        "PAIN PASSES. LET ME HELP IT PASS FASTER.",
     ),
 }
 

@@ -153,6 +153,54 @@ namespace NPCDatabase
     {8, 85},
   };
 
+  // M11: Briar Glen's General Store keeper -- shrewd, practical, good
+  // with numbers. Trait box tuned to land unambiguously on
+  // personality_descriptor()'s "measured" bucket (impulsivity<35 AND
+  // focus>=60) for every sample in range, with warmth kept >=45 so no
+  // sample can accidentally trip the earlier "stoic" rule (focus>=70 &&
+  // warmth<45) instead -- same calibration discipline
+  // trainer/tests/test_cast_corpus.py's _CANON_DESCRIPTOR enforces.
+  static const char *const MERCHANT_NAMES[] = {
+    "COSMO", "PENNY", "AUGUSTUS", "MARIGOLD", "FLETCHER", "HATTIE",
+    "BARTHOLOMEW", "CLOVER",
+  };
+  const Archetype MERCHANT_ARCHETYPE{
+    "merchant",
+    {
+      {45, 65},  // warmth -- friendly enough for trade, not gushing
+      {30, 55},  // humor -- dry wit
+      {15, 34},  // impulsivity -- careful, calculating
+      {30, 55},  // bravery -- not a fighter
+      {65, 90},  // focus -- sharp with the ledger
+    },
+    MERCHANT_NAMES,
+    sizeof(MERCHANT_NAMES) / sizeof(MERCHANT_NAMES[0]),
+    "merchant",
+    {28, 65},
+  };
+
+  // M11: Briar Glen's Herbalist -- gentle, warm, attentive. Trait box
+  // tuned to land unambiguously on personality_descriptor()'s "gentle"
+  // bucket (warmth>=70 AND bravery<45) for every sample in range.
+  static const char *const HEALER_NAMES[] = {
+    "WILLOW", "ROSEMARY", "BASIL", "MYRTLE", "FERN", "HAWTHORNE",
+    "CLEMENTINE", "PRIMROSE",
+  };
+  const Archetype HEALER_ARCHETYPE{
+    "healer",
+    {
+      {70, 90},  // warmth -- caring, the point of the role
+      {30, 55},  // humor -- gentle, not sassy
+      {15, 40},  // impulsivity -- careful with remedies
+      {15, 40},  // bravery -- not a fighter
+      {60, 85},  // focus -- attentive to whoever's in front of them
+    },
+    HEALER_NAMES,
+    sizeof(HEALER_NAMES) / sizeof(HEALER_NAMES[0]),
+    "healer",
+    {30, 75},
+  };
+
   static uint32_t xorshift32(uint32_t x)
   {
     x ^= x << 13;

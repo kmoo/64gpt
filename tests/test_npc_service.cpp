@@ -213,6 +213,9 @@ int main()
       {"blacksmith", &NPCDatabase::BLACKSMITH_ARCHETYPE, 0x5678},
       {"wizard",     &NPCDatabase::WIZARD_ARCHETYPE,     0x9abc},
       {"villager",   &NPCDatabase::VILLAGER_ARCHETYPE,   0xdef0},
+      // M11: Briar Glen's General Store / Herbalist.
+      {"merchant",   &NPCDatabase::MERCHANT_ARCHETYPE,   0x1111},
+      {"healer",     &NPCDatabase::HEALER_ARCHETYPE,     0x2222},
     };
     for(const Entry &e : entries)
     {

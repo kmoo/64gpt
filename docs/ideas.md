@@ -11,6 +11,13 @@ walk up, press A, they speak. The moment the AI is *a game feature*
 rather than a tech demo, every other idea doubles in value. Pyrite64 is
 built for exactly this. **Medium effort, no risk.**
 
+**Update (2026-07-22):** this became a real, detailed game design —
+"Briar Glen and the Everhollow," an 8-region spatial overworld. See
+`docs/ideas-briar-glen-world.md` for the full vision and how it maps
+onto what's actually built so far (still a flat NPC-cycling demo, no
+spatial engine yet — this idea's "medium effort, no risk" framing
+turned out to undersell it once the actual scope became clear).
+
 ## 2. "Watch it think" overlay
 Draw the top-5 next-character candidates as live bars beside the
 streaming text — the distribution visibly reshaping as each letter

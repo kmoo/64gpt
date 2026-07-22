@@ -236,16 +236,19 @@ namespace
   // REAL output (not a hardcoded NEW_CAST-style Profile) — proves the
   // archetype -> compositional-scheme bridge (NpcService::profileFor())
   // end to end in the shipped demo, not just in host tests.
-  constexpr int NEW_ARCHETYPE_COUNT = 4;
+  // M11: MERCHANT/HEALER added -- Briar Glen's General Store and
+  // Herbalist (docs/ideas-briar-glen-world.md).
+  constexpr int NEW_ARCHETYPE_COUNT = 6;
   const char *const NEW_ARCHETYPE_LABELS[NEW_ARCHETYPE_COUNT] = {
-    "PUB_PATRON", "BLACKSMITH", "WIZARD", "VILLAGER",
+    "PUB_PATRON", "BLACKSMITH", "WIZARD", "VILLAGER", "MERCHANT", "HEALER",
   };
   const NPCDatabase::Archetype *const NEW_ARCHETYPES[NEW_ARCHETYPE_COUNT] = {
     &NPCDatabase::PUB_PATRON_ARCHETYPE, &NPCDatabase::BLACKSMITH_ARCHETYPE,
     &NPCDatabase::WIZARD_ARCHETYPE, &NPCDatabase::VILLAGER_ARCHETYPE,
+    &NPCDatabase::MERCHANT_ARCHETYPE, &NPCDatabase::HEALER_ARCHETYPE,
   };
   constexpr uint32_t NEW_ARCHETYPE_SEEDS[NEW_ARCHETYPE_COUNT] = {
-    0x2001, 0x2002, 0x2003, 0x2004,
+    0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006,
   };
   NPCDatabase::NPC newArchetypeInstances[NEW_ARCHETYPE_COUNT]{};
 

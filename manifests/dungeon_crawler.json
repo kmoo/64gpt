@@ -117,6 +117,30 @@
       "corpus_ref": null,
       "name_gen": "game/src/user/NPCDatabase.cpp:VILLAGER_NAMES",
       "_status": "M10, pulled forward from M11's planned cast. Wide age range (8-85) deliberately covers 'a few funny old people' via the elderly_man/elderly_woman age-gender token rather than a dedicated elder archetype. corpus_ref pending."
+    },
+    {
+      "id": "merchant",
+      "tier": "thin",
+      "occupation": "merchant",
+      "personality_ranges": {
+        "warmth": [45, 65], "humor": [30, 55], "impulsivity": [15, 34],
+        "bravery": [30, 55], "focus": [65, 90]
+      },
+      "corpus_ref": null,
+      "name_gen": "game/src/user/NPCDatabase.cpp:MERCHANT_NAMES",
+      "_status": "M11, Briar Glen's General Store keeper (docs/ideas-briar-glen-world.md). Trait box tuned so every sample lands unambiguously on personality_descriptor()'s 'measured' bucket. corpus_ref pending."
+    },
+    {
+      "id": "healer",
+      "tier": "thin",
+      "occupation": "healer",
+      "personality_ranges": {
+        "warmth": [70, 90], "humor": [30, 55], "impulsivity": [15, 40],
+        "bravery": [15, 40], "focus": [60, 85]
+      },
+      "corpus_ref": null,
+      "name_gen": "game/src/user/NPCDatabase.cpp:HEALER_NAMES",
+      "_status": "M11, Briar Glen's Herbalist (docs/ideas-briar-glen-world.md). Trait box tuned so every sample lands unambiguously on personality_descriptor()'s 'gentle' bucket. corpus_ref pending."
     }
   ]
 }

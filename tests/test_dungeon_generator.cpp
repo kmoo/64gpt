@@ -76,7 +76,8 @@ static void test_placements_drawn_from_thin_archetype_pool()
   const NPCDatabase::Archetype *const pool[] = {
     &NPCDatabase::GUARD_ARCHETYPE, &NPCDatabase::PUB_PATRON_ARCHETYPE,
     &NPCDatabase::BLACKSMITH_ARCHETYPE, &NPCDatabase::WIZARD_ARCHETYPE,
-    &NPCDatabase::VILLAGER_ARCHETYPE,
+    &NPCDatabase::VILLAGER_ARCHETYPE, &NPCDatabase::MERCHANT_ARCHETYPE,
+    &NPCDatabase::HEALER_ARCHETYPE,
   };
   DungeonGenerator::NpcPlacement placements[DungeonGenerator::NPCS_PER_LEVEL];
   DungeonGenerator::npcsForLevel(42, placements);

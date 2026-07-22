@@ -18,7 +18,8 @@ namespace DungeonGenerator
   static const NPCDatabase::Archetype *const ARCHETYPE_POOL[] = {
     &NPCDatabase::GUARD_ARCHETYPE, &NPCDatabase::PUB_PATRON_ARCHETYPE,
     &NPCDatabase::BLACKSMITH_ARCHETYPE, &NPCDatabase::WIZARD_ARCHETYPE,
-    &NPCDatabase::VILLAGER_ARCHETYPE,
+    &NPCDatabase::VILLAGER_ARCHETYPE, &NPCDatabase::MERCHANT_ARCHETYPE,
+    &NPCDatabase::HEALER_ARCHETYPE,
   };
   constexpr int ARCHETYPE_POOL_SIZE =
       sizeof(ARCHETYPE_POOL) / sizeof(ARCHETYPE_POOL[0]);

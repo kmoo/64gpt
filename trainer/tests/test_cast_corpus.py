@@ -28,6 +28,8 @@ _CANON_DESCRIPTOR = {
     # villager keyed by occupation the same as the original three).
     "pub_patron": "cheerful", "blacksmith": "gruff",
     "wizard": "measured", "villager": "playful",
+    # M11: Briar Glen's General Store / Herbalist.
+    "merchant": "measured", "healer": "gentle",
 }
 
 
@@ -81,6 +83,7 @@ def test_density_per_character_matches_guard_benchmark():
     assert set(per_char_chars) == {
         "guard", "innkeeper", "bandit",
         "pub_patron", "blacksmith", "wizard", "villager",
+        "merchant", "healer",
     }
     for occ, chars in per_char_chars.items():
         assert 80_000 <= chars <= 200_000, (

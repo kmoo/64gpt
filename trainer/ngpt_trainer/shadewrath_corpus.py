@@ -30,6 +30,7 @@ follows).
 import random
 
 from ngpt_trainer import selena_corpus as sc
+from ngpt_trainer.ravendale_lore import RAVENDALE_LORE
 
 NPC_ID = "shadewrath"
 MOODS = sc.MOODS
@@ -196,13 +197,18 @@ _SHADEWRATH_CATCHPHRASES = (
 
 def _response(rng: random.Random, trust_tier: int, mood: str, context: str) -> str:
     """Draw order fixed -- same determinism contract as selena_corpus's
-    own _response()."""
+    own _response(). M11 quality push (docs/plan.md Known follow-ups):
+    a shared Ravendale-lore clause (ravendale_lore.py), reinforced across
+    Shadewrath/Korrath/Elowen -- the previously-untried "share more
+    structural content" lever, not a wholesale voice-bank reuse."""
     parts = []
     if rng.random() < 0.6:
         parts.append(rng.choice(_OPENERS[mood]))
     parts.append(rng.choice(_BODIES[context]))
     if rng.random() < 0.3:
         parts.append(rng.choice(_SHADEWRATH_CATCHPHRASES))
+    if rng.random() < 0.2:
+        parts.append(rng.choice(RAVENDALE_LORE))
     if rng.random() < 0.35:
         parts.append(rng.choice(_CLOSERS[trust_tier]))
     return " ".join(parts)
