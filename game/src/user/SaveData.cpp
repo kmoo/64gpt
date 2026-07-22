@@ -46,7 +46,7 @@ namespace SaveData
 
   void recordShadewrathTier(uint8_t tier)
   {
-    if(tier > current.shadewrathHighestTier)
+    if(isNewHighWaterMark(tier, current.shadewrathHighestTier))
     {
       current.shadewrathHighestTier = tier;
       save();
@@ -55,7 +55,7 @@ namespace SaveData
 
   void recordKorrathTier(uint8_t tier)
   {
-    if(tier > current.korrathHighestTier)
+    if(isNewHighWaterMark(tier, current.korrathHighestTier))
     {
       current.korrathHighestTier = tier;
       save();

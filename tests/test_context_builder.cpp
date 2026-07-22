@@ -51,6 +51,31 @@ static void test_world_state()
   WorldState::setContext(NPCDatabase::CONTEXTS[0]); /* restore for other tests */
 }
 
+// M11: gossip -- "" until a real trigger sets it, then holds that value
+// (single slot, no decay/history -- docs/milestones/m11.md section 2's
+// "keep it simple for v1").
+static void test_world_state_gossip()
+{
+  CHECK(strcmp(WorldState::currentGossip(), "") == 0);
+  CHECK_EQ_INT(WorldState::GOSSIP_EVENT_COUNT, 2);
+  CHECK(strcmp(WorldState::GOSSIP_EVENTS[0], "shadewrath_allied") == 0);
+  CHECK(strcmp(WorldState::GOSSIP_EVENTS[1], "korrath_pleaded") == 0);
+
+  WorldState::setGossip("shadewrath_allied");
+  CHECK(strcmp(WorldState::currentGossip(), "shadewrath_allied") == 0);
+
+  /* a later trigger overwrites the single slot -- no history to preserve */
+  WorldState::setGossip("korrath_pleaded");
+  CHECK(strcmp(WorldState::currentGossip(), "korrath_pleaded") == 0);
+
+  /* nullptr is treated as "no gossip", same convention as EventBus's
+   * empty-string-for-unset rather than a dangling pointer */
+  WorldState::setGossip(nullptr);
+  CHECK(strcmp(WorldState::currentGossip(), "") == 0);
+
+  WorldState::setGossip(""); /* restore for other tests */
+}
+
 static void test_npc_database()
 {
   CHECK(strcmp(NPCDatabase::selena.id, "selena") == 0);
@@ -201,6 +226,7 @@ int main()
 {
   test_event_bus();
   test_world_state();
+  test_world_state_gossip();
   test_npc_database();
   test_shadewrath_and_korrath_npc_globals();
   test_npc_tier();

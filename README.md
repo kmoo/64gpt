@@ -165,6 +165,8 @@ embedded ML — start at 00 and read in order, or jump in:
 - [05 — A GRU on a napkin](docs/05-gru-on-a-napkin.md)
 - [06 — The training pipeline](docs/06-training-pipeline.md)
 - [07 — Performance](docs/07-performance.md)
+- [ADR 0001 — Isolate decision logic into portable C++, host-test it](docs/adr/0001-host-test-portable-cpp-separate-from-libdragon.md)
+- [ADR 0002 — No Debug/Release build type; a source switch gates the boot self-test instead](docs/adr/0002-no-debug-release-build-type-source-level-switch-instead.md)
 - Milestone notes: [m0](docs/milestones/m0.md) · [m1](docs/milestones/m1.md) · [m2](docs/milestones/m2.md) · [m3](docs/milestones/m3.md) · [m4](docs/milestones/m4.md) · [m5](docs/milestones/m5.md) · [m6](docs/milestones/m6.md) · [m6.1](docs/milestones/m6.1.md)
 
 ## Pinned versions

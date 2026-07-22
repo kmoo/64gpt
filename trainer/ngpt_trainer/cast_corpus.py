@@ -257,6 +257,50 @@ _KRAGAN_CATCHPHRASES = (
 
 _CATCHPHRASES = {"fergus": _FERGUS_CATCHPHRASES, "kragan": _KRAGAN_CATCHPHRASES}
 
+# ---- gossip (M11 section 2, docs/milestones/m11.md) ---------------------
+# The town-gossip mechanism: a player-caused event (reaching max trust
+# with Shadewrath or Korrath, game/src/user/DialogueDemo.cpp's real
+# trigger) publishes to WorldState::currentGossip(); NpcService::eventFor()
+# routes it into EV: for occupations trained to react to it secondhand.
+# MUST match game/src/user/WorldState.cpp's GOSSIP_EVENTS exactly --
+# these are the only EV: values a gossip-hub occupation was ever shown
+# during training, so any other tag reaching them is out-of-distribution.
+GOSSIP_EVENTS = ("shadewrath_allied", "korrath_pleaded")
+
+# Only these two occupations' corpora get gossip content -- pub_patron and
+# villager are the town's natural gossip hubs ("EVERY VILLAGE NEEDS A GOOD
+# GOSSIP. THAT'S ME." is already villager's own stock line above). Every
+# other occupation keeps reacting only to its own direct EVENTS_FOR_CONTEXT
+# events, same as before this section existed.
+GOSSIP_HUB_OCCUPATIONS = frozenset({"pub_patron", "villager"})
+
+# Secondhand reactions -- deliberately phrased as hearsay ("I HEARD",
+# "THEY SAY", "WORD IS"), not firsthand experience, since these
+# characters didn't witness the event themselves.
+_GOSSIP_LINES = {
+    "shadewrath_allied": (
+        "DID YOU HEAR? THE NECROMANCER OFFERED SOME KIND OF ALLIANCE. GIVES ME CHILLS.",
+        "THEY SAY HE MADE AN OFFER TO SOMEONE, OF ALL THINGS. AN ALLIANCE.",
+        "WORD IS THE NECROMANCER WANTS TO TALK TERMS NOW. NEVER THOUGHT I'D SEE THE DAY.",
+        "SOMEONE TOLD ME THE NECROMANCER PROPOSED AN ALLIANCE. STRANGE TIMES, THESE.",
+        "I HEARD HE ISN'T FIGHTING ANYMORE. OFFERING DEALS INSTEAD. CAN YOU IMAGINE?",
+    ),
+    "korrath_pleaded": (
+        "I HEARD THE BOUND KNIGHT ASKED SOMEONE FOR HELP. POOR SOUL.",
+        "THEY SAY HE BEGGED TO BE FREED. IMAGINE CARRYING THAT BURDEN SO LONG.",
+        "WORD IS THE KNIGHT FINALLY SPOKE HIS TRUE WISH. IT BREAKS MY HEART.",
+        "SOMEONE TOLD ME THE BOUND KNIGHT ASKED FOR HIS FREEDOM. I HOPE HE FINDS PEACE.",
+        "I HEARD HE'S NOT JUST STANDING GUARD ANYMORE. HE ASKED FOR A WAY OUT.",
+    ),
+}
+
+# Fraction of a gossip-hub character's draws that carry a gossip EV: tag
+# instead of a direct EVENTS_FOR_CONTEXT one -- high enough for the model
+# to actually learn the association (guard/cast density precedent), low
+# enough that direct-event coverage for these two occupations isn't
+# starved.
+GOSSIP_FRACTION = 0.3
+
 # ---- relationship-tier closers (shared/reusable) ------------------------
 
 _TIER_CLOSERS = {
@@ -292,10 +336,15 @@ _TIER_CLOSERS = {
 
 
 def _response(rng: random.Random, name: str, descriptor: str, occupation: str,
-             tier: str, mood: str, context: str, crossed_descriptor: str | None) -> str:
+             tier: str, mood: str, context: str, crossed_descriptor: str | None,
+             gossip_tag: str | None = None) -> str:
     """One line: mood-opener + descriptor-tic + body + occupation-flavor +
     (Fergus-only) catchphrase + tier-closer, each included probabilistically
-    -- same discipline as selena_corpus._response()'s fixed draw order."""
+    -- same discipline as selena_corpus._response()'s fixed draw order.
+    gossip_tag (M11): when set, a secondhand-reaction line is appended
+    UNCONDITIONALLY, not probabilistically like the other clauses -- this
+    combo's entire purpose is teaching EV:<gossip_tag> -> this content, so
+    it needs strong signal, not a coin flip that could omit it entirely."""
     parts = []
     if rng.random() < 0.5:
         parts.append(rng.choice(sc._OPENERS[mood]))
@@ -308,6 +357,8 @@ def _response(rng: random.Random, name: str, descriptor: str, occupation: str,
         parts.append(rng.choice(_OCCUPATION_FLAVOR[occupation]))
     if name in _CATCHPHRASES and rng.random() < 0.3:
         parts.append(rng.choice(_CATCHPHRASES[name]))
+    if gossip_tag:
+        parts.append(rng.choice(_GOSSIP_LINES[gossip_tag]))
     if rng.random() < 0.35:
         parts.append(rng.choice(_TIER_CLOSERS[tier]))
     return " ".join(parts)
@@ -397,7 +448,12 @@ def generate_pairs(seed: int = 0, per_combo: int = 3,
                     other = [d for d in descriptors if d != descriptor
                             and (occupation, d) not in HOLDOUT_COMBOS]
                     crossed = rng.choice(other)
-                event = rng.choice(sc.EVENTS_FOR_CONTEXT[context])
+                gossip_tag = None
+                if occupation in GOSSIP_HUB_OCCUPATIONS and rng.random() < GOSSIP_FRACTION:
+                    gossip_tag = rng.choice(GOSSIP_EVENTS)
+                    event = gossip_tag
+                else:
+                    event = rng.choice(sc.EVENTS_FOR_CONTEXT[context])
                 relationship = _relationship_state(tier)
                 prompt = prompt_fields(profile, relationship, mood, context, event)
                 if crossed:
@@ -408,7 +464,7 @@ def generate_pairs(seed: int = 0, per_combo: int = 3,
                     # of teaching it OCC:/D: are independently composable.
                     prompt = prompt.replace(f"D:{descriptor} ", f"D:{crossed} ")
                 response = _response(rng, name, descriptor, profile["occupation"],
-                                     tier, mood, context, crossed)
+                                     tier, mood, context, crossed, gossip_tag)
                 pairs.append((prompt, response))
     return pairs
 

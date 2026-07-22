@@ -246,6 +246,60 @@ int main()
     }
   }
 
+  // M11: gossip hub predicate -- only the two occupations cast_corpus.py
+  // actually trained on gossip EV: tags should ever receive one
+  // (docs/milestones/m11.md section 2).
+  {
+    struct Case { const char *occ; bool want; };
+    const Case cases[] = {
+      {"pub_patron", true}, {"villager", true},
+      {"guard", false}, {"blacksmith", false}, {"wizard", false},
+      {"bandit", false}, {"innkeeper", false}, {"damsel", false},
+      {nullptr, false},
+    };
+    for(const Case &c : cases)
+    {
+      bool got = isGossipHub(c.occ);
+      if(got != c.want)
+      {
+        printf("FAIL [isGossipHub] occ=%s got=%d want=%d\n",
+               c.occ ? c.occ : "(null)", got, c.want);
+        ++failures;
+      }
+    }
+    printf("ok   [isGossipHub] hub/non-hub occupations classified correctly\n");
+  }
+
+  // M11: eventFor() -- gossip wins only for a hub occupation with
+  // non-empty gossip; every other combination falls back to directEvent.
+  {
+    struct Case
+    {
+      const char *label, *occ, *direct, *gossip, *want;
+    };
+    const Case cases[] = {
+      {"hub+gossip", "pub_patron", "found_gem", "shadewrath_allied", "shadewrath_allied"},
+      {"hub+no gossip", "villager", "found_gem", "", "found_gem"},
+      {"hub+null gossip", "villager", "found_gem", nullptr, "found_gem"},
+      {"non-hub+gossip", "guard", "found_gem", "shadewrath_allied", "found_gem"},
+      {"non-hub, no direct either", "guard", "", "shadewrath_allied", ""},
+      {"hub, nothing at all", "pub_patron", nullptr, nullptr, ""},
+    };
+    for(const Case &c : cases)
+    {
+      const char *got = eventFor(c.occ, c.direct, c.gossip);
+      if(strcmp(got, c.want) != 0)
+      {
+        printf("FAIL [eventFor %s] got=%s want=%s\n", c.label, got, c.want);
+        ++failures;
+      }
+      else
+      {
+        printf("ok   [eventFor %s] -> %s\n", c.label, got);
+      }
+    }
+  }
+
   if(failures)
   {
     printf("\n%d FAILURE(S)\n", failures);

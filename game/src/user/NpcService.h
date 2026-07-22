@@ -95,4 +95,22 @@ namespace NpcService
   // NPCs like selena/guard that go through ContextBuilder instead never
   // call this).
   Profile profileFor(const NPCDatabase::NPC &npc);
+
+  // M11: true for occupations the corpus actually trained to react to
+  // town gossip secondhand (trainer/ngpt_trainer/cast_corpus.py's
+  // GOSSIP_HUB_OCCUPATIONS: pub_patron, villager -- "EVERY VILLAGE NEEDS
+  // A GOOD GOSSIP" is a literal line in villager's own corpus). Routing
+  // a gossip tag to any other occupation would feed an out-of-
+  // distribution EV: token nothing in its training ever showed it.
+  bool isGossipHub(const char *occupation);
+
+  // M11: the EV: value a compositional-scheme NPC's prompt should carry
+  // -- gossip if this occupation is a trained hub AND gossip is set,
+  // otherwise directEvent (the ordinary per-interaction event, e.g.
+  // EventBus::lastTag()). Pure function: the caller supplies both
+  // strings, no dependency on WorldState/EventBus here, same portability
+  // discipline as the rest of this module. occupation/directEvent/gossip
+  // may be "" or nullptr.
+  const char *eventFor(const char *occupation, const char *directEvent,
+                       const char *gossip);
 }

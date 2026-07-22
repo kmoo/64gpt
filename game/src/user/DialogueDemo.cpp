@@ -140,11 +140,31 @@ namespace
   bool loaded{};
   bool selftestPass{};
 
+  // ---- SELF-TEST BUILD SWITCH --------------------------------------------
+  // DEBUG (default, 1): full self-test every boot -- CPU-vs-RSP cross-check
+  // + all SELFTEST_COUNT goldens replayed and byte-compared, ~7s/golden on
+  // the RSP path (this is what every milestone's "SELFTEST PASS"/"XCHK
+  // PASS" proof in docs/milestones/*.md actually verifies -- keep this ON
+  // for any build a milestone doc will cite). RELEASE (0): skips the CPU
+  // reference run and the golden replay, boots straight to the scene. The
+  // RSP backend itself is still installed either way (rspBackendInit() +
+  // ngpt_set_matvec(rspMatvec) below) -- that's real inference setup the
+  // game needs to run fast, not just a verification step, so a RELEASE
+  // build isn't slower to PLAY, only faster to BOOT (no ~7s/golden wait).
+  // There is no distinct Debug/Release build TYPE in this toolchain (n64.mk
+  // always uses one fixed -O2 -- docs/adr/0002-no-debug-release-build-
+  // type-source-level-switch-instead.md); this #define is the actual lever,
+  // a source edit rather than a build flag, same convention as
+  // NGPT_ATTRACT_MODE below.
+  #define NGPT_SELFTEST_ENABLED 1
+
   // ---- M6.1 boot sequence ----------------------------------------------
   // Runs from update() once the scene is up (the RSP path blocks, so it
   // can never run in initDelete): CPU reference generation -> same
   // generation through the RSP (h-state + bytes must match) -> all 12
   // goldens through the RSP path, one per frame so progress is visible.
+  // Skipped by NGPT_SELFTEST_ENABLED=0 (see above) -- BOOT_WAIT jumps
+  // straight to BOOT_READY instead of BOOT_XCHK_CPU.
   enum BootPhase { BOOT_WAIT, BOOT_XCHK_CPU, BOOT_XCHK_RSP, BOOT_SELFTEST,
                    BOOT_READY };
   BootPhase bootPhase = BOOT_WAIT;
@@ -346,12 +366,16 @@ namespace
         return;
       }
       // Thin-tier level NPC: same compositional bridge every archetype
-      // instance uses, dungeon-spawned or not.
+      // instance uses, dungeon-spawned or not. M11: eventFor() routes
+      // town gossip to pub_patron/villager instances instead of the raw
+      // per-interaction event -- a dungeon-spawned villager can still
+      // "have heard" what happened in town before the level generated.
       NpcService::Profile profile = NpcService::profileFor(dungeonActiveNpc());
       NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
                                     NPCDatabase::MOODS[moodIdx],
                                     NPCDatabase::CONTEXTS[contextIdx],
-                                    EventBus::lastTag());
+                                    NpcService::eventFor(profile.occupation,
+                                      EventBus::lastTag(), WorldState::currentGossip()));
       return;
     }
     if(isNewCastSlot()) {
@@ -360,7 +384,8 @@ namespace
       NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
                                     NPCDatabase::MOODS[moodIdx],
                                     NPCDatabase::CONTEXTS[contextIdx],
-                                    EventBus::lastTag());
+                                    NpcService::eventFor(profile.occupation,
+                                      EventBus::lastTag(), WorldState::currentGossip()));
       return;
     }
     if(isNewArchetypeSlot()) {
@@ -373,7 +398,8 @@ namespace
       NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
                                     NPCDatabase::MOODS[moodIdx],
                                     NPCDatabase::CONTEXTS[contextIdx],
-                                    EventBus::lastTag());
+                                    NpcService::eventFor(profile.occupation,
+                                      EventBus::lastTag(), WorldState::currentGossip()));
       return;
     }
     NPCDatabase::NPC &npc = activeNpc();
@@ -463,7 +489,20 @@ namespace
       case BOOT_WAIT:
         if(!loaded) { bootPhase = BOOT_READY; restartGeneration(); return; }
         if(frameCount < 30)return; // let the scene settle first
+        #if NGPT_SELFTEST_ENABLED
         bootPhase = BOOT_XCHK_CPU;
+        #else
+        // RELEASE: skip the CPU reference run and the golden replay, but
+        // still install the RSP backend -- gameplay needs the fast path
+        // even on a boot that verifies nothing (same rspBackendInit()/
+        // ngpt_set_matvec() call BOOT_XCHK_RSP makes below, idempotent
+        // either way since rspBackendInit() early-returns if already
+        // ready, so there's no double-init risk if this ever runs twice).
+        rspBackendInit(&model);
+        if(rspReady)ngpt_set_matvec(rspMatvec);
+        bootPhase = BOOT_READY;
+        restartGeneration();
+        #endif
         return;
 
       case BOOT_XCHK_CPU: // reference run, hook off: the M5 CPU path
@@ -567,6 +606,31 @@ namespace P64::Script::C64D1A106DE00001
     // save, same memory, either path.
     if(pressed.d_up || pressed.d_down)
     {
+      // M11: the real gossip trigger -- reaching the max trust tier with
+      // the villain/boss for the FIRST time (a genuine new high-water
+      // mark, not every re-visit) is the "player-caused event" the town
+      // hears about (docs/milestones/m11.md section 2). Checked BEFORE
+      // the save call below, against the still-stored high-water mark
+      // via the same SaveData::isNewHighWaterMark() recordXTier() itself
+      // uses (ADR 0001, docs/adr/0001-host-test-portable-cpp-separate-
+      // from-libdragon.md) -- one shared, host-tested rule instead of
+      // this call site re-deriving its own "< 2" comparison, which would
+      // silently drift from recordXTier()'s if MAX_TRUST_TIER ever
+      // changed here but not there, or vice versa.
+      uint8_t tierU8 = (uint8_t)trustTier;
+      if((isShadewrathSlot() || isDungeonBadGuySlot()) &&
+         trustTier == SaveData::MAX_TRUST_TIER &&
+         SaveData::isNewHighWaterMark(tierU8, SaveData::current.shadewrathHighestTier))
+      {
+        EventBus::publish(WorldState::GOSSIP_EVENTS[0]); // "shadewrath_allied"
+        WorldState::setGossip(WorldState::GOSSIP_EVENTS[0]);
+      }
+      else if(isKorrathSlot() && trustTier == SaveData::MAX_TRUST_TIER &&
+              SaveData::isNewHighWaterMark(tierU8, SaveData::current.korrathHighestTier))
+      {
+        EventBus::publish(WorldState::GOSSIP_EVENTS[1]); // "korrath_pleaded"
+        WorldState::setGossip(WorldState::GOSSIP_EVENTS[1]);
+      }
       if(isShadewrathSlot() || isDungeonBadGuySlot())
         SaveData::recordShadewrathTier((uint8_t)trustTier);
       else if(isKorrathSlot())
@@ -674,7 +738,14 @@ namespace P64::Script::C64D1A106DE00001
                  phase);
         Debug::print(24, 24, line);
       } else {
+        #if NGPT_SELFTEST_ENABLED
         Debug::print(24, 24, selftestPass ? "SELFTEST PASS" : "SELFTEST FAIL");
+        #else
+        // RELEASE: selftestPass was never set (nothing ran this boot) --
+        // showing "FAIL" here would be a false claim, not an honest
+        // default. Say plainly that nothing was verified this boot.
+        Debug::print(24, 24, "SELFTEST SKIPPED (RELEASE BUILD)");
+        #endif
       }
       {
         char npcLine[64]; // M10: grown from 40 -- the new "(M10, MET TR:N)"
@@ -688,6 +759,16 @@ namespace P64::Script::C64D1A106DE00001
             snprintf(npcLine, sizeof(npcLine), "LV:%lu SHADEWRATH (MET TR:%u)",
                      (unsigned long)dungeonLevelNumber,
                      (unsigned)SaveData::current.shadewrathHighestTier);
+          // M11: NEWS suffix is the on-screen, visually-verifiable proof
+          // gossip reached this NPC's conditioning -- generated dialogue
+          // quality is subjective, but this flag is exact and checkable
+          // from a screenshot the same way "MET TR:N" proves persistence.
+          else if(NpcService::isGossipHub(dungeonActiveNpc().occupation) &&
+                  WorldState::currentGossip()[0])
+            snprintf(npcLine, sizeof(npcLine), "LV:%lu %s (SEED %04X) NEWS",
+                     (unsigned long)dungeonLevelNumber,
+                     dungeonActiveNpc().name,
+                     (unsigned)(dungeonLevelSeed & 0xFFFFu));
           else
             snprintf(npcLine, sizeof(npcLine), "LV:%lu %s (SEED %04X)",
                      (unsigned long)dungeonLevelNumber,
@@ -709,10 +790,17 @@ namespace P64::Script::C64D1A106DE00001
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10, MET TR:%u)",
                    activeNpc().name, (unsigned)remembered);
         }
-        else if(isNewArchetypeSlot())
-          snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10 %s)",
-                   activeNpc().name,
-                   NEW_ARCHETYPE_LABELS[currentNpc - NEW_ARCHETYPE_START]);
+        else if(isNewArchetypeSlot()) {
+          if(NpcService::isGossipHub(activeNpc().occupation) &&
+             WorldState::currentGossip()[0])
+            snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10 %s) NEWS",
+                     activeNpc().name,
+                     NEW_ARCHETYPE_LABELS[currentNpc - NEW_ARCHETYPE_START]);
+          else
+            snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M10 %s)",
+                     activeNpc().name,
+                     NEW_ARCHETYPE_LABELS[currentNpc - NEW_ARCHETYPE_START]);
+        }
         else
           snprintf(npcLine, sizeof(npcLine), "64GPT V1.2 - %s (M8 GUARD)",
                    activeNpc().name);
@@ -747,10 +835,19 @@ namespace P64::Script::C64D1A106DE00001
         Debug::print(24, 90, line);
       }
       if(bootPhase == BOOT_READY && loaded) {
+        #if NGPT_SELFTEST_ENABLED
         snprintf(line, sizeof(line), "%s XCHK %s  CPU %lu RSP %lu US",
                  rspReady ? "RSP ON" : "RSP OFF",
                  xchkPass ? "PASS" : "FAIL",
                  (unsigned long)cpuStepUs, (unsigned long)rspStepUs);
+        #else
+        // RELEASE: xchkPass/cpuStepUs/rspStepUs were never measured this
+        // boot (no CPU reference run) -- rspReady is still meaningful
+        // (the RSP backend IS installed, see BOOT_WAIT above), so keep
+        // reporting that, just not a cross-check result that didn't run.
+        snprintf(line, sizeof(line), "%s XCHK SKIPPED (RELEASE)",
+                 rspReady ? "RSP ON" : "RSP OFF");
+        #endif
         Debug::print(24, 106, line);
       }
 

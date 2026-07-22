@@ -1,5 +1,6 @@
 #include "NpcService.h"
 #include <stdio.h>
+#include <string.h>
 
 namespace NpcService
 {
@@ -130,5 +131,19 @@ namespace NpcService
     for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
       p.traits[i] = npc.personality[i];
     return p;
+  }
+
+  bool isGossipHub(const char *occupation)
+  {
+    return occupation && (strcmp(occupation, "pub_patron") == 0 ||
+                          strcmp(occupation, "villager") == 0);
+  }
+
+  const char *eventFor(const char *occupation, const char *directEvent,
+                       const char *gossip)
+  {
+    if(isGossipHub(occupation) && gossip && gossip[0])
+      return gossip;
+    return (directEvent && directEvent[0]) ? directEvent : "";
   }
 }

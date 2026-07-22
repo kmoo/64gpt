@@ -89,3 +89,14 @@ target_include_directories(test_dungeon_generator PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_dungeon_generator PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_dungeon_generator PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_dungeon_generator COMMAND test_dungeon_generator)
+
+# M11: SaveData.h's pure header-only half (MAX_TRUST_TIER/
+# isNewHighWaterMark()) -- ADR 0001. Deliberately does NOT compile
+# SaveData.cpp (it #includes libdragon's eepromfs.h, real-hardware-only)
+# -- this target proves the extracted decision logic needs no peripheral
+# at all, header-only, no .cpp source beyond the test itself.
+add_executable(test_save_data test_save_data.cpp)
+target_include_directories(test_save_data PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_save_data PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_save_data PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_save_data COMMAND test_save_data)

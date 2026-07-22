@@ -13,4 +13,24 @@ namespace WorldState
   // One of NPCDatabase::CONTEXTS; defaults to the first entry.
   const char *currentContext();
   void setContext(const char *context);
+
+  // M11: gossip -- the world-state half of "event -> world state ->
+  // nearby NPCs' conditioning references it" (docs/milestones/m11.md
+  // section 2). A player-caused event worth the town hearing about, set
+  // once from a real trigger (DialogueDemo.cpp) and read by NpcService::
+  // eventFor() for occupations trained to react to it secondhand
+  // (NpcService::isGossipHub()). Deliberately just one slot, not a
+  // history or a decay timer -- "keep it simple for v1" per the plan;
+  // add propagation/decay only when a second real need shows up, same
+  // premature-abstraction discipline EventBus's own header note uses.
+  constexpr int GOSSIP_EVENT_COUNT = 2;
+  extern const char *const GOSSIP_EVENTS[GOSSIP_EVENT_COUNT]; // must match
+                                    // trainer/ngpt_trainer/cast_corpus.py's
+                                    // GOSSIP_EVENTS exactly -- these are the
+                                    // only tags the model was ever trained
+                                    // to react to as gossip
+
+  // "" if nothing gossip-worthy has happened yet.
+  const char *currentGossip();
+  void setGossip(const char *tag);
 }

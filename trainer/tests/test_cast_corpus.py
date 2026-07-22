@@ -6,10 +6,13 @@ import pytest
 
 from ngpt_trainer.cast_corpus import (
     CHARACTERS,
+    GOSSIP_EVENTS,
+    GOSSIP_HUB_OCCUPATIONS,
     HOLDOUT_COMBOS,
     _CATCHPHRASES,
     _DESCRIPTOR_TICS,
     _FERGUS_CATCHPHRASES,
+    _GOSSIP_LINES,
     _KRAGAN_CATCHPHRASES,
     assert_no_holdout_leak,
     combo_key,
@@ -169,3 +172,77 @@ def test_catchphrase_banks_are_disjoint_per_character():
 
 def test_holdout_pairs_returns_sorted_list():
     assert holdout_pairs() == sorted(HOLDOUT_COMBOS)
+
+
+# ---- M11 gossip (docs/milestones/m11.md section 2) -----------------------
+
+def test_gossip_events_match_worldstate_cpp():
+    # MUST match game/src/user/WorldState.cpp's GOSSIP_EVENTS exactly,
+    # same order -- these are the only EV: tags a gossip-hub occupation
+    # was ever shown in training, and WorldState.cpp is the runtime side
+    # that actually publishes them (no automated cross-check possible
+    # across the language boundary, same limitation test_npc_service.cpp's
+    # own header comment notes for its Python/C++ parity -- pinned by
+    # literal value here instead, same discipline test_guard_instances.py
+    # uses for its EXPECTED dict).
+    assert GOSSIP_EVENTS == ("shadewrath_allied", "korrath_pleaded")
+
+
+def test_gossip_hub_occupations_are_pub_patron_and_villager():
+    assert GOSSIP_HUB_OCCUPATIONS == {"pub_patron", "villager"}
+
+
+def test_gossip_lines_defined_for_every_gossip_event():
+    assert set(_GOSSIP_LINES) == set(GOSSIP_EVENTS)
+    for tag, lines in _GOSSIP_LINES.items():
+        assert len(lines) >= 3, f"{tag}: too few lines for real variety"
+        for line in lines:
+            assert line == line.upper(), f"{tag} line not uppercase: {line!r}"
+
+
+def test_gossip_events_appear_only_for_hub_occupations():
+    pairs = generate_pairs(seed=0)
+    for prompt, _ in pairs:
+        occ = prompt.split("OCC:")[1].split(" ")[0]
+        ev = prompt.split("EV:")[1].split("|")[0]
+        if ev in GOSSIP_EVENTS:
+            assert occ in GOSSIP_HUB_OCCUPATIONS, (
+                f"gossip tag {ev!r} leaked into non-hub occupation {occ!r}")
+
+
+def test_gossip_tag_produces_a_gossip_line_in_the_response():
+    # When a combo's EV: is a gossip tag, the response MUST contain one of
+    # that tag's lines -- gossip_tag is appended unconditionally in
+    # _response(), not probabilistically, since this combo's whole point
+    # is to teach the EV:<tag> -> secondhand-reaction association.
+    pairs = generate_pairs(seed=0)
+    gossip_pairs = [(p, r) for p, r in pairs
+                    if p.split("EV:")[1].split("|")[0] in GOSSIP_EVENTS]
+    assert gossip_pairs, "no gossip-tagged combos generated at seed=0"
+    for prompt, response in gossip_pairs:
+        tag = prompt.split("EV:")[1].split("|")[0]
+        assert any(line in response for line in _GOSSIP_LINES[tag]), (
+            f"gossip response missing a {tag} line: {response!r}")
+
+
+def test_gossip_hub_occupations_still_get_direct_events_too():
+    # GOSSIP_FRACTION < 1.0 -- pub_patron/villager must still see their
+    # ordinary direct EVENTS_FOR_CONTEXT values most of the time, not be
+    # entirely converted to gossip-only content.
+    pairs = generate_pairs(seed=0)
+    hub_events = [
+        prompt.split("EV:")[1].split("|")[0]
+        for prompt, _ in pairs
+        if prompt.split("OCC:")[1].split(" ")[0] in GOSSIP_HUB_OCCUPATIONS
+    ]
+    non_gossip = [ev for ev in hub_events if ev not in GOSSIP_EVENTS]
+    assert non_gossip, "gossip-hub occupations lost all direct-event coverage"
+
+
+def test_non_hub_occupations_never_see_gossip_events():
+    pairs = generate_pairs(seed=0)
+    for prompt, _ in pairs:
+        occ = prompt.split("OCC:")[1].split(" ")[0]
+        if occ not in GOSSIP_HUB_OCCUPATIONS:
+            ev = prompt.split("EV:")[1].split("|")[0]
+            assert ev not in GOSSIP_EVENTS
