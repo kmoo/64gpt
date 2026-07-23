@@ -16,26 +16,34 @@ seed) for each seed below and prints id/name/personality.
 """
 from ngpt_trainer.guard_instances import spawn_guard_instance
 
-# seed -> (id, name, personality dict), verified 2026-07-17 against the
+# seed -> (id, name, personality dict, age, gender), verified 2026-07-17
+# (personality/name/id) and 2026-07-22 (age/gender, M11.1) against the
 # real NPCDatabase.cpp via the dump-program method described above.
 EXPECTED = {
     0x1001: ("guard#1001", "BRAM",
-             {"warmth": 43, "humor": 5, "impulsivity": 35, "bravery": 72, "focus": 73}),
+             {"warmth": 43, "humor": 5, "impulsivity": 35, "bravery": 72, "focus": 73},
+             38, "male"),
     0x1002: ("guard#1002", "EDRIC",
-             {"warmth": 42, "humor": 24, "impulsivity": 16, "bravery": 60, "focus": 80}),
+             {"warmth": 42, "humor": 24, "impulsivity": 16, "bravery": 60, "focus": 80},
+             37, "male"),
     0x1003: ("guard#1003", "EDRIC",
-             {"warmth": 33, "humor": 7, "impulsivity": 19, "bravery": 72, "focus": 56}),
+             {"warmth": 33, "humor": 7, "impulsivity": 19, "bravery": 72, "focus": 56},
+             30, "male"),
     0x1004: ("guard#1004", "IVOR",
-             {"warmth": 32, "humor": 18, "impulsivity": 24, "bravery": 84, "focus": 76}),
+             {"warmth": 32, "humor": 18, "impulsivity": 24, "bravery": 84, "focus": 76},
+             28, "female"),
 }
 
 
 def test_spawn_guard_instance_matches_engine_ground_truth():
-    for seed, (expected_id, expected_name, expected_personality) in EXPECTED.items():
+    for seed, (expected_id, expected_name, expected_personality,
+              expected_age, expected_gender) in EXPECTED.items():
         instance = spawn_guard_instance(seed)
         assert instance["id"] == expected_id, seed
         assert instance["name"] == expected_name, seed
         assert instance["personality"] == expected_personality, seed
+        assert instance["age"] == expected_age, seed
+        assert instance["gender"] == expected_gender, seed
 
 
 def test_spawn_guard_instance_deterministic():

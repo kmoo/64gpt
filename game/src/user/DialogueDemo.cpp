@@ -32,7 +32,6 @@
 #include "EventBus.h"
 #include "WorldState.h"
 #include "NPCDatabase.h"
-#include "ContextBuilder.h"
 #include "NpcService.h"
 #include "SaveData.h"
 #include "DungeonGenerator.h"
@@ -121,7 +120,7 @@ namespace
   // GUARD/MET TR:N/etc.), never a bare milestone number that reads as a
   // build-version claim. Keep in sync with root README.md's own
   // "ROM vX.Y" column when tagging a milestone.
-  constexpr const char *NGPT_VERSION = "V1.6";
+  constexpr const char *NGPT_VERSION = "V1.7";
 
   // M6.1: one step ~4-6ms with the matvec on the RSP (was ~9.9ms all-CPU
   // in M5); one char/frame streams 60 chars/sec with VPS held at 60.
@@ -146,7 +145,9 @@ namespace
   // N:/TR: one -- e.g. Fergus + a long context/event can reach ~105
   // chars); 64 was sized for the old schema only and would have silently
   // truncated the actual conditioning string for the new cast (M9).
-  char prompt[128]{};
+  // M11.1: 128 -> 192 (NpcService.h's buffer-size note) -- SPECIES:/BOND:/
+  // AUD: grew the worst-case conditioning string past the old M9 budget.
+  char prompt[192]{};
   uint32_t textLen{};
   uint32_t pageStart{};  // draw() windows text[pageStart..] one page at a time
   int trustTier{}, moodIdx{}, contextIdx{};
@@ -220,10 +221,13 @@ namespace
   // demonstrating the new one works without inventing a fresh identity.
   constexpr int NEW_CAST_COUNT = 3;
   const char *const NEW_CAST_NAMES[NEW_CAST_COUNT] = { "BRAM", "FERGUS", "KRAGAN" };
+  // M11.1: species/bond match cast_corpus.py's CHARACTERS default
+  // (every curated-cast/town-rep entry is human/stranger -- no
+  // per-character authoring, see that module's own comment).
   const NpcService::Profile NEW_CAST[NEW_CAST_COUNT] = {
-    { "guard",     35, NpcService::Gender::Male, {30, 15, 20, 80, 70} },
-    { "innkeeper", 62, NpcService::Gender::Male, {80, 75, 50, 50, 40} },
-    { "bandit",    45, NpcService::Gender::Male, {20, 15, 40, 55, 60} },
+    { "guard",     "human", 35, NpcService::Gender::Male, "stranger", {30, 15, 20, 80, 70} },
+    { "innkeeper", "human", 62, NpcService::Gender::Male, "stranger", {80, 75, 50, 50, 40} },
+    { "bandit",    "human", 45, NpcService::Gender::Male, "stranger", {20, 15, 40, 55, 60} },
   };
 
   // M10: Shadewrath (full-tier villain) + Korrath (mid-tier boss) — old
@@ -376,16 +380,21 @@ namespace
     if(inDungeonMode) {
       NpcService::RelationshipState rel = relationshipForTrustTier(trustTier);
       if(isDungeonBadGuySlot() || isDungeonPrincessSlot()) {
-        // M11: Elowen's on the same old N: scheme as Shadewrath -- a
-        // named mid-tier individual, not an archetype instance, so no
-        // compositional Profile needed here (same as Korrath's fixed
-        // roster slot uses ContextBuilder, not NpcService).
+        // M11.1: Shadewrath/Elowen genericized onto the same compositional
+        // bridge every other NPC uses (Part 1 -- "one scheme, not two").
+        // AUD:alone -- both are dungeon-only encounters with no one else
+        // present, the narrative situation their real private/secret
+        // bible content (docs/08-manifest-schema.md) was written for.
         NPCDatabase::NPC &npc = dungeonActiveNpc();
         npc.trustTier = trustTier;
         npc.moodIdx = moodIdx;
         WorldState::setContext(NPCDatabase::CONTEXTS[contextIdx]);
-        ContextBuilder::build(prompt, sizeof(prompt), npc,
-                              WorldState::currentContext(), EventBus::lastTag());
+        NpcService::Profile profile = NpcService::profileFor(npc);
+        NpcService::RelationshipState rel = relationshipForTrustTier(trustTier);
+        NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
+                                      NPCDatabase::MOODS[moodIdx],
+                                      WorldState::currentContext(),
+                                      "alone", EventBus::lastTag());
         return;
       }
       // Thin-tier level NPC: same compositional bridge every archetype
@@ -394,9 +403,13 @@ namespace
       // per-interaction event -- a dungeon-spawned villager can still
       // "have heard" what happened in town before the level generated.
       NpcService::Profile profile = NpcService::profileFor(dungeonActiveNpc());
+      // M11.1: this cast has no authored private-register content --
+      // AUD:witnessed matches cast_corpus.py's own training-time default
+      // (see that module's generate_pairs() comment).
       NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
                                     NPCDatabase::MOODS[moodIdx],
                                     NPCDatabase::CONTEXTS[contextIdx],
+                                    "witnessed",
                                     NpcService::eventFor(profile.occupation,
                                       EventBus::lastTag(), WorldState::currentGossip()));
       return;
@@ -404,9 +417,13 @@ namespace
     if(isNewCastSlot()) {
       const NpcService::Profile &profile = NEW_CAST[currentNpc - NEW_CAST_START];
       NpcService::RelationshipState rel = relationshipForTrustTier(trustTier);
+      // M11.1: this cast has no authored private-register content --
+      // AUD:witnessed matches cast_corpus.py's own training-time default
+      // (see that module's generate_pairs() comment).
       NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
                                     NPCDatabase::MOODS[moodIdx],
                                     NPCDatabase::CONTEXTS[contextIdx],
+                                    "witnessed",
                                     NpcService::eventFor(profile.occupation,
                                       EventBus::lastTag(), WorldState::currentGossip()));
       return;
@@ -418,19 +435,37 @@ namespace
       // archetype system onto NpcService.
       NpcService::Profile profile = NpcService::profileFor(activeNpc());
       NpcService::RelationshipState rel = relationshipForTrustTier(trustTier);
+      // M11.1: this cast has no authored private-register content --
+      // AUD:witnessed matches cast_corpus.py's own training-time default
+      // (see that module's generate_pairs() comment).
       NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
                                     NPCDatabase::MOODS[moodIdx],
                                     NPCDatabase::CONTEXTS[contextIdx],
+                                    "witnessed",
                                     NpcService::eventFor(profile.occupation,
                                       EventBus::lastTag(), WorldState::currentGossip()));
       return;
     }
+    // M11.1: the last old-scheme holdout (Selena, guard's 4 fixed
+    // instances, Shadewrath/Korrath on the non-dungeon fixed roster) --
+    // genericized onto the same compositional bridge (Part 1, "one
+    // scheme, not two"). ContextBuilder/N:<id> removed entirely, no
+    // callers left.
     NPCDatabase::NPC &npc = activeNpc();
     npc.trustTier = trustTier;
     npc.moodIdx = moodIdx;
     WorldState::setContext(NPCDatabase::CONTEXTS[contextIdx]);
-    ContextBuilder::build(prompt, sizeof(prompt), npc,
-                          WorldState::currentContext(), EventBus::lastTag());
+    NpcService::Profile profile = NpcService::profileFor(npc);
+    NpcService::RelationshipState rel = relationshipForTrustTier(trustTier);
+    // Selena/Shadewrath/Korrath have real private-register bible content
+    // (occupation companion/villain/knight); guard's fixed instances
+    // don't (same "witnessed" default as the rest of the town cast --
+    // guard_corpus.py has no private-register banks either).
+    const char *audience = strcmp(profile.occupation, "guard") != 0 ? "alone" : "witnessed";
+    NpcService::buildPromptFields(prompt, sizeof(prompt), profile, rel,
+                                  NPCDatabase::MOODS[moodIdx],
+                                  WorldState::currentContext(),
+                                  audience, EventBus::lastTag());
   }
 
   uint32_t frameCount{}; // boot-settle gate (BOOT_WAIT) + secondary seed mix-in

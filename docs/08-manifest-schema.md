@@ -143,6 +143,35 @@ trainer test suite alongside the first manifest that uses it (M8 §7),
 not retrofitted after a typo'd trait name silently trains a model that
 ignores a slider nobody meant to drop.
 
+## M11.1 update: `occupation`/`species`/`bond`, and `AUD:`
+
+M9 (`docs/milestones/m9.md`) replaced the `N:<id>`/`TR:<tier>` scheme
+this doc originally described with a compositional one — every
+`characters[]`/`archetypes[]` entry now also declares `occupation` (one
+of `schema_fields.occupations`) and, as of M11.1, `species` and `bond`
+(one of `schema_fields.species_types`/`bond_types`). `personality`
+(or `personality_ranges` for archetypes) plus `age`/`gender` combine with
+these into `P:`/`D:`/`OCC:`/`SPECIES:`/`R:`/`BOND:` tokens
+(`NpcService::buildPromptFields()`, `trainer/ngpt_trainer/npc_service.py`'s
+`prompt_fields()`) — the `N:guard#4f2a` example above is the *retired*
+scheme (`ContextBuilder`, deleted M11.1); an instance's identity now
+lives entirely in its resolved feature tokens, not an opaque id.
+
+M11.1 also added `AUD:` (audience: `alone`/`witnessed`), which
+operationalizes the `bible.private`/`bible.secret` fields above — content
+written for those registers can now be gated to `AUD:alone`, not just
+read by a human corpus author as tone guidance. `bond` is a fixed
+per-character/archetype relationship *type* (`stranger`/`ally`/`rival`/
+etc.), orthogonal to `R:`'s closeness scale, which still tracks how that
+relationship has grown through play.
+
+Not every declared `species_types`/`bond_types` value has a trained
+character behind it yet (e.g. `dwarf`/`beast` species, `captor`/`family`/
+`mentor`/`romantic` bonds) — declared-but-unexercised vocabulary is an
+accepted, recorded state (same as `occupations` entries before their
+first archetype), not a bug, but don't condition live gameplay on a
+value nothing was trained on.
+
 ## Why this doc exists
 
 This is the concrete artifact M11's porting guide points at. "Supply a

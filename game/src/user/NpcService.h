@@ -24,16 +24,43 @@
 // same discipline as ContextBuilder/NPCDatabase.
 namespace NpcService
 {
-  constexpr int OCCUPATION_COUNT = 12;
+  // M11.1: 12 M9/M10/M11 entries + "villain"/"knight"/"companion" --
+  // real manifest-schema decisions made genericizing Shadewrath/Korrath/
+  // Selena onto this scheme found no existing entry that fit without
+  // merging their voice into an unrelated occupation's bank (docs/
+  // milestones/m11.1.md Part 1).
+  constexpr int OCCUPATION_COUNT = 15;
   extern const char *const OCCUPATIONS[OCCUPATION_COUNT];
+
+  // M11.1 Part 1/3: SPECIES: and BOND: -- not every value has a trained
+  // character yet ("dwarf"/"beast" and "captor"/"family"/"mentor"/
+  // "romantic" are declared vocabulary with no corpus this pass, same
+  // "declared, not yet exercised" status OCCUPATIONS values commonly
+  // start in). Must match trainer/ngpt_trainer/npc_service.py's
+  // SPECIES_TYPES/BOND_TYPES exactly, same discipline as OCCUPATIONS.
+  constexpr int SPECIES_COUNT = 5;
+  extern const char *const SPECIES[SPECIES_COUNT];
+  constexpr int BOND_COUNT = 9;
+  extern const char *const BOND_TYPES[BOND_COUNT];
+
+  // M11.1 Part 3: AUD: (audience) -- operationalizes the manifest bible's
+  // public/private/secret fields (existed since M7 as pure authoring
+  // guidance, docs/08-manifest-schema.md) into something the model can
+  // act on directly. "trusted" (a closeness threshold unlocking private
+  // content even when witnessed) is a recorded v2 candidate, not built
+  // this pass.
+  constexpr int AUDIENCE_COUNT = 2;
+  extern const char *const AUDIENCE_TYPES[AUDIENCE_COUNT];
 
   enum class Gender { Female, Male };
 
   struct Profile
   {
     const char *occupation;                // one of OCCUPATIONS, lowercase
+    const char *species;                   // one of SPECIES, lowercase
     int age;                               // years
     Gender gender;
+    const char *bond;                      // one of BOND_TYPES, lowercase
     int traits[NPCDatabase::TRAIT_COUNT];  // 0-100, same axes/order as NPCDatabase::TRAITS
   };
 
@@ -77,23 +104,26 @@ namespace NpcService
   // ContextBuilder's N:/TR:/M:/C:/EV: convention) -- byte-for-byte match
   // to npc_service.py's prompt_fields(). event may be "" or nullptr (an
   // idle NPC with no recent event still needs a valid EV: field).
-  // Writes into out (must be >= 96 bytes), NUL-terminates. Returns the
-  // written length excluding the NUL.
+  // audience may be "" or nullptr (defaults to "alone", matching
+  // prompt_fields()'s Python default). Writes into out (must be >= 192
+  // bytes -- M11.1 grew the M9 96-byte budget by 3 new fields, see
+  // docs/milestones/m11.1.md Part 1's buffer-size note), NUL-terminates.
+  // Returns the written length excluding the NUL.
   //
-  // "P:girl D:sassy OCC:villager R:best_friend M:cheerful C:greeting
-  //  EV:none|"
+  // "P:girl D:sassy OCC:villager SPECIES:human R:best_friend BOND:rival
+  //  M:cheerful C:greeting AUD:alone EV:none|"
   uint32_t buildPromptFields(char *out, uint32_t outCap, const Profile &profile,
                               const RelationshipState &relationship,
                               const char *mood, const char *context,
-                              const char *event);
+                              const char *audience, const char *event);
 
-  // M10: bridges an NPCDatabase::NPC (spawnInstance()'s output) to a
-  // Profile, so any archetype with an occupation+ageRange set (see
-  // NPCDatabase::Archetype) can feed buildPromptFields() directly --
-  // a new archetype needs a corpus, not new wiring. npc.occupation must
-  // be non-null (set by spawnInstance() from the archetype; old-scheme
-  // NPCs like selena/guard that go through ContextBuilder instead never
-  // call this).
+  // M10: bridges an NPCDatabase::NPC (spawnInstance()'s output, or a
+  // hand-authored named individual like selena/shadewrath) to a Profile,
+  // so any occupation+age+species+bond-carrying NPC can feed
+  // buildPromptFields() directly. M11.1: every NPC in NPCDatabase now
+  // sets these fields (Part 1 "one scheme, not two" retired the old
+  // ContextBuilder/N:<id> scheme entirely), so this is the only bridge
+  // left, not one of two.
   Profile profileFor(const NPCDatabase::NPC &npc);
 
   // M11: true for occupations the corpus actually trained to react to

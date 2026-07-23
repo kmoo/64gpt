@@ -1,19 +1,28 @@
 """Tests for princess_corpus.py -- M11's rescued elf princess (Elowen),
-same discipline as test_korrath_corpus.py/test_shadewrath_corpus.py."""
+genericized M11.1 onto NpcService's compositional scheme (docs/
+milestones/m11.1.md Part 1), same discipline as test_korrath_corpus.py/
+test_shadewrath_corpus.py."""
 from ngpt_trainer import korrath_corpus as kc
 from ngpt_trainer import princess_corpus as pc
 from ngpt_trainer import shadewrath_corpus as swc
 from ngpt_trainer.ravendale_lore import RAVENDALE_LORE
 
 
-def test_prompt_matches_context_builder_format():
+def test_prompt_matches_npc_service_format():
     p = pc.prompt_for(1, "sassy", "greeting", "none")
-    assert p == "N:elowen TR:1 M:sassy C:greeting EV:none|"
+    assert p == ("P:woman D:warm OCC:noble SPECIES:elf R:neutral "
+                 "BOND:captive M:sassy C:greeting AUD:witnessed EV:none|")
 
 
 def test_prompt_defaults_missing_event_to_none():
     p = pc.prompt_for(0, "cheerful", "farewell", "")
     assert p.endswith("EV:none|")
+
+
+def test_prompt_alone_moods_get_aud_alone():
+    # tender/embarrassed are her private-register moods -- see module header.
+    assert "AUD:alone" in pc.prompt_for(2, "tender", "quiet-moment", "")
+    assert "AUD:witnessed" in pc.prompt_for(2, "cheerful", "greeting", "")
 
 
 def test_generate_pairs_deterministic_with_same_seed():

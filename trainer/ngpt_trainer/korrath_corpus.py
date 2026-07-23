@@ -1,10 +1,9 @@
 """M10 corpus generator for Korrath -- the mid-tier talking boss. Same
-mechanism as shadewrath_corpus.py (own OPENERS/BODIES/CLOSERS, old
-N:<id> scheme via ContextBuilder.cpp, not the compositional OCC:/D:
-schema) but deliberately smaller: mid tier is "more than a bare
-archetype instance, less than a full-tier bespoke voice"
-(docs/milestones/m10.md's tier table), so his corpus targets roughly
-half Shadewrath's density, not parity with it.
+mechanism as shadewrath_corpus.py (own OPENERS/BODIES/CLOSERS) but
+deliberately smaller: mid tier is "more than a bare archetype instance,
+less than a full-tier bespoke voice" (docs/milestones/m10.md's tier
+table), so his corpus targets roughly half Shadewrath's density, not
+parity with it.
 
 Guards the captured elf princess's chamber -- bound by Shadewrath (who
 holds a piece of his true name) into eternal, unwilling servitude.
@@ -15,25 +14,57 @@ binding barely lets him say out loud -- ask the player to find what
 Shadewrath holds and end it, one way or another. See his bible in
 manifests/dungeon_crawler.json.
 
-Prompt format frozen by ContextBuilder.cpp: "N:<id> TR:<tier> M:<mood>
-C:<context> EV:<event>|". Response TEXT stays UPPERCASE.
+M11.1 (docs/milestones/m11.1.md Part 1): genericized onto NpcService's
+compositional scheme -- occupation "knight" is a new OCCUPATIONS entry,
+deliberately NOT "guard" (thematically close, but would merge his voice
+into the same OCC:guard bank guard_corpus.py's 4 instances and
+cast_corpus.py's Bram already share -- one voice-merge tradeoff per
+migrated character was enough; Korrath gets his own bank). species
+"human" -- a man bound by dark magic, not himself undead/shade.
+ContextBuilder/N:<id> is gone; prompt_for() now wraps
+npc_service.prompt_fields(). Response TEXT stays UPPERCASE.
 """
 import random
 
 from ngpt_trainer import selena_corpus as sc
+from ngpt_trainer.npc_service import prompt_fields
 from ngpt_trainer.ravendale_lore import RAVENDALE_LORE
 
-NPC_ID = "korrath"
 MOODS = sc.MOODS
 CONTEXTS = sc.CONTEXTS
 TRUST_TIERS = (0, 1, 2)
 EVENTS_FOR_CONTEXT = sc.EVENTS_FOR_CONTEXT
 
+# Matches game/src/user/NPCDatabase.cpp's korrath NPC exactly.
+KORRATH_PROFILE = {
+    "occupation": "knight", "age": 52, "gender": "male",
+    "species": "human", "bond": "enemy",
+    "traits": {"warmth": 38, "humor": 10, "impulsivity": 10,
+              "bravery": 75, "focus": 80},
+}
 
-def prompt_for(trust_tier: int, mood: str, context: str, event: str,
-               npc_id: str = NPC_ID) -> str:
-    ev = event if event else "none"
-    return f"N:{npc_id} TR:{trust_tier} M:{mood} C:{context} EV:{ev}|"
+# Matches DialogueDemo.cpp's relationshipForTrustTier() exactly, same
+# rationale as shadewrath_corpus.py's own copy.
+_TRUST_TIER_MIDPOINT = {0: 0.100, 1: 0.500, 2: 0.975}
+
+
+def _relationship_state(trust_tier: int) -> dict:
+    v = _TRUST_TIER_MIDPOINT[trust_tier]
+    return {"familiarity": v, "affection": v, "trust": v, "respect": v, "fear": 0.0}
+
+
+# AUD: -- a labeling pass over existing content (docs/milestones/m11.1.md
+# Part 3): "worried"/"tender" are where his bible's PRIVATE register
+# ("remembers his name from before the binding, and hates what he's
+# become") actually surfaces ("I AM NOT CERTAIN WHO I AM ANYMORE."); his
+# other moods stay the withholding, dutiful public performance.
+_ALONE_MOODS = ("worried", "tender")
+
+
+def prompt_for(trust_tier: int, mood: str, context: str, event: str) -> str:
+    audience = "alone" if mood in _ALONE_MOODS else "witnessed"
+    return prompt_fields(KORRATH_PROFILE, _relationship_state(trust_tier),
+                         mood, context, audience, event)
 
 
 # ---- OPENER: mood-specific vocal tic, prefixed ~60% of the time --------
@@ -156,20 +187,28 @@ _BODIES = {
 }
 
 
-def _response(rng: random.Random, trust_tier: int, mood: str, context: str) -> str:
+def _response(rng: random.Random, trust_tier: int, mood: str, context: str,
+              lore_bank_enabled: bool = True) -> str:
     """Draw order fixed -- same determinism contract as shadewrath_
     corpus's own _response(). No catchphrase bank -- Korrath's voice
     carries entirely through openers/bodies/closers, no fixed refrains
     (a bound knight repeating a catchphrase would read as comic, not
     tragic). M11 quality push (docs/plan.md Known follow-ups): a shared
     Ravendale-lore clause (ravendale_lore.py), reinforced across
-    Shadewrath/Korrath/Elowen."""
+    Shadewrath/Korrath/Elowen.
+
+    M11.1 Part 2: lore_bank_enabled gates the draw's RESULT, not the
+    draw itself -- see shadewrath_corpus._response()'s docstring for why
+    (keeps the RNG stream identical between a baseline and treatment
+    run)."""
     parts = []
     if rng.random() < 0.6:
         parts.append(rng.choice(_OPENERS[mood]))
     parts.append(rng.choice(_BODIES[context]))
-    if rng.random() < 0.2:
-        parts.append(rng.choice(RAVENDALE_LORE))
+    lore_drawn = rng.random() < 0.2
+    lore_line = rng.choice(RAVENDALE_LORE) if lore_drawn else None
+    if lore_bank_enabled and lore_line:
+        parts.append(lore_line)
     if rng.random() < 0.35:
         parts.append(rng.choice(_CLOSERS[trust_tier]))
     return " ".join(parts)
@@ -205,11 +244,13 @@ _CLOSERS = {
 }
 
 
-def generate_pairs(seed: int = 0, per_combo: int = 4) -> list[tuple[str, str]]:
+def generate_pairs(seed: int = 0, per_combo: int = 4,
+                   lore_bank_enabled: bool = True) -> list[tuple[str, str]]:
     """per_combo pairs for each trust_tier x mood x context combo (3 x 5
     x 8 = 120 combos). Default per_combo=4 is deliberately about half
     Shadewrath's 8 -- mid tier means less density than full tier, not
-    parity with it (docs/milestones/m10.md's tier table)."""
+    parity with it (docs/milestones/m10.md's tier table). lore_bank_
+    enabled: see _response()'s docstring."""
     rng = random.Random(seed)
     pairs = []
     for _ in range(per_combo):
@@ -218,10 +259,11 @@ def generate_pairs(seed: int = 0, per_combo: int = 4) -> list[tuple[str, str]]:
                 for context in CONTEXTS:
                     event = rng.choice(EVENTS_FOR_CONTEXT[context])
                     prompt = prompt_for(trust_tier, mood, context, event)
-                    response = _response(rng, trust_tier, mood, context)
+                    response = _response(rng, trust_tier, mood, context, lore_bank_enabled)
                     pairs.append((prompt, response))
     return pairs
 
 
-def corpus_text(seed: int = 0, per_combo: int = 4) -> str:
-    return "".join(p + r for p, r in generate_pairs(seed, per_combo))
+def corpus_text(seed: int = 0, per_combo: int = 4,
+                lore_bank_enabled: bool = True) -> str:
+    return "".join(p + r for p, r in generate_pairs(seed, per_combo, lore_bank_enabled))

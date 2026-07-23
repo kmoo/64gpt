@@ -18,10 +18,11 @@ static int failures = 0;
 
 static void expect_prompt(const char *label, const Profile &profile,
                            const RelationshipState &rel, const char *mood,
-                           const char *ctx, const char *ev, const char *expected)
+                           const char *ctx, const char *aud, const char *ev,
+                           const char *expected)
 {
-  char out[128];
-  uint32_t len = buildPromptFields(out, sizeof(out), profile, rel, mood, ctx, ev);
+  char out[192];
+  uint32_t len = buildPromptFields(out, sizeof(out), profile, rel, mood, ctx, aud, ev);
   bool ok = strcmp(out, expected) == 0 && len == strlen(expected);
   if(!ok)
   {
@@ -44,81 +45,83 @@ int main()
   // Selena calibration: {90,85,70,55,30} -> "sassy" (M9's core worked
   // example, docs/milestones/m9.md section 1).
   {
-    Profile p{"villager", 12, Gender::Female, {90, 85, 70, 55, 30}};
+    Profile p{"villager", "human", 12, Gender::Female, "ally", {90, 85, 70, 55, 30}};
     RelationshipState r{fx(1.0), fx(1.0), fx(1.0), fx(1.0), fx(0.0)};
-    expect_prompt("selena calibration", p, r, "cheerful", "greeting", "",
-                  "P:girl D:sassy OCC:villager R:best_friend M:cheerful C:greeting EV:none|");
+    expect_prompt("selena calibration", p, r, "cheerful", "greeting", "alone", "",
+                  "P:girl D:sassy OCC:villager SPECIES:human R:best_friend BOND:ally M:cheerful C:greeting AUD:alone EV:none|");
   }
 
   // Elderly multi-word person-token, non-empty event, stranger tier.
   {
-    Profile p{"healer", 70, Gender::Male, {20, 20, 20, 80, 85}};
+    Profile p{"healer", "human", 70, Gender::Male, "stranger", {20, 20, 20, 80, 85}};
     RelationshipState r{fx(0.0), fx(0.0), fx(0.0), fx(0.0), fx(0.5)};
-    expect_prompt("elderly stranger", p, r, "worried", "farewell", "heading_home",
-                  "P:elderly_man D:gruff OCC:healer R:stranger M:worried C:farewell EV:heading_home|");
+    expect_prompt("elderly stranger", p, r, "worried", "farewell", "witnessed", "heading_home",
+                  "P:elderly_man D:gruff OCC:healer SPECIES:human R:stranger BOND:stranger M:worried C:farewell AUD:witnessed EV:heading_home|");
   }
 
   // Real sampled profiles (random_npc_profile/random_relationship_state
   // in npc_service.py, seeds below), exercising occupation/descriptor/
-  // tier breadth beyond the two hand-picked cases above.
+  // tier breadth beyond the two hand-picked cases above. species/bond/
+  // audience are hand-picked per case (not re-derived from the seed) to
+  // spread coverage across the new vocabulary too.
   {
-    Profile p{"bandit", 54, Gender::Male, {54, 35, 61, 45, 93}};
+    Profile p{"bandit", "human", 54, Gender::Male, "rival", {54, 35, 61, 45, 93}};
     RelationshipState r{fx(0.939), fx(0.09), fx(0.661), fx(0.797), fx(0.495)};
-    expect_prompt("sampled seed=1", p, r, "sassy", "combat-banter", "",
-                  "P:man D:focused OCC:bandit R:friend M:sassy C:combat-banter EV:none|");
+    expect_prompt("sampled seed=1", p, r, "sassy", "combat-banter", "alone", "",
+                  "P:man D:focused OCC:bandit SPECIES:human R:friend BOND:rival M:sassy C:combat-banter AUD:alone EV:none|");
   }
   {
-    Profile p{"wizard", 60, Gender::Male, {10, 1, 43, 100, 46}};
+    Profile p{"wizard", "human", 60, Gender::Male, "stranger", {10, 1, 43, 100, 46}};
     RelationshipState r{fx(0.083), fx(0.256), fx(0.808), fx(0.38), fx(0.901)};
-    expect_prompt("sampled seed=7", p, r, "sassy", "combat-banter", "",
-                  "P:elderly_man D:gruff OCC:wizard R:acquaintance M:sassy C:combat-banter EV:none|");
+    expect_prompt("sampled seed=7", p, r, "sassy", "combat-banter", "witnessed", "",
+                  "P:elderly_man D:gruff OCC:wizard SPECIES:human R:acquaintance BOND:stranger M:sassy C:combat-banter AUD:witnessed EV:none|");
   }
   {
-    Profile p{"villager", 33, Gender::Male, {49, 97, 70, 42, 48}};
+    Profile p{"villager", "elf", 33, Gender::Male, "family", {49, 97, 70, 42, 48}};
     RelationshipState r{fx(0.282), fx(0.715), fx(0.665), fx(0.158), fx(0.831)};
-    expect_prompt("sampled seed=42", p, r, "sassy", "combat-banter", "",
-                  "P:man D:sassy OCC:villager R:neutral M:sassy C:combat-banter EV:none|");
+    expect_prompt("sampled seed=42", p, r, "sassy", "combat-banter", "alone", "",
+                  "P:man D:sassy OCC:villager SPECIES:elf R:neutral BOND:family M:sassy C:combat-banter AUD:alone EV:none|");
   }
   {
-    Profile p{"farmer", 62, Gender::Female, {13, 19, 38, 4, 81}};
+    Profile p{"farmer", "dwarf", 62, Gender::Female, "mentor", {13, 19, 38, 4, 81}};
     RelationshipState r{fx(0.133), fx(0.148), fx(0.675), fx(0.524), fx(0.978)};
-    expect_prompt("sampled seed=1000", p, r, "sassy", "combat-banter", "",
-                  "P:elderly_woman D:stoic OCC:farmer R:acquaintance M:sassy C:combat-banter EV:none|");
+    expect_prompt("sampled seed=1000", p, r, "sassy", "combat-banter", "witnessed", "",
+                  "P:elderly_woman D:stoic OCC:farmer SPECIES:dwarf R:acquaintance BOND:mentor M:sassy C:combat-banter AUD:witnessed EV:none|");
   }
   {
-    Profile p{"merchant", 80, Gender::Male, {54, 27, 67, 60, 67}};
+    Profile p{"merchant", "human", 80, Gender::Male, "stranger", {54, 27, 67, 60, 67}};
     RelationshipState r{fx(0.187), fx(0.686), fx(0.089), fx(0.124), fx(0.945)};
-    expect_prompt("sampled seed=99999", p, r, "sassy", "combat-banter", "",
-                  "P:elderly_man D:serious OCC:merchant R:acquaintance M:sassy C:combat-banter EV:none|");
+    expect_prompt("sampled seed=99999", p, r, "sassy", "combat-banter", "alone", "",
+                  "P:elderly_man D:serious OCC:merchant SPECIES:human R:acquaintance BOND:stranger M:sassy C:combat-banter AUD:alone EV:none|");
   }
   {
-    Profile p{"damsel", 31, Gender::Female, {13, 89, 96, 41, 28}};
+    Profile p{"damsel", "human", 31, Gender::Female, "captive", {13, 89, 96, 41, 28}};
     RelationshipState r{fx(0.341), fx(0.991), fx(0.638), fx(0.903), fx(0.44)};
-    expect_prompt("sampled seed=0xC0FFEE", p, r, "sassy", "combat-banter", "",
-                  "P:woman D:sassy OCC:damsel R:friend M:sassy C:combat-banter EV:none|");
+    expect_prompt("sampled seed=0xC0FFEE", p, r, "sassy", "combat-banter", "witnessed", "",
+                  "P:woman D:sassy OCC:damsel SPECIES:human R:friend BOND:captive M:sassy C:combat-banter AUD:witnessed EV:none|");
   }
   {
-    Profile p{"wizard", 7, Gender::Female, {10, 67, 62, 6, 16}};
+    Profile p{"wizard", "beast", 7, Gender::Female, "romantic", {10, 67, 62, 6, 16}};
     RelationshipState r{fx(0.775), fx(0.283), fx(0.074), fx(0.421), fx(0.982)};
-    expect_prompt("sampled seed=0xDEADBEEF", p, r, "sassy", "combat-banter", "",
-                  "P:girl D:anxious OCC:wizard R:acquaintance M:sassy C:combat-banter EV:none|");
+    expect_prompt("sampled seed=0xDEADBEEF", p, r, "sassy", "combat-banter", "alone", "",
+                  "P:girl D:anxious OCC:wizard SPECIES:beast R:acquaintance BOND:romantic M:sassy C:combat-banter AUD:alone EV:none|");
   }
   {
-    Profile p{"wizard", 12, Gender::Female, {63, 4, 91, 9, 54}};
+    Profile p{"wizard", "shade", 12, Gender::Female, "captor", {63, 4, 91, 9, 54}};
     RelationshipState r{fx(0.668), fx(0.54), fx(0.45), fx(0.961), fx(0.742)};
-    expect_prompt("sampled seed=55555", p, r, "sassy", "combat-banter", "",
-                  "P:girl D:serious OCC:wizard R:friend M:sassy C:combat-banter EV:none|");
+    expect_prompt("sampled seed=55555", p, r, "sassy", "combat-banter", "witnessed", "",
+                  "P:girl D:serious OCC:wizard SPECIES:shade R:friend BOND:captor M:sassy C:combat-banter AUD:witnessed EV:none|");
   }
 
-  // Every space-separated prompt token must carry its own colon
-  // (ContextBuilder's parsing convention) -- direct structural check,
-  // not just string equality above.
+  // Every space-separated prompt token must carry its own colon (the
+  // schema's colon-per-token convention) -- direct structural check, not
+  // just string equality above.
   {
-    Profile p{"noble", 70, Gender::Female, {50, 50, 50, 50, 50}};
+    Profile p{"noble", "elf", 70, Gender::Female, "captive", {50, 50, 50, 50, 50}};
     RelationshipState r{fx(0.5), fx(0.5), fx(0.5), fx(0.5), fx(0.5)};
-    char out[128];
-    buildPromptFields(out, sizeof(out), p, r, "tender", "joke", nullptr);
-    char buf[128];
+    char out[192];
+    buildPromptFields(out, sizeof(out), p, r, "tender", "joke", nullptr, nullptr);
+    char buf[192];
     strcpy(buf, out);
     char *saveptr = nullptr;
     char *tok = strtok_r(buf, " ", &saveptr);
@@ -150,6 +153,37 @@ int main()
     }
   }
 
+  // M11.1: SPECIES/BOND_TYPES/AUDIENCE_TYPES -- must match trainer/
+  // ngpt_trainer/npc_service.py's SPECIES_TYPES/BOND_TYPES/AUDIENCE_TYPES
+  // exactly, same discipline as OCCUPATIONS above.
+  {
+    const char *const wantSpecies[SPECIES_COUNT] = {"human", "elf", "dwarf", "beast", "shade"};
+    for(int i = 0; i < SPECIES_COUNT; ++i)
+      if(strcmp(SPECIES[i], wantSpecies[i]) != 0)
+      {
+        printf("FAIL [species table] index %d: got %s want %s\n", i, SPECIES[i], wantSpecies[i]);
+        ++failures;
+      }
+    const char *const wantBond[BOND_COUNT] = {
+      "stranger", "ally", "rival", "enemy", "captor", "captive", "family",
+      "mentor", "romantic",
+    };
+    for(int i = 0; i < BOND_COUNT; ++i)
+      if(strcmp(BOND_TYPES[i], wantBond[i]) != 0)
+      {
+        printf("FAIL [bond table] index %d: got %s want %s\n", i, BOND_TYPES[i], wantBond[i]);
+        ++failures;
+      }
+    const char *const wantAudience[AUDIENCE_COUNT] = {"alone", "witnessed"};
+    for(int i = 0; i < AUDIENCE_COUNT; ++i)
+      if(strcmp(AUDIENCE_TYPES[i], wantAudience[i]) != 0)
+      {
+        printf("FAIL [audience table] index %d: got %s want %s\n", i, AUDIENCE_TYPES[i], wantAudience[i]);
+        ++failures;
+      }
+    printf("ok   [species/bond/audience tables] match npc_service.py\n");
+  }
+
   // M10: the archetype->Profile bridge -- any spawnInstance() output must
   // carry enough (occupation/age/gender) to feed buildPromptFields()
   // directly, so a NEW archetype (blacksmith, pub_patron, ...) doesn't
@@ -161,6 +195,8 @@ int main()
       {{10, 20}, {30, 40}, {50, 60}, {70, 80}, {90, 100}},
       TEST_NAMES, 1,
       "blacksmith",     // occupation
+      "human",          // species
+      "stranger",       // bond
       {30, 50},         // ageRange
     };
     NPCDatabase::NPC npc = NPCDatabase::spawnInstance(testArchetype, 0x77);
@@ -177,7 +213,8 @@ int main()
     }
 
     Profile p = profileFor(npc);
-    bool ok = strcmp(p.occupation, npc.occupation) == 0 && p.age == npc.age;
+    bool ok = strcmp(p.occupation, npc.occupation) == 0 && p.age == npc.age
+           && strcmp(p.species, npc.species) == 0 && strcmp(p.bond, npc.bond) == 0;
     for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
       ok = ok && p.traits[i] == npc.personality[i];
     if(!ok)
@@ -233,10 +270,11 @@ int main()
       NPCDatabase::NPC npc = NPCDatabase::spawnInstance(*e.arch, e.seed);
       Profile p = profileFor(npc);
       RelationshipState r{fx(0.5), fx(0.5), fx(0.5), fx(0.5), fx(0.0)};
-      char out[128];
-      uint32_t len = buildPromptFields(out, sizeof(out), p, r, "cheerful", "greeting", "");
+      char out[192];
+      uint32_t len = buildPromptFields(out, sizeof(out), p, r, "cheerful", "greeting", "witnessed", "");
       bool ok = len > 0 && len < sizeof(out) && strstr(out, "OCC:") != nullptr
-             && strstr(out, e.arch->occupation) != nullptr;
+             && strstr(out, e.arch->occupation) != nullptr
+             && strstr(out, "SPECIES:") != nullptr && strstr(out, "BOND:") != nullptr;
       if(!ok)
       {
         printf("FAIL [%s prompt] malformed: %s\n", e.label, out);

@@ -98,7 +98,7 @@ static void test_reload_reproduces_identical_dialogue_text()
    * archetype would feed the model -- "first play" and "reload" are
    * just two independent derivations from the same stored level seed,
    * with nothing else carried over between them. */
-  auto conditioningStringsForLevel = [](uint32_t levelSeed, char out[][96]) {
+  auto conditioningStringsForLevel = [](uint32_t levelSeed, char out[][192]) {
     DungeonGenerator::NpcPlacement placements[DungeonGenerator::NPCS_PER_LEVEL];
     DungeonGenerator::npcsForLevel(levelSeed, placements);
     for(int i = 0; i < DungeonGenerator::NPCS_PER_LEVEL; ++i)
@@ -107,13 +107,13 @@ static void test_reload_reproduces_identical_dialogue_text()
           *placements[i].archetype, placements[i].instanceSeed);
       NpcService::Profile profile = NpcService::profileFor(npc);
       NpcService::RelationshipState rel{500, 500, 500, 500, 0};
-      NpcService::buildPromptFields(out[i], 96, profile, rel,
-                                     "cheerful", "greeting", "");
+      NpcService::buildPromptFields(out[i], 192, profile, rel,
+                                     "cheerful", "greeting", "witnessed", "");
     }
   };
 
-  char firstPlay[DungeonGenerator::NPCS_PER_LEVEL][96];
-  char reload[DungeonGenerator::NPCS_PER_LEVEL][96];
+  char firstPlay[DungeonGenerator::NPCS_PER_LEVEL][192];
+  char reload[DungeonGenerator::NPCS_PER_LEVEL][192];
   conditioningStringsForLevel(0xFEED, firstPlay);
   conditioningStringsForLevel(0xFEED, reload);
   for(int i = 0; i < DungeonGenerator::NPCS_PER_LEVEL; ++i)

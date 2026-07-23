@@ -1,12 +1,19 @@
-/* M7 game-side subsystem tests: EventBus, WorldState, NPCDatabase,
- * ContextBuilder. These are pure portable C++ (no libdragon includes),
- * so unlike DialogueDemo.cpp they compile and run in the host suite —
- * same red/green discipline the project uses for core/, extended to the
- * new game-side layer docs/milestones/m7.md adds. */
+/* M7 game-side subsystem tests: EventBus, WorldState, NPCDatabase. These
+ * are pure portable C++ (no libdragon includes), so unlike
+ * DialogueDemo.cpp they compile and run in the host suite — same
+ * red/green discipline the project uses for core/, extended to the game-
+ * side layer docs/milestones/m7.md adds.
+ *
+ * M11.1: ContextBuilder (the old N:<id> TR:<tier> M: C: EV: scheme) and
+ * its test_context_builder() were removed here -- Part 1's "full
+ * genericization: one scheme, not two" moved every remaining old-scheme
+ * NPC (Selena, Shadewrath, Korrath, Elowen, guard) onto NpcService::
+ * buildPromptFields(), leaving ContextBuilder::build() with zero callers.
+ * Deleted rather than left as unreferenced dead code (game/src/user/
+ * ContextBuilder.h/.cpp removed in the same pass). */
 #include "EventBus.h"
 #include "WorldState.h"
 #include "NPCDatabase.h"
-#include "ContextBuilder.h"
 #include "test_util.h"
 #include <string.h>
 
@@ -132,37 +139,6 @@ static void test_npc_tier()
   CHECK(!NPCDatabase::isPersistent(NPCDatabase::Tier::THIN));
 }
 
-static void test_context_builder()
-{
-  NPCDatabase::NPC npc{"selena", "", 2, 0, {90, 85, 70, 55, 30}, 0}; /* trust tier 2, mood[0]=cheerful */
-  char out[64];
-
-  uint32_t len = ContextBuilder::build(out, sizeof(out), npc, "item-found", "found_gem");
-  CHECK(strcmp(out, "N:selena TR:2 M:cheerful C:item-found EV:found_gem|") == 0);
-  CHECK_EQ_INT(len, strlen(out));
-
-  /* schema tag syntax pinned exactly as docs/milestones/m7.md specifies:
-   * N:<id> TR:<tier> M:<mood> C:<context> EV:<event>| */
-  CHECK(out[len - 1] == '|');
-
-  /* no event yet (idle NPC) still yields a valid, parseable EV: field —
-   * the corpus must define a trainable "no event" sentinel, not emit an
-   * empty/dangling EV: */
-  ContextBuilder::build(out, sizeof(out), npc, "greeting", "");
-  CHECK(strcmp(out, "N:selena TR:2 M:cheerful C:greeting EV:none|") == 0);
-
-  /* every produced string stays inside the M7 prime-time budget's
-   * target ceiling (64 bytes) for realistic field values */
-  CHECK(len < 64);
-
-  /* a too-small buffer truncates safely (snprintf semantics) rather
-   * than overflowing — build() must never write past outCap */
-  char tiny[8];
-  uint32_t tlen = ContextBuilder::build(tiny, sizeof(tiny), npc, "greeting", "x");
-  CHECK(tlen < sizeof(tiny));
-  CHECK(strlen(tiny) == tlen);
-}
-
 static void test_archetype_instance()
 {
   /* deterministic: same seed -> byte-identical instance */
@@ -238,7 +214,6 @@ int main()
   test_npc_database();
   test_shadewrath_and_korrath_npc_globals();
   test_npc_tier();
-  test_context_builder();
   test_archetype_instance();
   test_guard_instance_registry();
   return test_summary("test_context_builder");

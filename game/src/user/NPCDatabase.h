@@ -61,16 +61,21 @@ namespace NPCDatabase
     Tier tier = Tier::THIN;       // default matches spawnInstance()'s only
                                    // valid tier; characters[]-shaped NPCs
                                    // (selena) override explicitly
-    const char *occupation = nullptr; // M10: one of NpcService::OCCUPATIONS,
-                                   // set by spawnInstance() from the
-                                   // archetype; nullptr for old-scheme NPCs
-                                   // (selena/guard) that don't feed
-                                   // NpcService::buildPromptFields()
+    const char *occupation = nullptr; // M10: one of NpcService::OCCUPATIONS.
+                                   // M11.1: every NPC in this database now
+                                   // sets this (Part 1 "one scheme, not
+                                   // two" -- ContextBuilder/N:<id> removed)
     int age = 0;                  // M10: years, jittered from the
-                                   // archetype's ageRange; 0 = unset
+                                   // archetype's ageRange for a spawned
+                                   // instance, fixed for a named individual
     bool isFemale = false;        // M10: avoids this header depending on
                                    // NpcService::Gender (NpcService already
                                    // depends on NPCDatabase, not the reverse)
+    const char *species = nullptr; // M11.1: one of NpcService::SPECIES
+    const char *bond = nullptr;    // M11.1: one of NpcService::BOND_TYPES
+                                    // -- fixed per character/archetype, not
+                                    // dynamic gameplay state (unlike R:'s
+                                    // closeness, which tracks trustTier)
   };
 
   extern NPC selena;
@@ -102,7 +107,13 @@ namespace NPCDatabase
                                 // lowercase — lets spawnInstance() feed
                                 // NpcService::buildPromptFields() directly,
                                 // instead of every new archetype needing
-                                // its own bespoke ContextBuilder-style wiring
+                                // its own bespoke wiring
+    const char *species;       // M11.1: one of NpcService::SPECIES, fixed
+                                // per archetype (not jittered -- every
+                                // instance of one archetype is the same
+                                // species)
+    const char *bond;          // M11.1: one of NpcService::BOND_TYPES,
+                                // fixed per archetype, same reasoning
     PersonalityRange ageRange; // M10: inclusive, years — jittered same as
                                 // the personality traits
   };

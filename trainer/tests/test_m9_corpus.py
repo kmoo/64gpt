@@ -36,7 +36,8 @@ def test_generate_pairs_produces_prompt_fields_output():
     pairs = generate_pairs([_entry()])
     assert len(pairs) == 1
     prompt, response = pairs[0]
-    assert prompt == "P:man D:gruff OCC:guard R:best_friend M:cheerful C:greeting EV:none|"
+    assert prompt == ("P:man D:gruff OCC:guard SPECIES:human R:best_friend "
+                       "BOND:stranger M:cheerful C:greeting AUD:alone EV:none|")
     assert response == "HOLD THE LINE."
 
 

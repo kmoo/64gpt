@@ -13,29 +13,67 @@ three-clause monologues (m7.md's "companion-specific corpus shape"), and
 the presence/absence of each clause is itself a structural variant, on
 top of the >=15-20 distinct skeletons per axis this module hand-authors.
 
-Prompt format is frozen by game/src/user/ContextBuilder.cpp -- this is
-the single source of truth the trainer must match byte-for-byte:
-"N:<id> TR:<tier> M:<mood> C:<context> EV:<event>|". Response TEXT
-stays UPPERCASE (the N64 debug font used by the demo has no lowercase
-glyphs, same M3/M4 constraint); schema field VALUES stay lowercase,
-matching ContextBuilder's own NPCDatabase tables exactly.
+M11.1: genericized onto NpcService's compositional scheme (docs/
+milestones/m11.1.md Part 1) -- prompt_for()/ContextBuilder's old
+N:<id> TR:<tier> M: C: EV: scheme is gone (game/src/user/ContextBuilder
+was deleted, zero remaining callers). SELENA_PROFILE below (occupation
+"companion" -- no existing OCCUPATIONS entry fit a protagonist's
+adventuring sidekick, same "add an entry" precedent Shadewrath/Korrath
+needed) matches game/src/user/NPCDatabase.cpp's selena NPC exactly.
+trust_tier still maps to only 3 of NpcService's 6 R: tiers (stranger/
+neutral/best_friend, via _TRUST_TIER_MIDPOINT below) -- the same subset
+DialogueDemo.cpp's D-pad control has always produced for every
+character, old scheme or new (relationshipForTrustTier()); the 3-value
+CLOSER bank below is authored around exactly those 3 depth levels
+("new"/"growing"/"close"), not a full 6-tier grid.
+
+Response TEXT stays UPPERCASE (the N64 debug font used by the demo has
+no lowercase glyphs, same M3/M4 constraint); schema field VALUES stay
+lowercase, matching NpcService's own tables exactly.
 """
 import random
 
-NPC_ID = "selena"
+from ngpt_trainer.npc_service import prompt_fields
+
 MOODS = ("cheerful", "worried", "sassy", "tender", "embarrassed")
 CONTEXTS = ("greeting", "combat-banter", "item-found", "damage-taken",
            "quiet-moment", "joke", "encouragement", "farewell")
 TRUST_TIERS = (0, 1, 2)
 
 # ---- schema / prompt protocol ------------------------------------------
-# MUST match game/src/user/ContextBuilder.cpp's build() exactly.
+# Matches game/src/user/NPCDatabase.cpp's selena NPC exactly.
+
+SELENA_PROFILE = {
+    "occupation": "companion", "age": 12, "gender": "female",
+    "species": "human", "bond": "ally",
+    "traits": {"warmth": 90, "humor": 85, "impulsivity": 70,
+              "bravery": 55, "focus": 30},
+}
+
+# Matches DialogueDemo.cpp's relationshipForTrustTier() exactly (uniform
+# axes at v/1000, fear=0) -- corpus-time R: must land on the same tier
+# runtime interactive play produces for the same trust_tier value.
+_TRUST_TIER_MIDPOINT = {0: 0.100, 1: 0.500, 2: 0.975}
 
 
-def prompt_for(trust_tier: int, mood: str, context: str, event: str,
-              npc_id: str = NPC_ID) -> str:
-    ev = event if event else "none"
-    return f"N:{npc_id} TR:{trust_tier} M:{mood} C:{context} EV:{ev}|"
+def _relationship_state(trust_tier: int) -> dict:
+    v = _TRUST_TIER_MIDPOINT[trust_tier]
+    return {"familiarity": v, "affection": v, "trust": v, "respect": v, "fear": 0.0}
+
+
+# AUD: -- a labeling pass over existing content, not new authoring (docs/
+# milestones/m11.1.md Part 3): tender/embarrassed are already Selena's
+# most vulnerable-register moods (the module's own header calls out
+# "that gap between Public and Private shows up in WORRIED/EMBARRASSED"),
+# so those two get AUD:alone; the rest (cheerful/worried/sassy) are her
+# ordinary out-loud banter, AUD:witnessed.
+_ALONE_MOODS = ("tender", "embarrassed")
+
+
+def prompt_for(trust_tier: int, mood: str, context: str, event: str) -> str:
+    audience = "alone" if mood in _ALONE_MOODS else "witnessed"
+    return prompt_fields(SELENA_PROFILE, _relationship_state(trust_tier),
+                         mood, context, audience, event)
 
 
 # Plausible event tags per context (used to give EV: a real, learnable
@@ -350,49 +388,15 @@ def corpus_text(seed: int = 0, per_combo: int = 120) -> str:
     return "".join(p + r for p, r in generate_pairs(seed, per_combo))
 
 
-# ---- Thin placeholder second identity (Evaluation Protocol) -----------
-# NOT a character: no bible, no voice pass, deliberately generic and NOT
-# proportional to Selena's corpus. Its only job is to force the N: tag
-# to matter during training at the real H=256 scale — a re-check of the
-# spike's result (docs/spikes/identity-conditioning.md), not a first
-# proof. Kept 100% in training, no combo holdout (m7.md: "there isn't
-# enough of it to both train and hold out meaningfully").
-
-THIN_ID = "kip"
-
-_THIN_GENERIC = (
-    "YEAH, I'M HERE.", "NOT MUCH TO SAY.", "LET'S KEEP MOVING.",
-    "FINE BY ME.", "I SUPPOSE SO.", "NOTED.", "ALL RIGHT THEN.",
-    "IF YOU SAY SO.", "SEEMS FINE.", "I'LL MANAGE.", "GOT IT.",
-    "UNDERSTOOD.", "SURE, WHATEVER WORKS.", "NO COMPLAINTS HERE.",
-    "THAT WORKS.", "FAIR ENOUGH.", "I'M LISTENING.", "GO ON THEN.",
-    "NOTHING NEW TO REPORT.", "STILL HERE.",
-)
-
-
-def generate_thin_identity_pairs(seed: int = 1000, combos_used: int = 20,
-                                 lines_per_combo: int = 12) -> list[tuple[str, str]]:
-    """A few hundred lines total (20 combos x 12 = 240) — deliberately
-    thin, deliberately not proportional to Selena's ~5-10MB corpus."""
-    rng = random.Random(seed)
-    all_combos = [(t, m, c) for t in TRUST_TIERS for m in MOODS for c in CONTEXTS]
-    chosen = rng.sample(all_combos, combos_used)
-    pairs = []
-    for _ in range(lines_per_combo):
-        for trust, mood, context in chosen:
-            event = rng.choice(EVENTS_FOR_CONTEXT[context])
-            prompt = prompt_for(trust, mood, context, event, npc_id=THIN_ID)
-            response = rng.choice(_THIN_GENERIC)
-            pairs.append((prompt, response))
-    return pairs
-
-
 def combo_key(prompt: str) -> tuple[int, str, str]:
     """Parses (trust_tier, mood, context) back out of a prompt string --
     used by the combo-level holdout split, which holds out whole combos,
-    not just lines within them (m7.md's regularization section)."""
+    not just lines within them (m7.md's regularization section). R:
+    (not TR:) since M11.1 -- trust_tier is recovered via the same
+    _TRUST_TIER_MIDPOINT inverse the module uses everywhere else."""
     fields = {}
     for tok in prompt.rstrip("|").split(" "):
         k, _, v = tok.partition(":")
         fields[k] = v
-    return int(fields["TR"]), fields["M"], fields["C"]
+    tier_by_r = {"stranger": 0, "neutral": 1, "best_friend": 2}
+    return tier_by_r[fields["R"]], fields["M"], fields["C"]

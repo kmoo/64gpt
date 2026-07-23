@@ -194,6 +194,30 @@ long survives.
   currently blocked behind if it turns out the corpus-density lever is
   genuinely exhausted).
 
+  **The "shared structural content" lever tested in true isolation,
+  M11.1 (2026-07-23) — does not work either.** M11's own combined
+  retrain (2 new archetypes + Elowen + the Ravendale-lore bank, all in
+  one pass) couldn't attribute its regression to any single change;
+  M11.1 fixed that by genericizing every remaining character onto one
+  compositional scheme first (so the lore bank reinforces across the
+  full shared cast, not three isolated old-scheme voices), then running
+  a byte-for-byte controlled baseline-vs-treatment comparison (RNG-
+  identical corpora except the lore clause's presence,
+  `trainer/m11_1_lore_bank_experiment.py`) against a bar pre-registered
+  before either result was seen. Result: agreement and divergence both
+  hold fine with the lore bank on (0.9682 vs. baseline 0.9508;
+  every axis within 20% of baseline), but the invented-word count barely
+  moves (69→67 on a 26-golden probe, nowhere near the required ≤34).
+  **Both of this project's two identified content-structure levers
+  (raw pair count, shared structural content) have now been tried and
+  found insufficient**, the second one cleanly isolated rather than
+  confounded. This meaningfully strengthens the case that the remaining
+  gap is a real H=320 model-capacity limit, not a corpus-authoring
+  problem — the next real lever is `docs/ideas-capacity-scaling-
+  evaluation-plan.md`'s H=768/ktile capacity increase, not another
+  corpus-structure attempt at the same H. Full numbers and the
+  pre-registered bar: `docs/milestones/m11.1.md` Part 2.
+
 **Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost
   it.** Closed same-session, follow-up work after M7 (`docs/spikes/

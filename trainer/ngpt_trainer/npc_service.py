@@ -32,13 +32,41 @@ TRAITS = ("warmth", "humor", "impulsivity", "bravery", "focus")
 
 # Pulled from docs/milestones/m11.md's (formerly m10.md's) already-
 # written town-cast list, plus villager/farmer/innkeeper -- not invented
-# fresh for this module.
+# fresh for this module. M11.1 adds "villain"/"knight"/"companion": real
+# manifest-schema decisions (docs/milestones/m11.1.md Part 1) made because
+# genericizing Shadewrath/Korrath/Selena onto this scheme found no
+# existing entry that fit without merging their voice into an unrelated
+# occupation's bank (e.g. Shadewrath into "wizard", which the town
+# tinker-wizard archetype deliberately contrasts against).
 OCCUPATIONS = (
     "villager", "guard", "merchant", "wizard", "damsel", "pub_patron",
     "blacksmith", "healer", "noble", "bandit", "farmer", "innkeeper",
+    "villain", "knight", "companion",
 )
 
 GENDERS = ("female", "male")
+
+# M11.1: SPECIES: and BOND: (Part 3's new axes, plus two of the recorded-
+# but-deferred candidates from docs/milestones/m11.1.md, pulled forward
+# on Luke's direction 2026-07-22). Not every value has a trained
+# character this pass -- "dwarf"/"beast" (SPECIES:) and "captor"/
+# "family"/"mentor"/"romantic" (BOND:) are declared vocabulary with no
+# corpus yet, same "declared, not yet exercised" status OCCUPATIONS
+# values commonly start in (e.g. "damsel" before M11's town cast). Do
+# not condition live gameplay on an unused value until a character
+# trains it.
+SPECIES_TYPES = ("human", "elf", "dwarf", "beast", "shade")
+BOND_TYPES = (
+    "stranger", "ally", "rival", "enemy", "captor", "captive", "family",
+    "mentor", "romantic",
+)
+
+# M11.1 Part 3: AUD: (audience) operationalizes the bible's public/
+# private/secret fields (docs/08-manifest-schema.md, existed since M7 as
+# pure authoring guidance) into something the model can act on directly.
+# "trusted" (a closeness threshold unlocking private content even when
+# witnessed) is a recorded v2 candidate, not built this pass.
+AUDIENCE_TYPES = ("alone", "witnessed")
 
 # (name, min_age, max_age) -- inclusive bounds.
 AGE_BUCKETS = (
@@ -56,9 +84,6 @@ RELATIONSHIP_TIERS = (
     (0.8, "close_friend"),
     (0.95, "best_friend"),
 )
-
-RELATIONSHIP_TYPES = ("friend", "family", "rival", "customer", "employer")
-
 
 def xorshift32(x: int) -> int:
     """Same RNG discipline as core/ngpt_sample.cpp and M8's spawnInstance."""
@@ -159,7 +184,8 @@ def random_relationship_state(seed: int) -> dict:
 
 
 def random_npc_profile(seed: int) -> dict:
-    """Seed-deterministic. occupation/age/gender/personality traits."""
+    """Seed-deterministic. occupation/age/gender/species/bond/personality
+    traits."""
     rng = seed if seed != 0 else 1
 
     rng = xorshift32(rng)
@@ -171,6 +197,12 @@ def random_npc_profile(seed: int) -> dict:
     rng = xorshift32(rng)
     gender = GENDERS[rng % len(GENDERS)]
 
+    rng = xorshift32(rng)
+    species = SPECIES_TYPES[rng % len(SPECIES_TYPES)]
+
+    rng = xorshift32(rng)
+    bond = BOND_TYPES[rng % len(BOND_TYPES)]
+
     traits = {}
     for name in TRAITS:
         rng = xorshift32(rng)
@@ -180,22 +212,25 @@ def random_npc_profile(seed: int) -> dict:
         "occupation": occupation,
         "age": age,
         "gender": gender,
+        "species": species,
+        "bond": bond,
         "traits": traits,
     }
 
 
 def conditioning_features(profile: dict, relationship: dict) -> str:
     """The compositional feature string, e.g.
-    "girl age:12 sassy VILLAGER R:best_friend"."""
+    "girl age:12 sassy VILLAGER human R:best_friend rival"."""
     person = age_gender_token(profile["age"], profile["gender"])
     descriptor = personality_descriptor(profile["traits"])
     _, tier = relationship_label(relationship)
     return (f"{person} age:{profile['age']} {descriptor} "
-            f"{profile['occupation'].upper()} R:{tier}")
+            f"{profile['occupation'].upper()} {profile['species']} "
+            f"R:{tier} {profile['bond']}")
 
 
 def prompt_fields(profile: dict, relationship: dict, mood: str, context: str,
-                   event: str = "") -> str:
+                   audience: str = "alone", event: str = "") -> str:
     """The actual training/inference prompt string: colon-delimited tokens
     (matching ContextBuilder's N:/TR:/M:/C:/EV: convention -- every
     space-separated token has a colon, unlike conditioning_features()'s
@@ -211,8 +246,15 @@ def prompt_fields(profile: dict, relationship: dict, mood: str, context: str,
     primitive, so "AGE:63" costs prompt characters for a distinction P:
     already made without teaching the model anything new).
 
-    "P:girl D:sassy OCC:villager R:best_friend M:cheerful C:greeting
-    EV:none|"
+    "P:girl D:sassy OCC:villager SPECIES:human R:best_friend BOND:rival
+    M:cheerful C:greeting AUD:alone EV:none|"
+
+    M11.1: SPECIES:/BOND: (Part 1, genericization) and AUD: (Part 3, the
+    new audience axis operationalizing the bible's public/private/secret
+    fields) grouped with their nearest existing axis -- identity
+    (P/D/OCC/SPECIES), relationship (R/BOND), situation (M/C/AUD) -- not
+    appended at the end, so a human reading the string still finds
+    related fields next to each other.
     """
     # age_gender_token can be two words ("elderly woman") -- every
     # space-separated prompt token must carry its own colon, so multi-word
@@ -223,8 +265,9 @@ def prompt_fields(profile: dict, relationship: dict, mood: str, context: str,
     _, tier = relationship_label(relationship)
     ev = event if event else "none"
     return (f"P:{person} D:{descriptor} "
-            f"OCC:{profile['occupation']} R:{tier} M:{mood} C:{context} "
-            f"EV:{ev}|")
+            f"OCC:{profile['occupation']} SPECIES:{profile['species']} "
+            f"R:{tier} BOND:{profile['bond']} M:{mood} C:{context} "
+            f"AUD:{audience} EV:{ev}|")
 
 
 def generate_sample_population(n: int, seed: int = 0) -> list[dict]:

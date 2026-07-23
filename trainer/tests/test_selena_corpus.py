@@ -1,15 +1,25 @@
 from ngpt_trainer.selena_corpus import (
-    TRUST_TIERS, MOODS, CONTEXTS, THIN_ID,
-    prompt_for, combo_key, generate_pairs, generate_thin_identity_pairs,
+    TRUST_TIERS, MOODS, CONTEXTS,
+    prompt_for, combo_key, generate_pairs,
 )
 
 
 def test_prompt_for_format():
     assert (prompt_for(2, "cheerful", "item-found", "found_gem")
-            == "N:selena TR:2 M:cheerful C:item-found EV:found_gem|")
-    # empty event -> "none"
+            == "P:girl D:sassy OCC:companion SPECIES:human R:best_friend "
+               "BOND:ally M:cheerful C:item-found AUD:witnessed EV:found_gem|")
+    # empty event -> "none"; "worried" is not an _ALONE_MOODS entry -> AUD:witnessed
     assert (prompt_for(0, "worried", "greeting", "")
-            == "N:selena TR:0 M:worried C:greeting EV:none|")
+            == "P:girl D:sassy OCC:companion SPECIES:human R:stranger "
+               "BOND:ally M:worried C:greeting AUD:witnessed EV:none|")
+
+
+def test_prompt_for_alone_moods_get_aud_alone():
+    # tender/embarrassed are Selena's vulnerable-register moods (module
+    # header) -- the only two that carry AUD:alone.
+    assert "AUD:alone" in prompt_for(2, "tender", "quiet-moment", "")
+    assert "AUD:alone" in prompt_for(2, "embarrassed", "joke", "")
+    assert "AUD:witnessed" in prompt_for(2, "cheerful", "greeting", "")
 
 
 def test_combo_key_round_trips_prompt_for():
@@ -39,11 +49,3 @@ def test_generate_pairs_all_combos_parseable_and_in_grid():
         assert tier in TRUST_TIERS
         assert mood in MOODS
         assert context in CONTEXTS
-
-
-def test_generate_thin_identity_pairs_count_and_identity():
-    pairs = generate_thin_identity_pairs(seed=1000, combos_used=20, lines_per_combo=12)
-    assert len(pairs) == 20 * 12
-    for prompt, _response in pairs:
-        assert f"N:{THIN_ID} " in prompt
-        assert "N:selena " not in prompt

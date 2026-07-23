@@ -26,6 +26,9 @@ GUARD_RANGES = {
 GUARD_NAMES = ("BRAM", "CORVIN", "DESMOND", "EDRIC",
                "FENWICK", "GARRICK", "HALVOR", "IVOR")
 
+# Must match game/src/user/NPCDatabase.cpp's GUARD_ARCHETYPE.ageRange (M10).
+GUARD_AGE_RANGE = (25, 55)
+
 
 def xorshift32(x: int) -> int:
     x &= MASK32
@@ -38,7 +41,11 @@ def xorshift32(x: int) -> int:
 def spawn_guard_instance(seed: int) -> dict:
     """Mirrors NPCDatabase::spawnInstance(GUARD_ARCHETYPE, seed) exactly:
     per-trait jitter in TRAITS order, then one more xorshift32 step to
-    pick a name, then the id as "guard#<4 lowercase hex digits>"."""
+    pick a name, then age (M10 ageRange jitter), then a gender coin flip,
+    then the id as "guard#<4 lowercase hex digits>". age/gender added
+    M11.1 (docs/milestones/m11.1.md Part 1) -- guard_corpus.py's real
+    Profile dicts need them; verified against the compiled NPCDatabase.cpp
+    via the dump-program method this module's test file documents."""
     rng = seed if seed != 0 else 1  # xorshift32's fixed point, same remap
                                      # as core/ngpt.cpp's ngpt_reset
     personality = {}
@@ -51,8 +58,17 @@ def spawn_guard_instance(seed: int) -> dict:
     rng = xorshift32(rng)
     name = GUARD_NAMES[rng % len(GUARD_NAMES)]
 
+    rng = xorshift32(rng)
+    age_lo, age_hi = GUARD_AGE_RANGE
+    age = age_lo + (rng % (age_hi - age_lo + 1))
+
+    rng = xorshift32(rng)
+    is_female = (rng & 1) != 0
+
     return {
         "id": f"guard#{seed & 0xFFFF:04x}",
         "name": name,
         "personality": personality,
+        "age": age,
+        "gender": "female" if is_female else "male",
     }

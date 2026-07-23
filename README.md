@@ -133,6 +133,24 @@ The on-console proof is re-verified continuously:
       retrospective correction to this project's own prior "one
       retrain covers all of it" advice). M11.1 retries with proper
       single-variable isolation
+- [x] **M11.1** — ROM v1.7: full genericization + isolated lore-bank
+      retrain. The last old-scheme holdouts (Selena, Shadewrath, Korrath,
+      Elowen, and guard's 4 fixed instances) all migrated onto
+      `NpcService`'s compositional scheme — `ContextBuilder`/`N:<id>`
+      deleted entirely (zero callers left after the migration), not just
+      deprecated. Three new conditioning axes: `AUD:` (audience, gates
+      private-register content), `BOND:` (relationship type, orthogonal
+      to `R:`'s closeness), `SPECIES:` (human/elf/dwarf/beast/shade).
+      Then ran the controlled experiment M11's combined retrain made
+      impossible — baseline vs. treatment (Ravendale-lore bank on/off),
+      RNG-identical otherwise, against a bar pre-registered before
+      either result was seen. **Second honest negative result, properly
+      isolated this time**: the lore bank does not clear the bar
+      (invented-word count 69→67 of a 26-golden probe, needed ≤34) —
+      agreement and divergence both held fine, the coherence gap simply
+      didn't move. Shipped the winning baseline configuration: val loss
+      0.1015, agreement 0.9508. SELFTEST + XCHK PASS for 36 goldens, RSP
+      ON. Full record: `docs/milestones/m11.1.md`
 
 ## Quickstart
 

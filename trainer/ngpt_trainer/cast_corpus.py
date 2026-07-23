@@ -100,6 +100,15 @@ CHARACTERS = {
     },
 }
 
+# M11.1: every curated-cast/town-archetype-rep entry is an ordinary human
+# the player has no pre-existing relationship with -- species/bond are
+# uniform defaults here, not per-character authoring (unlike Selena/
+# Shadewrath/Korrath/Elowen below, whose species/bond come from their own
+# manifest bible and are set individually where each is genericized).
+for _c in CHARACTERS.values():
+    _c.setdefault("species", "human")
+    _c.setdefault("bond", "stranger")
+
 # ---- DESCRIPTOR-keyed tics (personality axis, shared/reusable) ---------
 # "sassy" reuses Selena's own mood-opener bank directly -- same word,
 # same voice, genuine cross-axis reuse rather than new authoring.
@@ -515,7 +524,15 @@ def generate_pairs(seed: int = 0, per_combo: int = 3,
                 else:
                     event = rng.choice(sc.EVENTS_FOR_CONTEXT[context])
                 relationship = _relationship_state(tier)
-                prompt = prompt_fields(profile, relationship, mood, context, event)
+                # M11.1: this cast has no authored private/secret-register
+                # content (no bible entries -- unlike Selena/Shadewrath/
+                # Korrath/Elowen below, whose corpora DO vary AUD: against
+                # real differentiated content). Fixing AUD:witnessed here
+                # rather than randomizing against identical text avoids
+                # teaching the model a fake alone/witnessed distinction
+                # this cast's phrase banks don't actually carry.
+                prompt = prompt_fields(profile, relationship, mood, context,
+                                       audience="witnessed", event=event)
                 if crossed:
                     # Relabel D: to match the crossed descriptor -- the
                     # response text below is drawn from THAT descriptor's

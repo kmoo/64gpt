@@ -23,28 +23,83 @@ Selena's full production-scale corpus: 3 representative contexts, not all
 8, since this corpus exists to test id-swap divergence, not to ship a
 finished guard-dialogue cast.
 
-Prompt format matches ContextBuilder.cpp exactly, same as Selena's:
-"N:<id> TR:<tier> M:<mood> C:<context> EV:<event>|"
+M11.1 (docs/milestones/m11.1.md Part 1): genericized onto NpcService's
+compositional scheme, the last old-scheme holdout closed -- migrating
+this corpus (not just guard's own voice content) means guard#1001-1004's
+OCC:guard tokens now sit in the SAME occupation bank cast_corpus.py's
+Bram already trained (a real, deliberate voice-merge tradeoff weighed and
+accepted, not an oversight -- see that milestone doc's Part 1 discussion).
+GUARD_PROFILES below is built from guard_instances.spawn_guard_instance()
+(the same seed-jitter the live game's spawnInstance() uses for these
+exact 4 fixed seeds), not hand-invented values, so this corpus and
+game/src/user/NPCDatabase.cpp's guardInstances[] describe the identical
+4 individuals.
 """
 import random
 
 from ngpt_trainer.selena_corpus import MOODS, CONTEXTS, TRUST_TIERS
+from ngpt_trainer.npc_service import prompt_fields
+from ngpt_trainer.guard_instances import spawn_guard_instance
 
 GUARD_IDS = ("guard#1001", "guard#1002", "guard#1003", "guard#1004")
+GUARD_SEEDS = {"guard#1001": 0x1001, "guard#1002": 0x1002,
+               "guard#1003": 0x1003, "guard#1004": 0x1004}
+
+# One real Profile per fixed instance -- occupation/species/bond are
+# uniform (every guard is the same archetype), age/gender/traits come
+# from the actual seed jitter (spawn_guard_instance(), cross-checked
+# against the compiled engine by test_guard_instances.py).
+GUARD_PROFILES = {
+    gid: {
+        "occupation": "guard", "species": "human", "bond": "stranger",
+        "age": spawn_guard_instance(seed)["age"],
+        "gender": spawn_guard_instance(seed)["gender"],
+        "traits": spawn_guard_instance(seed)["personality"],
+    }
+    for gid, seed in GUARD_SEEDS.items()
+}
 
 # Only a representative subset of the shared CONTEXTS vocabulary -- see
 # module docstring for why this corpus stays thin.
 GUARD_CONTEXTS = ("greeting", "combat-banter", "quiet-moment")
 
+# Matches DialogueDemo.cpp's relationshipForTrustTier() exactly -- same
+# rationale as selena_corpus.py's _TRUST_TIER_MIDPOINT.
+_TRUST_TIER_MIDPOINT = {0: 0.100, 1: 0.500, 2: 0.975}
+
+
+def _relationship_state(trust_tier: int) -> dict:
+    v = _TRUST_TIER_MIDPOINT[trust_tier]
+    return {"familiarity": v, "affection": v, "trust": v, "respect": v, "fear": 0.0}
+
+
+# AUD: -- same labeling-pass approach as selena_corpus.py: "tender" is
+# every guard's warmest, most personal opener bank (e.g. guard#1001's
+# "YOU'RE DOING GOOD WORK. I'M PROUD OF YOU." vs. his terse professional
+# default), "embarrassed" the one place a guard admits a mistake plainly
+# rather than deflecting -- the two moods that read as off-duty/private
+# rather than on-duty/public.
+_ALONE_MOODS = ("tender", "embarrassed")
+
 
 def prompt_for(npc_id: str, trust_tier: int, mood: str, context: str, event: str = "") -> str:
-    ev = event if event else "none"
-    return f"N:{npc_id} TR:{trust_tier} M:{mood} C:{context} EV:{ev}|"
+    audience = "alone" if mood in _ALONE_MOODS else "witnessed"
+    return prompt_fields(GUARD_PROFILES[npc_id], _relationship_state(trust_tier),
+                         mood, context, audience, event)
 
 
-def combo_key(prompt: str) -> tuple[str, int, str, str]:
-    parts = dict(p.split(":", 1) for p in prompt.rstrip("|").split(" "))
-    return parts["N"], int(parts["TR"]), parts["M"], parts["C"]
+def combo_key(prompt: str) -> tuple[int, str, str]:
+    """(trust_tier, mood, context) -- guard_id isn't recoverable from the
+    prompt string anymore (P:/OCC: carry no per-instance identity, same
+    as every other genericized character; the age/gender/traits in P:/D:
+    already distinguish the 4 instances without a name tag). Same shape
+    as selena_corpus.combo_key()."""
+    fields = {}
+    for tok in prompt.rstrip("|").split(" "):
+        k, _, v = tok.partition(":")
+        fields[k] = v
+    tier_by_r = {"stranger": 0, "neutral": 1, "best_friend": 2}
+    return tier_by_r[fields["R"]], fields["M"], fields["C"]
 
 
 # ---- OPENER: mood-specific vocal tic per guard, prefixed ~60% of draws -

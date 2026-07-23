@@ -1,16 +1,24 @@
-"""Tests for korrath_corpus.py -- M10's mid-tier talking boss, same
-discipline as test_shadewrath_corpus.py."""
+"""Tests for korrath_corpus.py -- M10's mid-tier talking boss, genericized
+M11.1 onto NpcService's compositional scheme (docs/milestones/m11.1.md
+Part 1), same discipline as test_shadewrath_corpus.py."""
 from ngpt_trainer import korrath_corpus as kc
 
 
-def test_prompt_matches_context_builder_format():
+def test_prompt_matches_npc_service_format():
     p = kc.prompt_for(1, "sassy", "greeting", "none")
-    assert p == "N:korrath TR:1 M:sassy C:greeting EV:none|"
+    assert p == ("P:man D:gruff OCC:knight SPECIES:human R:neutral "
+                 "BOND:enemy M:sassy C:greeting AUD:witnessed EV:none|")
 
 
 def test_prompt_defaults_missing_event_to_none():
     p = kc.prompt_for(0, "cheerful", "farewell", "")
     assert p.endswith("EV:none|")
+
+
+def test_prompt_alone_moods_get_aud_alone():
+    # worried/tender are his private-register moods -- see module header.
+    assert "AUD:alone" in kc.prompt_for(2, "worried", "quiet-moment", "")
+    assert "AUD:witnessed" in kc.prompt_for(2, "cheerful", "greeting", "")
 
 
 def test_generate_pairs_deterministic_with_same_seed():

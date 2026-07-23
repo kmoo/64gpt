@@ -6,12 +6,25 @@
     "context": ["greeting", "combat-banter", "item-found", "damage-taken",
                 "quiet-moment", "joke", "encouragement", "farewell"],
     "trust_tiers": [0, 1, 2],
-    "personality_traits": ["warmth", "humor", "impulsivity", "bravery", "focus"]
+    "personality_traits": ["warmth", "humor", "impulsivity", "bravery", "focus"],
+    "occupations": ["villager", "guard", "merchant", "wizard", "damsel",
+                    "pub_patron", "blacksmith", "healer", "noble", "bandit",
+                    "farmer", "innkeeper", "villain", "knight", "companion"],
+    "species_types": ["human", "elf", "dwarf", "beast", "shade"],
+    "bond_types": ["stranger", "ally", "rival", "enemy", "captor", "captive",
+                   "family", "mentor", "romantic"],
+    "audience": ["alone", "witnessed"],
+    "_status": "M11.1 (2026-07-22): occupations grew 12->15 (villain/knight/companion, docs/milestones/m11.1.md Part 1); species_types/bond_types/audience new (Part 1/3). Not every species_types/bond_types value has a trained character yet -- see docs/08-manifest-schema.md's M11.1 update note."
   },
   "characters": [
     {
       "id": "selena",
       "tier": "full",
+      "occupation": "companion",
+      "species": "human",
+      "bond": "ally",
+      "age": 12,
+      "gender": "female",
       "personality": {"warmth": 90, "humor": 85, "impulsivity": 70, "bravery": 55, "focus": 30},
       "bible": {
         "public": "Fearless, always has a joke ready.",
@@ -21,11 +34,17 @@
         "desire": "To actually matter to the player — not be tolerated, needed."
       },
       "corpus_ref": "trainer/ngpt_trainer/selena_corpus.py",
-      "memory_persistence": "full"
+      "memory_persistence": "full",
+      "_status": "M11.1 (2026-07-22): occupation 'companion' is a new OCCUPATIONS entry -- no existing one fit a protagonist's adventuring sidekick. Genericized onto NpcService's compositional scheme (docs/milestones/m11.1.md Part 1); the old N:<id> scheme (ContextBuilder) is retired entirely."
     },
     {
       "id": "shadewrath",
       "tier": "full",
+      "occupation": "villain",
+      "species": "shade",
+      "bond": "rival",
+      "age": 40,
+      "gender": "male",
       "personality": {"warmth": 8, "humor": 20, "impulsivity": 12, "bravery": 88, "focus": 95},
       "bible": {
         "public": "A necromancer wrapped in shadow — taunts from the dark at the edge of torchlight, vanishes before a blade or a question can land. The dungeon feels rearranged whenever he's been near.",
@@ -36,11 +55,16 @@
       },
       "corpus_ref": "trainer/ngpt_trainer/shadewrath_corpus.py",
       "memory_persistence": "full",
-      "_status": "M10 (2026-07-17), recurring villain -- abducted the elf princess of Ravendale (met by the player once), knows more than he should about the player and the town, real ambition is an alliance not conquest. Trained + hardware-verified (SELFTEST/XCHK PASS); currently the least-coherent character in the shared model due to a thin 960-pair training set -- see docs/plan.md Known follow-ups. memory_persistence is aspirational, not yet wired to any actual save/cross-encounter mechanism."
+      "_status": "M10 (2026-07-17), recurring villain -- abducted the elf princess of Ravendale (met by the player once), knows more than he should about the player and the town, real ambition is an alliance not conquest. Trained + hardware-verified (SELFTEST/XCHK PASS); currently the least-coherent character in the shared model due to a thin 960-pair training set -- see docs/plan.md Known follow-ups. memory_persistence is aspirational, not yet wired to any actual save/cross-encounter mechanism. M11.1 (2026-07-22): genericized onto NpcService's compositional scheme -- occupation 'villain'/species 'shade' are new entries (docs/milestones/m11.1.md Part 1)."
     },
     {
       "id": "korrath",
       "tier": "mid",
+      "occupation": "knight",
+      "species": "human",
+      "bond": "enemy",
+      "age": 52,
+      "gender": "male",
       "personality": {"warmth": 38, "humor": 10, "impulsivity": 10, "bravery": 75, "focus": 80},
       "bible": {
         "public": "A knight in tarnished armor, blocking the path with old-world formality and a weary, dutiful menace.",
@@ -51,11 +75,16 @@
       },
       "corpus_ref": "trainer/ngpt_trainer/korrath_corpus.py",
       "memory_persistence": "arc",
-      "_status": "M10 (2026-07-17), mid-tier talking boss -- guards the captured elf princess's chamber, bound into unwilling servitude by Shadewrath (who holds a piece of his true name). Persistent within his own arc (this dungeon branch), not the whole game, per the tier's definition. Corpus deliberately ~half Shadewrath's density (per_combo=4 vs 8), tied to his mid-tier scope, not yet empirically validated per m10.md's Data Science Review recommendation (pick the smallest density that clears a distinctness bar -- this is a first-pass estimate)."
+      "_status": "M10 (2026-07-17), mid-tier talking boss -- guards the captured elf princess's chamber, bound into unwilling servitude by Shadewrath (who holds a piece of his true name). Persistent within his own arc (this dungeon branch), not the whole game, per the tier's definition. Corpus deliberately ~half Shadewrath's density (per_combo=4 vs 8), tied to his mid-tier scope, not yet empirically validated per m10.md's Data Science Review recommendation (pick the smallest density that clears a distinctness bar -- this is a first-pass estimate). M11.1 (2026-07-22): genericized onto NpcService's compositional scheme -- occupation 'knight' is a new entry, deliberately not 'guard' (would merge his voice into the town-guard occupation bank, docs/milestones/m11.1.md Part 1)."
     },
     {
       "id": "elowen",
       "tier": "mid",
+      "occupation": "noble",
+      "species": "elf",
+      "bond": "captive",
+      "age": 24,
+      "gender": "female",
       "personality": {"warmth": 78, "humor": 45, "impulsivity": 55, "bravery": 60, "focus": 50},
       "bible": {
         "public": "The elf princess of Ravendale, held captive in a chamber deep in the Everhollow -- hopeful and warm to anyone who shows her real kindness, with a dry wit captivity hasn't quite killed.",
@@ -66,7 +95,7 @@
       },
       "corpus_ref": "trainer/ngpt_trainer/princess_corpus.py",
       "memory_persistence": "arc",
-      "_status": "M11 (2026-07-22), the rescued-good-character content the game vision calls for (docs/ideas-briar-glen-world.md: 'a princess + wizard + etc. you find in the dungeon'). Dungeon-only -- no fixed roster slot, unlike Shadewrath/Korrath. Her trust tier IS the rescue arc: reaching TR:2 for the first time is the actual in-game rescue event (game/src/user/SaveData.h's princessHighestTier), same mechanism Shadewrath/Korrath's own tiers already use. Corpus deliberately comparable to Korrath's density (per_combo=4), both mid tier. Shares the Ravendale-lore quality-push bank (trainer/ngpt_trainer/ravendale_lore.py) with Shadewrath/Korrath -- the three are narratively linked through the same binding/captivity backstory."
+      "_status": "M11 (2026-07-22), the rescued-good-character content the game vision calls for (docs/ideas-briar-glen-world.md: 'a princess + wizard + etc. you find in the dungeon'). Dungeon-only -- no fixed roster slot, unlike Shadewrath/Korrath. Her trust tier IS the rescue arc: reaching TR:2 for the first time is the actual in-game rescue event (game/src/user/SaveData.h's princessHighestTier), same mechanism Shadewrath/Korrath's own tiers already use. Corpus deliberately comparable to Korrath's density (per_combo=4), both mid tier. Shares the Ravendale-lore quality-push bank (trainer/ngpt_trainer/ravendale_lore.py) with Shadewrath/Korrath -- the three are narratively linked through the same binding/captivity backstory. M11.1 (2026-07-22): genericized onto NpcService's compositional scheme -- occupation 'noble' (already existed, fits cleanly), species 'elf'."
     }
   ],
   "archetypes": [
@@ -74,6 +103,8 @@
       "id": "guard",
       "tier": "thin",
       "occupation": "guard",
+      "species": "human",
+      "bond": "stranger",
       "personality_ranges": {
         "warmth": [20, 45],
         "humor": [5, 30],
@@ -81,14 +112,16 @@
         "bravery": [60, 90],
         "focus": [55, 85]
       },
-      "corpus_ref": null,
+      "corpus_ref": "trainer/ngpt_trainer/guard_corpus.py",
       "name_gen": "game/src/user/NPCDatabase.cpp:GUARD_NAMES",
-      "_status": "ranges are a first-pass sketch (stern/professional profile), not yet validated against a trained model. corpus_ref is unset until M8 task #10 (guard corpus + retrain) exists. name_gen resolved to a compiled-in name array (NPCDatabase::GUARD_ARCHETYPE), not a loaded text file — same pattern as MOODS/CONTEXTS in the same file. Still on the old N:<id> conditioning scheme (ContextBuilder), not yet migrated to the compositional scheme new M10 archetypes below use -- migrating it would require retraining guard's existing, shipped, hardware-verified corpus, out of scope for M10's town-cast pass."
+      "_status": "ranges are a first-pass sketch (stern/professional profile), not yet validated against a trained model. name_gen resolved to a compiled-in name array (NPCDatabase::GUARD_ARCHETYPE), not a loaded text file — same pattern as MOODS/CONTEXTS in the same file. M11.1 (2026-07-22): migrated onto NpcService's compositional scheme (docs/milestones/m11.1.md Part 1) -- the deferred M10 boundary is closed. guard's 4 fixed named instances (guard#1001-1004) now share the OCC:guard occupation bank with cast_corpus.py's Bram, a real accepted voice-merge tradeoff, not an oversight."
     },
     {
       "id": "pub_patron",
       "tier": "thin",
       "occupation": "pub_patron",
+      "species": "human",
+      "bond": "stranger",
       "personality_ranges": {
         "warmth": [55, 85], "humor": [55, 90], "impulsivity": [45, 85],
         "bravery": [40, 75], "focus": [20, 55]
@@ -101,6 +134,8 @@
       "id": "blacksmith",
       "tier": "thin",
       "occupation": "blacksmith",
+      "species": "human",
+      "bond": "stranger",
       "personality_ranges": {
         "warmth": [20, 45], "humor": [15, 40], "impulsivity": [15, 40],
         "bravery": [65, 90], "focus": [65, 90]
@@ -113,6 +148,8 @@
       "id": "wizard",
       "tier": "thin",
       "occupation": "wizard",
+      "species": "human",
+      "bond": "stranger",
       "personality_ranges": {
         "warmth": [45, 75], "humor": [40, 70], "impulsivity": [40, 75],
         "bravery": [30, 60], "focus": [55, 85]
@@ -125,6 +162,8 @@
       "id": "villager",
       "tier": "thin",
       "occupation": "villager",
+      "species": "human",
+      "bond": "stranger",
       "personality_ranges": {
         "warmth": [40, 80], "humor": [40, 85], "impulsivity": [30, 70],
         "bravery": [20, 60], "focus": [30, 70]
@@ -137,6 +176,8 @@
       "id": "merchant",
       "tier": "thin",
       "occupation": "merchant",
+      "species": "human",
+      "bond": "stranger",
       "personality_ranges": {
         "warmth": [45, 65], "humor": [30, 55], "impulsivity": [15, 34],
         "bravery": [30, 55], "focus": [65, 90]
@@ -149,6 +190,8 @@
       "id": "healer",
       "tier": "thin",
       "occupation": "healer",
+      "species": "human",
+      "bond": "stranger",
       "personality_ranges": {
         "warmth": [70, 90], "humor": [30, 55], "impulsivity": [15, 40],
         "bravery": [15, 40], "focus": [60, 85]

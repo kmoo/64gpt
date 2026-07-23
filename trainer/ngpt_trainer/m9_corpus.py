@@ -47,7 +47,16 @@ def generate_pairs(raw: list[dict] | None = None) -> list[tuple[str, str]]:
     raw = raw if raw is not None else load_raw()
     pairs = []
     for entry in raw:
-        prompt = prompt_fields(entry["persona"], _relationship_state(entry["tier"]),
+        # M11.1: m9_corpus_llm.json predates SPECIES:/BOND: -- this module
+        # is attempt #1's superseded LLM-per-persona approach (see module
+        # docstring / cast_corpus.py's own docstring), not part of the
+        # active build pipeline, but its persona dicts still need these
+        # keys to satisfy prompt_fields()'s current contract.
+        persona = dict(entry["persona"], **{
+            "species": entry["persona"].get("species", "human"),
+            "bond": entry["persona"].get("bond", "stranger"),
+        })
+        prompt = prompt_fields(persona, _relationship_state(entry["tier"]),
                                 entry["mood"], entry["context"])
         pairs.append((prompt, entry["line"]))
     return pairs

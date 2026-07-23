@@ -1,7 +1,10 @@
 """Tests for npc_service.py -- M9's compositional conditioning mapping.
 See docs/milestones/m9.md for the design rationale."""
 from ngpt_trainer.npc_service import (
+    AUDIENCE_TYPES,
+    BOND_TYPES,
     OCCUPATIONS,
+    SPECIES_TYPES,
     TRAITS,
     age_gender_token,
     closeness,
@@ -95,6 +98,8 @@ def test_random_npc_profile_deterministic():
     assert a["occupation"] in OCCUPATIONS
     assert a["gender"] in ("female", "male")
     assert 5 <= a["age"] <= 84
+    assert a["species"] in SPECIES_TYPES
+    assert a["bond"] in BOND_TYPES
     assert set(a["traits"].keys()) == set(TRAITS)
     for v in a["traits"].values():
         assert 0 <= v <= 100
@@ -102,11 +107,12 @@ def test_random_npc_profile_deterministic():
 
 def test_conditioning_features_format():
     profile = {"occupation": "guard", "age": 30, "gender": "male",
+               "species": "human", "bond": "rival",
                "traits": {"warmth": 90, "humor": 85, "impulsivity": 70,
                           "bravery": 55, "focus": 30}}
     relationship = {"familiarity": 1.0, "affection": 1.0, "trust": 1.0, "respect": 1.0}
     features = conditioning_features(profile, relationship)
-    assert features == "man age:30 sassy GUARD R:best_friend"
+    assert features == "man age:30 sassy GUARD human R:best_friend rival"
 
 
 def test_generate_sample_population_deterministic_and_covers_vocab():
@@ -119,11 +125,28 @@ def test_generate_sample_population_deterministic_and_covers_vocab():
 
 def test_prompt_fields_format():
     profile = {"occupation": "guard", "age": 30, "gender": "male",
+               "species": "human", "bond": "rival",
                "traits": {"warmth": 90, "humor": 85, "impulsivity": 70,
                           "bravery": 55, "focus": 30}}
     relationship = {"familiarity": 1.0, "affection": 1.0, "trust": 1.0, "respect": 1.0}
     prompt = prompt_fields(profile, relationship, "cheerful", "greeting")
-    assert prompt == "P:man D:sassy OCC:guard R:best_friend M:cheerful C:greeting EV:none|"
+    assert prompt == ("P:man D:sassy OCC:guard SPECIES:human R:best_friend "
+                       "BOND:rival M:cheerful C:greeting AUD:alone EV:none|")
+    # every space-separated token carries its own colon (ContextBuilder's
+    # existing N:/TR:/M:/C:/EV: parsing convention)
+    for tok in prompt.rstrip("|").split(" "):
+        assert ":" in tok
+
+
+def test_prompt_fields_audience_and_event_are_positional_after_context():
+    profile = {"occupation": "healer", "age": 70, "gender": "female",
+               "species": "human", "bond": "stranger",
+               "traits": {"warmth": 50, "humor": 50, "impulsivity": 50,
+                          "bravery": 50, "focus": 50}}
+    relationship = {"familiarity": 0.0, "affection": 0.0, "trust": 0.0, "respect": 0.0}
+    prompt = prompt_fields(profile, relationship, "worried", "farewell",
+                            "witnessed", "heading_home")
+    assert "AUD:witnessed EV:heading_home|" in prompt
     # every space-separated token carries its own colon (ContextBuilder's
     # existing N:/TR:/M:/C:/EV: parsing convention)
     for tok in prompt.rstrip("|").split(" "):
@@ -134,13 +157,26 @@ def test_prompt_fields_multiword_person_token_underscored():
     # age_gender_token can return "elderly woman"/"elderly man" -- must not
     # break the one-token-per-space rule.
     profile = {"occupation": "healer", "age": 70, "gender": "female",
+               "species": "human", "bond": "stranger",
                "traits": {"warmth": 50, "humor": 50, "impulsivity": 50,
                           "bravery": 50, "focus": 50}}
     relationship = {"familiarity": 0.0, "affection": 0.0, "trust": 0.0, "respect": 0.0}
-    prompt = prompt_fields(profile, relationship, "worried", "farewell", "heading_home")
+    prompt = prompt_fields(profile, relationship, "worried", "farewell",
+                            event="heading_home")
     assert "P:elderly_woman " in prompt
     for tok in prompt.rstrip("|").split(" "):
         assert ":" in tok
+
+
+def test_species_and_bond_vocab_sizes():
+    # Real values (docs/milestones/m11.1.md Part 3, Luke's direction
+    # 2026-07-22) -- not every value has a trained character yet, but the
+    # declared vocabulary itself is pinned so a later corpus module can't
+    # silently invent an off-vocabulary value.
+    assert SPECIES_TYPES == ("human", "elf", "dwarf", "beast", "shade")
+    assert BOND_TYPES == ("stranger", "ally", "rival", "enemy", "captor",
+                          "captive", "family", "mentor", "romantic")
+    assert AUDIENCE_TYPES == ("alone", "witnessed")
 
 
 def test_generate_sample_population_different_seed_differs():

@@ -1,10 +1,5 @@
 """M10 corpus generator for Shadewrath -- the recurring necromancer
-villain. Full tier (manifests/dungeon_crawler.json), same mechanism as
-selena_corpus.py: ONE bespoke character on THREE independent axes
-(mood/context/trust-tier), not the compositional OCC:/D: schema
-cast_corpus.py's town archetypes use -- a one-off named villain doesn't
-have an "occupation" in the shared vocabulary sense, and the old N:<id>
-scheme (ContextBuilder.cpp) is the natural fit, same as Selena.
+villain. Full tier (manifests/dungeon_crawler.json).
 
     response = [OPENER[mood]] + BODY[context]{slots} + [CLOSER[trust_tier]]
 
@@ -22,27 +17,61 @@ watching the player, tier 2 reveals the actual offer: an alliance, not
 conquest, matching his bible's desire field in manifests/
 dungeon_crawler.json).
 
-Prompt format is frozen by ContextBuilder.cpp: "N:<id> TR:<tier> M:<mood>
-C:<context> EV:<event>|". Response TEXT stays UPPERCASE (N64 debug font
-has no lowercase glyphs, same constraint every other corpus module
-follows).
+M11.1 (docs/milestones/m11.1.md Part 1): genericized onto NpcService's
+compositional scheme -- occupation "villain" is a new OCCUPATIONS entry
+(no existing one fit a necromancer without merging his voice into an
+unrelated bank, e.g. the town's friendly tinker-wizard), species "shade"
+likewise new (fits "wrapped in shadow" literally, manifests/
+dungeon_crawler.json's bible). ContextBuilder/N:<id> is gone; prompt_for()
+now wraps npc_service.prompt_fields().
+
+Response TEXT stays UPPERCASE (N64 debug font has no lowercase glyphs,
+same constraint every other corpus module follows).
 """
 import random
 
 from ngpt_trainer import selena_corpus as sc
+from ngpt_trainer.npc_service import prompt_fields
 from ngpt_trainer.ravendale_lore import RAVENDALE_LORE
 
-NPC_ID = "shadewrath"
 MOODS = sc.MOODS
 CONTEXTS = sc.CONTEXTS
 TRUST_TIERS = (0, 1, 2)
 EVENTS_FOR_CONTEXT = sc.EVENTS_FOR_CONTEXT
 
+# Matches game/src/user/NPCDatabase.cpp's shadewrath NPC exactly.
+SHADEWRATH_PROFILE = {
+    "occupation": "villain", "age": 40, "gender": "male",
+    "species": "shade", "bond": "rival",
+    "traits": {"warmth": 8, "humor": 20, "impulsivity": 12,
+              "bravery": 88, "focus": 95},
+}
 
-def prompt_for(trust_tier: int, mood: str, context: str, event: str,
-               npc_id: str = NPC_ID) -> str:
-    ev = event if event else "none"
-    return f"N:{npc_id} TR:{trust_tier} M:{mood} C:{context} EV:{ev}|"
+# Matches DialogueDemo.cpp's relationshipForTrustTier() exactly -- same
+# rationale as selena_corpus.py's _TRUST_TIER_MIDPOINT (his trust_tier
+# arc tracks encounters/familiarity, not friendship, but the D-pad
+# control that drives it in-game is the same 3-value dial every
+# character uses).
+_TRUST_TIER_MIDPOINT = {0: 0.100, 1: 0.500, 2: 0.975}
+
+
+def _relationship_state(trust_tier: int) -> dict:
+    v = _TRUST_TIER_MIDPOINT[trust_tier]
+    return {"familiarity": v, "affection": v, "trust": v, "respect": v, "fear": 0.0}
+
+
+# AUD: -- a labeling pass over existing content (docs/milestones/m11.1.md
+# Part 3): "tender" is his own bible's PRIVATE register surfacing
+# directly ("YOU REMIND ME OF SOMEONE. LONG AGO." / "I DID NOT EXPECT TO
+# RESPECT YOU."), "embarrassed" his rare unguarded moments -- the two
+# moods where he drops the public cryptic-menace performance.
+_ALONE_MOODS = ("tender", "embarrassed")
+
+
+def prompt_for(trust_tier: int, mood: str, context: str, event: str) -> str:
+    audience = "alone" if mood in _ALONE_MOODS else "witnessed"
+    return prompt_fields(SHADEWRATH_PROFILE, _relationship_state(trust_tier),
+                         mood, context, audience, event)
 
 
 # ---- OPENER: mood-specific vocal tic, prefixed ~60% of the time --------
@@ -195,20 +224,32 @@ _SHADEWRATH_CATCHPHRASES = (
 )
 
 
-def _response(rng: random.Random, trust_tier: int, mood: str, context: str) -> str:
+def _response(rng: random.Random, trust_tier: int, mood: str, context: str,
+              lore_bank_enabled: bool = True) -> str:
     """Draw order fixed -- same determinism contract as selena_corpus's
     own _response(). M11 quality push (docs/plan.md Known follow-ups):
     a shared Ravendale-lore clause (ravendale_lore.py), reinforced across
     Shadewrath/Korrath/Elowen -- the previously-untried "share more
-    structural content" lever, not a wholesale voice-bank reuse."""
+    structural content" lever, not a wholesale voice-bank reuse.
+
+    M11.1 Part 2: lore_bank_enabled gates the ravendale_lore.py draw's
+    RESULT, not the draw itself -- rng.random()/rng.choice() still fire
+    on the same call whether the flag is True or False, so the RNG
+    stream (and every later draw in this response, and every later
+    response in the corpus) is byte-identical between a baseline
+    (disabled) and treatment (enabled) run. That's what makes this an
+    isolated-variable comparison rather than two differently-seeded
+    corpora that happen to also differ in lore-bank content."""
     parts = []
     if rng.random() < 0.6:
         parts.append(rng.choice(_OPENERS[mood]))
     parts.append(rng.choice(_BODIES[context]))
     if rng.random() < 0.3:
         parts.append(rng.choice(_SHADEWRATH_CATCHPHRASES))
-    if rng.random() < 0.2:
-        parts.append(rng.choice(RAVENDALE_LORE))
+    lore_drawn = rng.random() < 0.2
+    lore_line = rng.choice(RAVENDALE_LORE) if lore_drawn else None
+    if lore_bank_enabled and lore_line:
+        parts.append(lore_line)
     if rng.random() < 0.35:
         parts.append(rng.choice(_CLOSERS[trust_tier]))
     return " ".join(parts)
@@ -255,11 +296,15 @@ _CLOSERS = {
 }
 
 
-def generate_pairs(seed: int = 0, per_combo: int = 3) -> list[tuple[str, str]]:
+def generate_pairs(seed: int = 0, per_combo: int = 3,
+                   lore_bank_enabled: bool = True) -> list[tuple[str, str]]:
     """per_combo pairs for each trust_tier x mood x context combo (3 x 5 x
     8 = 120 combos). Matches selena_corpus's own grid shape/density
     approach (docs/milestones/m7.md), not guard's small-combo-space/high-
-    repeat structure -- Shadewrath's bespoke, not archetype-instanced."""
+    repeat structure -- Shadewrath's bespoke, not archetype-instanced.
+    lore_bank_enabled: see _response()'s docstring -- False produces the
+    M11.1 Part 2 baseline corpus (RNG-identical to the treatment corpus
+    except the lore clause never appears in the text)."""
     rng = random.Random(seed)
     pairs = []
     for _ in range(per_combo):
@@ -268,10 +313,11 @@ def generate_pairs(seed: int = 0, per_combo: int = 3) -> list[tuple[str, str]]:
                 for context in CONTEXTS:
                     event = rng.choice(EVENTS_FOR_CONTEXT[context])
                     prompt = prompt_for(trust_tier, mood, context, event)
-                    response = _response(rng, trust_tier, mood, context)
+                    response = _response(rng, trust_tier, mood, context, lore_bank_enabled)
                     pairs.append((prompt, response))
     return pairs
 
 
-def corpus_text(seed: int = 0, per_combo: int = 3) -> str:
-    return "".join(p + r for p, r in generate_pairs(seed, per_combo))
+def corpus_text(seed: int = 0, per_combo: int = 3,
+                lore_bank_enabled: bool = True) -> str:
+    return "".join(p + r for p, r in generate_pairs(seed, per_combo, lore_bank_enabled))

@@ -16,25 +16,34 @@ namespace NPCDatabase
     "warmth", "humor", "impulsivity", "bravery", "focus",
   };
 
+  // M11.1: occupation/age/isFemale/species/bond added -- Part 1's "full
+  // genericization" moves every named individual here off the old
+  // ContextBuilder/N:<id> scheme onto NpcService::buildPromptFields(),
+  // same mechanism the archetype-spawned cast already uses. Values match
+  // manifests/dungeon_crawler.json's characters[] entries exactly.
   NPC selena{"selena", "", /*trustTier=*/0, /*moodIdx=*/0,
              /*personality=*/{90, 85, 70, 55, 30}, /*memorySlot=*/0,
-             /*tier=*/Tier::FULL};
+             /*tier=*/Tier::FULL, /*occupation=*/"companion", /*age=*/12,
+             /*isFemale=*/true, /*species=*/"human", /*bond=*/"ally"};
 
   // M10: traits match manifests/dungeon_crawler.json's characters[]
   // entries exactly (same discipline selena's own values follow).
   NPC shadewrath{"shadewrath", "SHADEWRATH", /*trustTier=*/0, /*moodIdx=*/0,
                   /*personality=*/{8, 20, 12, 88, 95}, /*memorySlot=*/0,
-                  /*tier=*/Tier::FULL};
+                  /*tier=*/Tier::FULL, /*occupation=*/"villain", /*age=*/40,
+                  /*isFemale=*/false, /*species=*/"shade", /*bond=*/"rival"};
   NPC korrath{"korrath", "KORRATH", /*trustTier=*/0, /*moodIdx=*/0,
               /*personality=*/{38, 10, 10, 75, 80}, /*memorySlot=*/0,
-              /*tier=*/Tier::MID};
+              /*tier=*/Tier::MID, /*occupation=*/"knight", /*age=*/52,
+              /*isFemale=*/false, /*species=*/"human", /*bond=*/"enemy"};
 
   // M11: Elowen, the rescued elf princess -- traits match trainer/
   // ngpt_trainer/princess_corpus.py's module docstring and manifests/
   // dungeon_crawler.json's characters[] entry exactly.
   NPC princess{"elowen", "ELOWEN", /*trustTier=*/0, /*moodIdx=*/0,
                /*personality=*/{78, 45, 55, 60, 50}, /*memorySlot=*/0,
-               /*tier=*/Tier::MID};
+               /*tier=*/Tier::MID, /*occupation=*/"noble", /*age=*/24,
+               /*isFemale=*/true, /*species=*/"elf", /*bond=*/"captive"};
 
   // Placeholder name pool: manifests/dungeon_crawler.json's guard entry
   // leaves name_gen unset pending real corpus/voice work (M8 task #10);
@@ -59,9 +68,12 @@ namespace NPCDatabase
     },
     GUARD_NAMES,
     sizeof(GUARD_NAMES) / sizeof(GUARD_NAMES[0]),
-    "guard",     // occupation (M10) -- unused by ContextBuilder's existing
-                 // N: scheme, harmless to set; only new archetypes routed
-                 // through NpcService actually consume it
+    "guard",     // occupation (M10)
+    "human",     // species (M11.1)
+    "stranger",  // bond (M11.1) -- professional distance, matches
+                 // cast_corpus.py's town-cast default (guard's OCC:guard
+                 // token is shared with Bram, cast_corpus.py's own
+                 // compositional-scheme guard representative)
     {25, 55},    // ageRange (M10)
   };
 
@@ -96,6 +108,7 @@ namespace NPCDatabase
     PUB_PATRON_NAMES,
     sizeof(PUB_PATRON_NAMES) / sizeof(PUB_PATRON_NAMES[0]),
     "pub_patron",
+    "human", "stranger", // species/bond (M11.1) -- town-cast default
     {19, 70},
   };
 
@@ -114,6 +127,7 @@ namespace NPCDatabase
     BLACKSMITH_NAMES,
     sizeof(BLACKSMITH_NAMES) / sizeof(BLACKSMITH_NAMES[0]),
     "blacksmith",
+    "human", "stranger", // species/bond (M11.1) -- town-cast default
     {28, 65},
   };
 
@@ -136,6 +150,7 @@ namespace NPCDatabase
     WIZARD_NAMES,
     sizeof(WIZARD_NAMES) / sizeof(WIZARD_NAMES[0]),
     "wizard",
+    "human", "stranger", // species/bond (M11.1) -- town-cast default
     {24, 80},
   };
 
@@ -157,6 +172,7 @@ namespace NPCDatabase
     VILLAGER_NAMES,
     sizeof(VILLAGER_NAMES) / sizeof(VILLAGER_NAMES[0]),
     "villager",
+    "human", "stranger", // species/bond (M11.1) -- town-cast default
     {8, 85},
   };
 
@@ -183,6 +199,7 @@ namespace NPCDatabase
     MERCHANT_NAMES,
     sizeof(MERCHANT_NAMES) / sizeof(MERCHANT_NAMES[0]),
     "merchant",
+    "human", "stranger", // species/bond (M11.1) -- town-cast default
     {28, 65},
   };
 
@@ -205,6 +222,7 @@ namespace NPCDatabase
     HEALER_NAMES,
     sizeof(HEALER_NAMES) / sizeof(HEALER_NAMES[0]),
     "healer",
+    "human", "stranger", // species/bond (M11.1) -- town-cast default
     {30, 75},
   };
 
@@ -249,6 +267,8 @@ namespace NPCDatabase
                             // not hand-authored individuals)
 
     npc.occupation = archetype.occupation;
+    npc.species = archetype.species;
+    npc.bond = archetype.bond;
     npc.age = jitter(rng, archetype.ageRange);
     rng = xorshift32(rng);
     npc.isFemale = (rng & 1u) != 0; // coin flip off the same RNG stream --

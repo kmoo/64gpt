@@ -9,6 +9,20 @@ namespace NpcService
   const char *const OCCUPATIONS[OCCUPATION_COUNT] = {
     "villager", "guard", "merchant", "wizard", "damsel", "pub_patron",
     "blacksmith", "healer", "noble", "bandit", "farmer", "innkeeper",
+    "villain", "knight", "companion",
+  };
+
+  // Matches trainer/ngpt_trainer/npc_service.py's SPECIES_TYPES/BOND_TYPES
+  // exactly, same order.
+  const char *const SPECIES[SPECIES_COUNT] = {
+    "human", "elf", "dwarf", "beast", "shade",
+  };
+  const char *const BOND_TYPES[BOND_COUNT] = {
+    "stranger", "ally", "rival", "enemy", "captor", "captive", "family",
+    "mentor", "romantic",
+  };
+  const char *const AUDIENCE_TYPES[AUDIENCE_COUNT] = {
+    "alone", "witnessed",
   };
 
   // TRAITS index order, matching NPCDatabase::TRAITS exactly:
@@ -101,18 +115,19 @@ namespace NpcService
   uint32_t buildPromptFields(char *out, uint32_t outCap, const Profile &profile,
                               const RelationshipState &relationship,
                               const char *mood, const char *context,
-                              const char *event)
+                              const char *audience, const char *event)
   {
     char person[16];
     ageGenderToken(profile.age, profile.gender, person, sizeof(person));
     const char *descriptor = personalityDescriptor(profile.traits);
     const char *tier = relationshipTier(closeness(relationship));
     const char *ev = (event && event[0]) ? event : "none";
+    const char *aud = (audience && audience[0]) ? audience : "alone";
 
     int n = snprintf(out, outCap,
-                      "P:%s D:%s OCC:%s R:%s M:%s C:%s EV:%s|",
-                      person, descriptor, profile.occupation,
-                      tier, mood, context, ev);
+                      "P:%s D:%s OCC:%s SPECIES:%s R:%s BOND:%s M:%s C:%s AUD:%s EV:%s|",
+                      person, descriptor, profile.occupation, profile.species,
+                      tier, profile.bond, mood, context, aud, ev);
     if(n < 0)
     {
       if(outCap) out[0] = '\0';
@@ -126,8 +141,10 @@ namespace NpcService
   {
     Profile p;
     p.occupation = npc.occupation;
+    p.species = npc.species;
     p.age = npc.age;
     p.gender = npc.isFemale ? Gender::Female : Gender::Male;
+    p.bond = npc.bond;
     for(int i = 0; i < NPCDatabase::TRAIT_COUNT; ++i)
       p.traits[i] = npc.personality[i];
     return p;
