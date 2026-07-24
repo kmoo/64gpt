@@ -118,14 +118,39 @@ static void gru_h_update(ngpt_ctx *ctx, uint32_t x_id)
   if (ngpt_matvec_hook) {
     ngpt_matvec_hook(g->w_hh, 3 * H, H, ctx->h, acc_h);
   } else {
+    /* M12 (H up to 1024): a row sum's REALISTIC bound (h's Q14-quantized
+     * |h|<=16384, not the worst-case 32767) sits at ~99.2% of int32's hard
+     * ceiling at H=1024 -- real margin at H<=320, essentially none left
+     * here. Accumulating in int64 costs nothing this loop doesn't already
+     * pay (this is the CPU reference path only, gated off whenever the RSP
+     * hook is installed -- see the boot self-test's BOOT_XCHK_CPU phase,
+     * DialogueDemo.cpp) and removes the signed-overflow UB risk outright.
+     * Saturating (not wrapping) on narrow-back is deliberate: the RSP
+     * kernel's own int32 accumulator (rsp_ngpt.S, unwidened -- fixing
+     * THAT costs real cycles on hardware with no native 64-bit path) still
+     * carries this project's original, disclosed risk. If a real trained
+     * model's weights ever push it into a genuine overflow, wrapping vs.
+     * saturating diverge, which is exactly what turns a silent numeric
+     * corruption into a loud, on-screen XCHK FAIL -- the same
+     * CPU-vs-RSP cross-check this project already trusts as its
+     * correctness gate, just made trustworthy for this specific new risk
+     * instead of both paths quietly overflowing the same way and still
+     * agreeing. */
     for (uint32_t i = 0; i < 3 * H; ++i) {
-      int32_t sum = 0;
+      int64_t sum = 0;
       const uint8_t *row = g->w_hh + i * H;
-      for (uint32_t j = 0; j < H; ++j) sum += (int32_t)(int8_t)row[j] * ctx->h[j];
-      acc_h[i] = sum;
+      for (uint32_t j = 0; j < H; ++j) sum += (int64_t)(int32_t)((int8_t)row[j]) * ctx->h[j];
+      if (sum > INT32_MAX) sum = INT32_MAX;
+      else if (sum < INT32_MIN) sum = INT32_MIN;
+      acc_h[i] = (int32_t)sum;
     }
   }
-  for (uint32_t i = 0; i < 3 * H; ++i) acc_h[i] += read_i32be(g->b_hh + 4 * i);
+  for (uint32_t i = 0; i < 3 * H; ++i) {
+    int64_t withBias = (int64_t)acc_h[i] + read_i32be(g->b_hh + 4 * i);
+    if (withBias > INT32_MAX) withBias = INT32_MAX;
+    else if (withBias < INT32_MIN) withBias = INT32_MIN;
+    acc_h[i] = (int32_t)withBias;
+  }
 
   static int16_t h_next[NGPT_GRU_MAX_HIDDEN];
   for (uint32_t j = 0; j < H; ++j) {

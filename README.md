@@ -151,6 +151,24 @@ The on-console proof is re-verified continuously:
       didn't move. Shipped the winning baseline configuration: val loss
       0.1015, agreement 0.9508. SELFTEST + XCHK PASS for 36 goldens, RSP
       ON. Full record: `docs/milestones/m11.1.md`
+- [x] **M12** — ROM v1.8: capacity scaling — does a bigger model fix
+      coherence? `NGPT_GRU_MAX_HIDDEN` bumped 320→1024 (explicit sign-off,
+      `core/ngpt.h` is a frozen interface) via a K-chunked RSP kernel
+      ported from the hardware-verified `spike/rsp-matvec-ktile` branch
+      onto current `main`, plus an int64 overflow-mitigation on the CPU
+      reference path. Trained the exact M11.1 corpus/seed at H=1024 (only
+      capacity changed) via MPS. **Third honest negative result**: val
+      loss landed *worse* than the H=320 baseline (0.1051 vs. 0.1015),
+      and the garbling itself didn't move — agreement and divergence held
+      fine, but that's not the thing that mattered. All three levers this
+      project has tried for the standing coherence problem (raw pair
+      count, shared structural content, model capacity) are now tried and
+      found insufficient. Also found and fixed a real, previously-latent
+      bug in the golden-recording pipeline (`generate_sampled()`'s
+      `max_len=256` default silently truncating goldens past 256 chars,
+      present since M11.1). SELFTEST + XCHK PASS for 36 goldens, RSP ON,
+      ~5 ch/s (an explicit, disclosed tradeoff, not a regression). Full
+      record: `docs/milestones/m12.md`
 
 ## Quickstart
 

@@ -122,15 +122,28 @@ git diff --cached | grep -niE "/Users/[a-z]+|@[a-z0-9.]+\.(com|net|org)"
 
 ## Local compute contention (one GPU, shared with qwen)
 
-- `trainer/` PyTorch scripts must train with `device="cpu"`, never MPS —
-  MPS competes with qwen's MLX server for the same unified memory and
-  OOM-crashes both (`kIOGPUCommandBufferCallbackErrorOutOfMemory`) if a
-  training run and a qwen dispatch land at once. CPU is slower but safe
-  to run alongside qwen.
+- `trainer/` PyTorch scripts default to `device="cpu"` — safe always,
+  slower always. MPS is allowed ONLY after checking, right before the
+  run, that qwen's MLX server is NOT currently up: `opencoder status`
+  (or `pgrep -f mlx_lm.server`) must show nothing running. If it's up
+  and idle, either train on CPU or stop it first (`opencoder stop`) —
+  don't run MPS alongside it "just this once," that's exactly the
+  OOM-crash case (`kIOGPUCommandBufferCallbackErrorOutOfMemory`) this
+  check exists to catch.
+- This is a start-of-run check, not a guarantee for the whole run: a
+  long MPS training job can still collide with an MLX server someone
+  (you, the user, or another session) starts *after* the check passes.
+  Short/cheap training (this project's usual case — tiny corpora,
+  seconds to low-tens-of-seconds on CPU already) mostly sidesteps the
+  question by just not needing MPS's speed in the first place; reach
+  for MPS only when a run is genuinely slow enough on CPU to be worth
+  the residual race risk.
 - Before starting a heavy local-model or training session, run
   `claude agents --json --cwd $PWD` — a live background Claude session
   already in this repo is a second agent that can hit the GPU at the same
-  time as you, which is what causes the crash above.
+  time as you, which is what causes the crash above. Applies whether
+  you're about to use MPS or dispatch to qwen; the collision is
+  GPU-vs-GPU either way.
 
 ## Toolchain notes
 

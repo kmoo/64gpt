@@ -45,16 +45,42 @@ enum {
 /* Static caps: ngpt_ctx carries the hidden state inline (no heap), so the
  * dims a blob may declare are bounded at load time. M2 shipped H=32, M4's
  * ~100K-param model H=128; M6.1 raised the cap to 256 for the H=256+
- * generative model (M7's "magic zone"); M9 raises it again to 320 for
+ * generative model (M7's "magic zone"); M9 raised it again to 320 for
  * compositional conditioning's extra capacity (docs/milestones/m9.md
- * section 6 — real DMEM-derived target, not the unreachable 368-473
- * "magic zone" itself). The int32 hot-loop bound: a row sum is at most
- * H * 127 * 32767, which is 256*127*32767 ≈ 1.06e9 (< 2^30) at H=256 and
- * 320*127*32767 ≈ 1.33e9 (< 2^31, ~62% of int32's signed range) at H=320
- * — still safely inside int32 with real margin, just past the 2^30
- * threshold the old comment cited, so it's called out explicitly here
- * rather than silently going stale. */
-#define NGPT_GRU_MAX_HIDDEN 320
+ * section 6).
+ *
+ * M12 bumps this to 1024 — explicit human sign-off (Luke, 2026-07-23),
+ * per this file's own frozen-interface status. Grounded in
+ * docs/spikes/rsp-matvec-ktile.md's K-chunked RSP kernel, hardware-
+ * verified at H=1024 (9/9 bit-exact XCHK passes across the spike's full
+ * (chunk, H) sweep, including this exact configuration). That spike's own
+ * recommendation was H=768 (real margin on every axis); H=1024 was
+ * chosen anyway as "how far can this actually go" — accepted with eyes
+ * open, not a default.
+ *
+ * int32 overflow at this H: a row sum's REALISTIC bound (h's Q14-
+ * quantized |h|<=16384, not the worst-case 32767) is 1024*127*16384 ≈
+ * 2.13e9 — 99.2% of int32's hard ceiling (2^31-1 ≈ 2.15e9), essentially
+ * no margin, a materially different situation from H=320's comfortable
+ * 62%. Two things are true about this, both disclosed rather than
+ * quietly accepted:
+ *   1. The RSP kernel's own int32 accumulator (rsp_ngpt.S) is NOT
+ *      widened — real hardware has no native 64-bit path, and widening
+ *      it costs real cycles this kernel's whole point is to avoid. This
+ *      risk is the same one the spike disclosed and never closed; it
+ *      still hasn't been re-validated against a REAL trained model's
+ *      bias magnitudes, only a gibberish one.
+ *   2. core/ngpt_gru.cpp's CPU reference path (used by the boot self-
+ *      test's CPU-vs-RSP cross-check as ground truth) IS widened to
+ *      int64 internally, saturating on narrow-back. This doesn't shrink
+ *      #1's risk, but it does mean that if the RSP path's int32 path
+ *      ever DOES overflow on real weights, it diverges from the now-
+ *      correct reference instead of both paths quietly wrapping the same
+ *      way and still agreeing — turning a silent numeric-corruption
+ *      failure mode into a loud, on-screen XCHK FAIL, the existing
+ *      correctness gate this project already trusts, made trustworthy
+ *      for this specific new risk. */
+#define NGPT_GRU_MAX_HIDDEN 1024
 #define NGPT_GRU_MAX_VOCAB  96
 
 /* GRU payload view (model type 1): pointers into the blob, set up once by

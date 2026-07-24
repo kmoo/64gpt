@@ -50,14 +50,17 @@ namespace
   // W_hh copied out of the blob once at init: the blob offset is not
   // 8-aligned and DMA from an unaligned RDRAM source lands shifted in
   // DMEM. Written uncached so RDRAM is coherent before the RSP reads it.
-  // H=320 generalization (M9, spike: rsp-matvec-h256 -> this): sizes
-  // scale the same way the H=128->256 step did -- W_hh is 3H x H so
-  // it's 4x, not 2x, at 320/256 = 1.25x the hidden size (960*320 =
-  // 3H*H). rspHShuf/rspMvOut scale linearly with H/3H respectively.
-  constexpr int RSP_H = 320;
-  int8_t rspWhh[3 * RSP_H * RSP_H] __attribute__((aligned(16)));   // 300 KB
-  int16_t rspHShuf[RSP_H] __attribute__((aligned(16)));            // 640 B
-  int32_t rspMvOut[3 * RSP_H] __attribute__((aligned(16)));        // 3840 B
+  // M12: bumped 320->1024 -- the K-chunked kernel (rsp_ngpt.S, ported
+  // from docs/spikes/rsp-matvec-ktile.md) tiles the reduction dimension
+  // as well as rows, so DMEM no longer bounds H; RDRAM is now the real
+  // constraint (rspWhh alone is 3MB of the N64's base 4MB) -- see
+  // core/ngpt.h's own comment for the accepted tradeoffs at this H.
+  // rspHShuf/rspMvOut scale linearly with H/3H respectively, same
+  // relationship every prior H bump used.
+  constexpr int RSP_H = 1024;
+  int8_t rspWhh[3 * RSP_H * RSP_H] __attribute__((aligned(16)));   // 3 MB
+  int16_t rspHShuf[RSP_H] __attribute__((aligned(16)));            // 2 KB
+  int32_t rspMvOut[3 * RSP_H] __attribute__((aligned(16)));        // 12 KB
   const uint8_t *rspWhhSrc{};   // the blob W_hh this copy mirrors
   bool rspReady{};
   uint32_t rspOvlId{};
@@ -120,7 +123,7 @@ namespace
   // GUARD/MET TR:N/etc.), never a bare milestone number that reads as a
   // build-version claim. Keep in sync with root README.md's own
   // "ROM vX.Y" column when tagging a milestone.
-  constexpr const char *NGPT_VERSION = "V1.7";
+  constexpr const char *NGPT_VERSION = "V1.8";
 
   // M6.1: one step ~4-6ms with the matvec on the RSP (was ~9.9ms all-CPU
   // in M5); one char/frame streams 60 chars/sec with VPS held at 60.

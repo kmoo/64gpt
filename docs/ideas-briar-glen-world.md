@@ -116,10 +116,12 @@ has followed since M7:
   a rescued princess in the dungeon, dungeon-loop polish within the
   existing state-machine (no spatial movement), a quality push on
   Shadewrath/Korrath's coherence.
-- **M12** (already scoped): toolkit portability — meta-schema,
+- **M13** (already scoped, renumbered 2026-07-23 from M12 -- M11.1's
+  capacity-scaling follow-on claimed the M12 slot instead, see
+  `docs/milestones/m12.md`): toolkit portability — meta-schema,
   manifest-update skill, cross-genre portability proof. Independent of
   the Briar Glen content direction.
-- **M13+ (sketch only)**: the actual spatial-overworld engine work —
+- **M14+ (sketch only)**: the actual spatial-overworld engine work —
   likely its own multi-milestone arc: (a) a minimal tile/room system
   proven on ONE region first (e.g. West Hills, since it unlocks
   first), (b) player movement + collision, (c) the boss-gate → road/

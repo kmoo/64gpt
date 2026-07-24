@@ -218,6 +218,61 @@ long survives.
   corpus-structure attempt at the same H. Full numbers and the
   pre-registered bar: `docs/milestones/m11.1.md` Part 2.
 
+  **The capacity lever tested directly, M12 (2026-07-23) — also does
+  not work.** Trained the exact M11.1 corpus/seed at H=1024 (10.24x more
+  `W_hh` parameters than H=320), via a K-chunked RSP kernel ported from
+  the hardware-verified `spike/rsp-matvec-ktile` branch onto current
+  `main`, with explicit sign-off to bump `core/ngpt.h`'s frozen
+  `NGPT_GRU_MAX_HIDDEN` cap. Result: val loss landed *worse* than the
+  H=320 baseline (0.1051 vs. 0.1015) — not just short of the all-time-
+  low bar (0.0980), actually behind the thing it was supposed to beat.
+  Agreement improved (0.9696 vs. 0.9508) and divergence stayed
+  structurally healthy, but the garbling itself didn't move — reading
+  the golden probe, H=1024's output is just as invented-word-heavy as
+  H=320's. **All three levers on record for this standing problem (raw
+  pair count, shared structural content, model capacity) have now been
+  tried and found insufficient**, the last two cleanly isolated rather
+  than confounded. This is a meaningful update to the working theory:
+  it's very likely NOT primarily a capacity-starvation or corpus-
+  authoring problem — something else (architecture, training procedure,
+  decoding strategy, or a more fundamental data/task mismatch) is the
+  more likely real bottleneck. Also found and fixed along the way: a
+  real, previously-latent bug in `ref_impl.py`'s golden-generation
+  pipeline (`generate_sampled()`'s `max_len=256` default was never
+  actually overridden by any `make_mN_blob.py`'s own `MAX_GOLDEN_LEN`,
+  silently truncating any golden that ran past 256 characters) — present
+  since at least M11.1, never manifested there since H=320's shorter
+  output rarely hit the boundary; H=1024's longer output exposed it.
+  ROM v1.8 hardware-verified once fixed: SELFTEST PASS, RSP ON, XCHK
+  PASS. Full numbers, the kernel-port writeup, and the bug's root cause:
+  `docs/milestones/m12.md`.
+
+- **A genuinely improved/expanded corpus, as its own controlled test —
+  raised 2026-07-23, still not started.** M12 (above) deliberately
+  trained the EXACT same corpus/seed as M11.1's H=320 baseline, capacity
+  as the only controlled variable — and, like the other two levers, it
+  didn't close the coherence gap either. A real corpus-quality pass
+  (more/better-authored content at a FIXED H, not combined with any
+  other simultaneous change) is still a real, distinct, untried fourth
+  candidate — but given all three already-tried levers came back
+  negative, it's no longer obviously the next thing to reach for either;
+  worth weighing against non-corpus hypotheses (architecture, decoding,
+  training procedure) before committing to it. Needs its own controlled
+  before/after comparison, same discipline as M11.1's/M12's, not bundled
+  into whatever milestone is active when someone thinks of it.
+
+- **Back-port the golden-generation `max_len` fix to `make_m11_1_blob.py`
+  and earlier `make_mN_blob.py` scripts — raised 2026-07-23, not
+  started.** M12 found and fixed a real bug (see above) in the shared
+  `generate_sampled()` golden-recording pattern that every prior
+  milestone's blob-build script also has, latently. Nothing already
+  shipped is proven wrong by it (M11.1's actual goldens never happened
+  to run past 256 characters), so this isn't urgent, but the risk is
+  real for any of them and the fix is small and mechanical
+  (`max_len=MAX_GOLDEN_LEN` on each `generate_sampled()` call) — worth
+  doing opportunistically rather than waiting for another milestone to
+  hit the same latent failure the way M12 did.
+
 **Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost
   it.** Closed same-session, follow-up work after M7 (`docs/spikes/
