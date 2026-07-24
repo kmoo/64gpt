@@ -169,6 +169,29 @@ The on-console proof is re-verified continuously:
       present since M11.1). SELFTEST + XCHK PASS for 36 goldens, RSP ON,
       ~5 ch/s (an explicit, disclosed tradeoff, not a regression). Full
       record: `docs/milestones/m12.md`
+- [x] **M12.1** — ROM v1.9: the coherence rescue — a controlled decoding
+      experiment on M12's own model found the garbling was never a
+      capacity problem: int8 quantization alone tripled invented words
+      (5→17 greedy on a 12-prompt probe), on top of a 75:1 per-character
+      training-data skew (Selena 36,000 pairs vs. Elowen 480) and an
+      unconditional sampler forcing 144 off-argmax draws per 12 lines —
+      and val loss (teacher-forced, prefix-masked, float) was blind to
+      all three. Fixed: quantization-aware fine-tuning (straight-through
+      estimator onto the exact int8 export grid — the shipped int8 model
+      now BEATS the old pre-quantization float model, 0.1002 vs. 0.1015)
+      and corpus rebalancing (worst-case ratio 75:1 → 6:1). The old 0.95
+      agreement gate — which FATALed the first, excellent QAT run — was
+      retired as a quality bar (demoted to a 0.95 sanity floor) in favor
+      of gating on a new shipped-config coherence probe + greedy
+      int8-vs-float parity. Back on H=320 (capacity exonerated by M12;
+      both kernels kept as a build-time toggle, `NGPT_RSP_H`, instead of
+      overwriting one in git history). Coherence probe: 2.60 → 0.50
+      invented words/line across 48 sampled lines. SELFTEST PASS, RSP ON,
+      XCHK PASS, **44 ch/s restored** (M5-era bar). Full plan:
+      `docs/ideas-coherence-rescue-plan.md`; record: `docs/milestones/
+      m12.1.md`. Sampler min-p gate and a lexicon-trie decode guard
+      (guaranteeing zero invented words by construction) are the next,
+      not-yet-started phases.
 
 ## Quickstart
 

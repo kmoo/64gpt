@@ -20,6 +20,23 @@ $(BUILD_DIR)/src/user/../../../core/%.o: N64_CXXFLAGS += -O3 -funroll-loops
 # the "rsp" filename prefix and builds it as RSP ucode.
 $(BUILD_DIR)/$(ROM_NAME).elf: $(BUILD_DIR)/src/user/rsp_ngpt.o
 
+# M12.1: NGPT_RSP_H picks which kernel body rsp_ngpt.S's #include
+# dispatcher assembles (rsp_ngpt_h320.inc default / rsp_ngpt_h1024.inc,
+# see that file) -- 320 is the shipping default (M12 exonerated
+# H=1024's capacity gain: same corpus/seed, no coherence win, 9x
+# slower); H=1024 is kept only for the conditional capacity re-test in
+# docs/milestones/m12.1.md phase 6. Threaded into BOTH the RSP
+# assembly (RSPASFLAGS) and DialogueDemo.cpp's buffer sizing
+# (N64_CXXFLAGS) from this ONE variable, so the kernel's H and the
+# CPU-side buffers/DMA sizes can never drift apart the way two
+# independently hand-set constants could (which is exactly what M12's
+# port required a human sign-off to change safely).
+# Override per-build: `make NGPT_RSP_H=1024` (or set in the environment
+# before invoking the Pyrite64 CLI).
+NGPT_RSP_H ?= 320
+RSPASFLAGS += -DNGPT_RSP_H=$(NGPT_RSP_H)
+N64_CXXFLAGS += -DNGPT_RSP_H=$(NGPT_RSP_H)
+
 # M10: advertise a 4k EEPROM (game/src/user/SaveData.cpp) via the
 # advanced homebrew header, so emulators/flashcarts know to emulate/
 # provision save memory. n64.mk defaults N64_ROM_SAVETYPE to empty;

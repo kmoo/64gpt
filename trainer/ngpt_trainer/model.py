@@ -307,6 +307,165 @@ def train_corpus_conditioned(train_pairs: list[tuple[str, str]],
     return model
 
 
+def _pow2_shift_t(t: torch.Tensor) -> int:
+    """Torch twin of quantize.pow2_shift: largest k in [0, 16] with
+    round(max|t| * 2^k) <= 127. Must stay in lockstep with quantize.py —
+    the QAT grid IS the export grid, or QAT trains against the wrong
+    rounding."""
+    m = float(t.detach().abs().max())
+    if m == 0.0:
+        return 14
+    k = 0
+    while k < 16 and round(m * 2 ** (k + 1)) <= 127:
+        k += 1
+    return k
+
+
+def _fake_quant(w: torch.Tensor, k: int) -> torch.Tensor:
+    """Round w onto the int8 grid at shift k and back to float, with the
+    straight-through estimator: forward sees the rounded weights, backward
+    updates the underlying floats. torch.round is half-to-even, matching
+    np.round in quantize()."""
+    scale = float(2 ** k)
+    return w + ((w * scale).round() / scale - w).detach()
+
+
+def qat_finetune(model: CharGRU, train_pairs: list[tuple[str, str]],
+                 val_pairs: list[tuple[str, str]], vocab,
+                 seed: int = 0, lr: float = 3e-4, batch_size: int = 64,
+                 max_epochs: int = 30, patience: int = 6,
+                 device: str | None = None) -> CharGRU:
+    """M12.1: quantization-aware fine-tuning after float convergence.
+
+    Every forward pass runs with the weights FAKE-QUANTIZED onto the
+    exact grid quantize() will export to (same pow2_shift k, shared k_w
+    across W_ih/W_hh, per-tensor k_out on the head), so the optimizer
+    converges to floats whose ROUNDED version behaves — instead of
+    hoping the rounded version of a float optimum behaves. Rationale and
+    the measurement that motivated this (int8 rounding tripled the
+    invented-word rate): docs/ideas-coherence-rescue-plan.md.
+
+    Mechanically this uses the weight_norm pattern, not parametrize:
+    nn.GRU's fused kernels read _flat_weights, and RNNBase.__setattr__
+    refreshes that list when the weight attributes are assigned — so a
+    forward_pre_hook that re-derives the quantized weights from raw
+    float parameters is the one approach that provably reaches the
+    fused path. Biases and activations stay unquantized: their grids
+    (int32 / int16 Q14) are ~64x finer than the weights' int8 and are
+    not the dominant error term (measure first — extend only if the
+    coherence probe says otherwise).
+
+    Same loop shape as train_corpus_conditioned (prefix-masked loss,
+    combo-level val split, early-stop on best val, restore best); the
+    val loss driving early-stop is the QUANTIZED forward's, which is
+    the number that actually predicts shipped behavior. Returns the
+    model with plain float weights restored (best raw state), ready for
+    quantize()."""
+    if device is None:
+        device = "mps" if torch.backends.mps.is_available() else "cpu"
+    torch.manual_seed(seed)
+    model = model.to(device)
+    model.train()
+
+    gru, head = model.gru, model.head
+    raw = {}
+    for name in ("weight_ih_l0", "weight_hh_l0"):
+        raw[name] = nn.Parameter(getattr(gru, name).detach().clone())
+        delattr(gru, name)
+        gru.register_parameter(name + "_raw", raw[name])
+    raw["head"] = nn.Parameter(head.weight.detach().clone())
+    del head.weight
+    head.register_parameter("weight_raw", raw["head"])
+
+    def quantize_gru_weights(module, inputs):
+        k_w = min(_pow2_shift_t(raw["weight_ih_l0"]),
+                  _pow2_shift_t(raw["weight_hh_l0"]))
+        module.weight_ih_l0 = _fake_quant(raw["weight_ih_l0"], k_w)
+        module.weight_hh_l0 = _fake_quant(raw["weight_hh_l0"], k_w)
+
+    def quantize_head_weight(module, inputs):
+        module.weight = _fake_quant(raw["head"], _pow2_shift_t(raw["head"]))
+
+    hooks = [gru.register_forward_pre_hook(quantize_gru_weights),
+             head.register_forward_pre_hook(quantize_head_weight)]
+
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=-100)
+
+    def encode_split(pairs):
+        ids = [vocab.encode(p) + vocab.encode(r) for p, r in pairs]
+        plens = [len(vocab.encode(p)) for p, _ in pairs]
+        return ids, plens
+
+    train_ids, train_plens = encode_split(train_pairs)
+    val_ids, val_plens = encode_split(val_pairs)
+    assert vocab.eos_id == 0
+
+    def val_loss() -> float:
+        model.eval()
+        total, count = 0.0, 0
+        with torch.no_grad():
+            for i in range(0, len(val_ids), batch_size):
+                inputs, targets = _batchify_masked(
+                    val_ids[i:i + batch_size], val_plens[i:i + batch_size], len(vocab))
+                logits, _ = model(inputs.to(device))
+                n = (targets != -100).sum().item()
+                total += loss_fn(logits.reshape(-1, len(vocab)),
+                                 targets.reshape(-1).to(device)).item() * n
+                count += n
+        model.train()
+        return total / count if count else float("inf")
+
+    rng = torch.Generator().manual_seed(seed)
+    best, best_state, since_best = float("inf"), None, 0
+    for epoch in range(max_epochs):
+        order = torch.randperm(len(train_ids), generator=rng).tolist()
+        for i in range(0, len(order), batch_size):
+            idx = order[i:i + batch_size]
+            inputs, targets = _batchify_masked([train_ids[j] for j in idx],
+                                               [train_plens[j] for j in idx],
+                                               len(vocab))
+            opt.zero_grad()
+            logits, _ = model(inputs.to(device))
+            loss = loss_fn(logits.reshape(-1, len(vocab)),
+                           targets.reshape(-1).to(device))
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            opt.step()
+        v = val_loss()
+        print(f"qat epoch {epoch}: val loss (quantized forward) {v:.4f}", flush=True)
+        if v < best:
+            best, since_best = v, 0
+            best_state = {k: t.detach().cpu().clone()
+                          for k, t in model.state_dict().items()}
+        else:
+            since_best += 1
+            if since_best >= patience:
+                break
+
+    model.load_state_dict(best_state)
+    for h in hooks:
+        h.remove()
+    # Restore plain float weights (best raw state) so quantize() sees the
+    # standard CharGRU attribute layout.
+    for name in ("weight_ih_l0", "weight_hh_l0"):
+        w = getattr(gru, name + "_raw").detach().clone()
+        delattr(gru, name + "_raw")
+        if hasattr(gru, name):
+            delattr(gru, name)
+        gru.register_parameter(name, nn.Parameter(w))
+    w = head.weight_raw.detach().clone()
+    delattr(head, "weight_raw")
+    if hasattr(head, "weight"):
+        del head.weight
+    head.register_parameter("weight", nn.Parameter(w))
+    gru._init_flat_weights()
+
+    model = model.to("cpu").eval()
+    model.final_loss = best
+    return model
+
+
 def generate_greedy_prompted(model: CharGRU, vocab, prompt: str,
                              max_len: int = 256) -> str:
     """Prime ONCE on EOS+prompt (the last position's logits are the first

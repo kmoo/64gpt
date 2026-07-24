@@ -50,17 +50,25 @@ namespace
   // W_hh copied out of the blob once at init: the blob offset is not
   // 8-aligned and DMA from an unaligned RDRAM source lands shifted in
   // DMEM. Written uncached so RDRAM is coherent before the RSP reads it.
-  // M12: bumped 320->1024 -- the K-chunked kernel (rsp_ngpt.S, ported
-  // from docs/spikes/rsp-matvec-ktile.md) tiles the reduction dimension
-  // as well as rows, so DMEM no longer bounds H; RDRAM is now the real
-  // constraint (rspWhh alone is 3MB of the N64's base 4MB) -- see
-  // core/ngpt.h's own comment for the accepted tradeoffs at this H.
-  // rspHShuf/rspMvOut scale linearly with H/3H respectively, same
-  // relationship every prior H bump used.
-  constexpr int RSP_H = 1024;
-  int8_t rspWhh[3 * RSP_H * RSP_H] __attribute__((aligned(16)));   // 3 MB
-  int16_t rspHShuf[RSP_H] __attribute__((aligned(16)));            // 2 KB
-  int32_t rspMvOut[3 * RSP_H] __attribute__((aligned(16)));        // 12 KB
+  // M12.1: RSP_H now comes from NGPT_RSP_H (game/Makefile.custom),
+  // the SAME build-time value that picks which kernel body
+  // rsp_ngpt.S's #include dispatcher assembles -- one source of
+  // truth instead of two hand-maintained constants that could drift
+  // apart. 320 is the shipping default (rsp_ngpt_h320.inc, M9-proven,
+  // DMEM-bound, 307KB rspWhh); 1024 selects the K-chunked kernel
+  // (rsp_ngpt_h1024.inc, M12, RDRAM-bound, rspWhh alone 3MB of the
+  // N64's base 4MB -- see core/ngpt.h's comment for the accepted
+  // tradeoffs at that H, and docs/milestones/m12.1.md phase 6 for when
+  // it's worth paying that cost again). rspHShuf/rspMvOut scale
+  // linearly with H/3H respectively, same relationship every prior H
+  // bump used.
+#ifndef NGPT_RSP_H
+#define NGPT_RSP_H 320   /* defensive default, matches rsp_ngpt.S's */
+#endif
+  constexpr int RSP_H = NGPT_RSP_H;
+  int8_t rspWhh[3 * RSP_H * RSP_H] __attribute__((aligned(16)));
+  int16_t rspHShuf[RSP_H] __attribute__((aligned(16)));
+  int32_t rspMvOut[3 * RSP_H] __attribute__((aligned(16)));
   const uint8_t *rspWhhSrc{};   // the blob W_hh this copy mirrors
   bool rspReady{};
   uint32_t rspOvlId{};
@@ -92,11 +100,12 @@ namespace
       }
       return;
     }
-    // h shuffled even-indices-first (h[0,2,..318], then h[1,3,..319])
-    // to match the ucode's lqv byte-pair unpack; dot products are
-    // order-invariant so the sums are unchanged. Odd half starts at
-    // RSP_H/2 (== new even-half element count), same relationship the
-    // H=256 kernel had at 128 -- see rsp_ngpt.S's file header.
+    // h shuffled even-indices-first (h[0,2,..RSP_H-2], then h[1,3,..
+    // RSP_H-1]) to match the ucode's lqv byte-pair unpack; dot products
+    // are order-invariant so the sums are unchanged. Odd half starts at
+    // RSP_H/2 (== new even-half element count) -- see the active
+    // kernel's own file (rsp_ngpt_h320.inc or rsp_ngpt_h1024.inc,
+    // selected by NGPT_RSP_H) for the exact unpack layout.
     volatile int16_t *hs = (volatile int16_t *)UncachedAddr(rspHShuf);
     for(uint32_t j = 0; j < (uint32_t)RSP_H; ++j)
       hs[(j & 1) ? RSP_H / 2 + j / 2 : j / 2] = h[j];
@@ -123,7 +132,7 @@ namespace
   // GUARD/MET TR:N/etc.), never a bare milestone number that reads as a
   // build-version claim. Keep in sync with root README.md's own
   // "ROM vX.Y" column when tagging a milestone.
-  constexpr const char *NGPT_VERSION = "V1.8";
+  constexpr const char *NGPT_VERSION = "V1.9";
 
   // M6.1: one step ~4-6ms with the matvec on the RSP (was ~9.9ms all-CPU
   // in M5); one char/frame streams 60 chars/sec with VPS held at 60.

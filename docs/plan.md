@@ -247,6 +247,35 @@ long survives.
   PASS. Full numbers, the kernel-port writeup, and the bug's root cause:
   `docs/milestones/m12.md`.
 
+  **The real bottleneck found and largely fixed, M12.1 (2026-07-24) —
+  it was never capacity or corpus content.** A controlled decoding
+  experiment on M12's own model (varying only the decode path, same
+  weights) localized the garbling to three multiplicative causes none
+  of the prior three milestones had tested: **int8 post-training
+  quantization** (5→17 invented words, float-greedy vs int8-greedy on a
+  12-prompt probe — the largest single cause and never previously
+  suspected), **unconditional per-character sampling** (17→22, 144
+  forced off-argmax draws), and the **per-character training-data skew**
+  (Selena 36,000 pairs vs. Elowen 480 — consistent with M10's/M11.1's
+  own thin-character observations, just never quantified at this
+  ratio). Val loss — teacher-forced, prefix-masked, float — is
+  structurally blind to all three, which is the real reason three
+  milestones of honest work missed this. Fixed: quantization-aware
+  fine-tuning (straight-through estimator onto the exact int8 export
+  grid — the shipped int8 model now BEATS the pre-quantization float
+  model, 0.1002 vs. 0.1015) and corpus rebalancing (75:1 → 6:1 worst
+  case, ratio-only, no new authoring). Result: 48-line coherence probe
+  2.60 → 0.50 invented words/line; 36-golden invented-word total 91 →
+  26; ROM v1.9 hardware-verified, SELFTEST PASS, RSP ON, XCHK PASS, 44
+  ch/s (H=320, capacity confirmed unnecessary — both kernels kept as a
+  build-time toggle rather than one overwriting the other). **This item
+  stays OPEN, not Closed**: 0.50 invented words/line is a large
+  improvement, not zero — two more phases are planned (an integer min-p
+  sampler gate; a lexicon-trie decode guard making invented words
+  structurally impossible) before this can be called fully resolved.
+  Full diagnosis and the 5-phase plan: `docs/ideas-coherence-rescue-
+  plan.md`; execution record: `docs/milestones/m12.1.md`.
+
 - **A genuinely improved/expanded corpus, as its own controlled test —
   raised 2026-07-23, still not started.** M12 (above) deliberately
   trained the EXACT same corpus/seed as M11.1's H=320 baseline, capacity
