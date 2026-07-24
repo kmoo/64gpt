@@ -48,6 +48,7 @@ ngpt_test(test_prompted_model)
 ngpt_test(test_sampled_model)
 ngpt_test(test_matvec_hook)
 ngpt_test(test_overflow_mitigation)
+ngpt_test(test_minp_sampler)
 
 # M7 game-side subsystem (EventBus/WorldState/NPCDatabase). ContextBuilder
 # (the old N:<id> TR:<tier> scheme) was removed M11.1 -- every NPC now

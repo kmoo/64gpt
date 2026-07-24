@@ -509,6 +509,9 @@ namespace
        * self-test below uses the pinned seed instead, unaffected. */
       ngpt_set_sampler(&ctx, (uint32_t)get_ticks() ^ frameCount,
                        SELFTEST_INV_T_Q8, SELFTEST_TOP_K);
+      // M12.1 phase 3: integer min-p gate, on for live play same as the
+      // self-test below (docs/ideas-coherence-rescue-plan.md fix 3).
+      ngpt_set_minp(&ctx, SELFTEST_MINP_SHIFT);
     }
   }
 
@@ -521,6 +524,7 @@ namespace
     ngpt_reset(&ctx, &model, SELFTEST_PROMPTS[0]);
     ngpt_set_sampler(&ctx, SELFTEST_SAMPLE_SEED, SELFTEST_INV_T_Q8,
                      SELFTEST_TOP_K);
+    ngpt_set_minp(&ctx, SELFTEST_MINP_SHIFT); // M12.1 phase 3
     uint32_t n = 0, steps = 0;
     int c;
     uint64_t t0 = get_ticks();
@@ -540,6 +544,7 @@ namespace
     ngpt_reset(&ctx, &model, SELFTEST_PROMPTS[p]);
     ngpt_set_sampler(&ctx, SELFTEST_SAMPLE_SEED, SELFTEST_INV_T_Q8,
                      SELFTEST_TOP_K);
+    ngpt_set_minp(&ctx, SELFTEST_MINP_SHIFT); // M12.1 phase 3
     const char *want = SELFTEST_GOLDEN[p];
     uint32_t i = 0;
     int c;

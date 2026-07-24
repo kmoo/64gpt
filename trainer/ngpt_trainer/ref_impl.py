@@ -110,7 +110,8 @@ def xorshift32(state: int) -> int:
     return state
 
 
-def sample_from_logits(q, logits, rng_state: int, inv_t_q8: int, top_k: int):
+def sample_from_logits(q, logits, rng_state: int, inv_t_q8: int, top_k: int,
+                       minp_shift: int = 0):
     """One temperature/top-k draw, integer-only (m4.md design). Returns
     (token_id, new_rng_state). inv_t_q8 = round(256/T); k=1 reproduces
     argmax (ties toward the lowest id) regardless of the RNG draw.
@@ -121,8 +122,18 @@ def sample_from_logits(q, logits, rng_state: int, inv_t_q8: int, top_k: int):
          logit scale 2^(k_out+14)
       3. weights: exp2 LUT on (scaled - scaled_max) rescaled to Q10 by
          rshift_round(diff, k_out + 4)
-      4. draw = xorshift32() % total_weight; first index whose
-         cumulative weight exceeds draw wins
+      4. M12.1 min-p gate (docs/ideas-coherence-rescue-plan.md fix 3,
+         published min-p sampling arXiv 2407.01082 in integer form):
+         if minp_shift > 0, drop any candidate whose weight is below
+         weights[0] >> minp_shift. weights[0] is ALWAYS the max weight
+         -- order[0] is the top logit (diff 0 from itself), and scaling/
+         exp2 are both monotonic in the (all <= 0) diffs, so no later
+         candidate's weight can exceed it. minp_shift=0 (the default)
+         skips this branch entirely, so every milestone before M12.1
+         reproduces byte-for-byte -- this is a strictly additive gate.
+      5. draw = xorshift32() % total_weight (over the KEPT candidates
+         only, when the gate is active); first index whose cumulative
+         weight exceeds draw wins
     """
     from ngpt_trainer.sampler_lut import lut_exp2_lookup
     V = len(logits)
@@ -137,6 +148,18 @@ def sample_from_logits(q, logits, rng_state: int, inv_t_q8: int, top_k: int):
     rng_state = xorshift32(rng_state)
     if k == 1 or total == 0:  # degenerate: greedy (RNG still advances)
         return order[0], rng_state
+    if minp_shift > 0:
+        floor = weights[0] >> minp_shift
+        kept_total = sum(w for w in weights if w >= floor)
+        draw = rng_state % kept_total
+        cum = 0
+        for i, w in zip(order, weights):
+            if w < floor:
+                continue
+            cum += w
+            if cum > draw:
+                return i, rng_state
+        return order[0], rng_state  # unreachable; belt and suspenders
     draw = rng_state % total
     cum = 0
     for i, w in zip(order, weights):
@@ -148,7 +171,7 @@ def sample_from_logits(q, logits, rng_state: int, inv_t_q8: int, top_k: int):
 
 def generate_sampled(q, vocab, prompt: str = "", seed: int = 1,
                      inv_t_q8: int = 256, top_k: int = 8,
-                     max_len: int = 256) -> str:
+                     max_len: int = 256, minp_shift: int = 0) -> str:
     """Sampled decode: same priming as generate(), but each step draws
     via sample_from_logits. Deterministic given the seed."""
     h, x = prime(q, vocab, prompt)
@@ -156,7 +179,8 @@ def generate_sampled(q, vocab, prompt: str = "", seed: int = 1,
     out = []
     for _ in range(max_len):
         h, logits = gru_step(q, h, x)
-        x, state = sample_from_logits(q, logits, state, inv_t_q8, top_k)
+        x, state = sample_from_logits(q, logits, state, inv_t_q8, top_k,
+                                      minp_shift)
         if x == vocab.eos_id:
             break
         out.append(vocab.decode([x]))
@@ -164,7 +188,7 @@ def generate_sampled(q, vocab, prompt: str = "", seed: int = 1,
 
 
 def trace_sampled(q, vocab, prompt: str, seed: int, inv_t_q8: int,
-                  top_k: int, max_len: int = 256):
+                  top_k: int, max_len: int = 256, minp_shift: int = 0):
     """Per-step goldens for the C sampler tests: like trace(), but the
     next token comes from sample_from_logits — records (input_id,
     h_after int16[H], chosen_id), generation steps only."""
@@ -173,7 +197,8 @@ def trace_sampled(q, vocab, prompt: str, seed: int, inv_t_q8: int,
     steps = []
     for _ in range(max_len):
         h, logits = gru_step(q, h, x)
-        nxt, state = sample_from_logits(q, logits, state, inv_t_q8, top_k)
+        nxt, state = sample_from_logits(q, logits, state, inv_t_q8, top_k,
+                                        minp_shift)
         steps.append((x, h.astype(np.int16).copy(), nxt))
         x = nxt
         if x == vocab.eos_id:

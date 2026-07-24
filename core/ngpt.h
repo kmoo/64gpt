@@ -124,6 +124,11 @@ typedef struct ngpt_ctx {
   uint16_t inv_t_q8;               /* round(256 / temperature)          */
   uint16_t top_k;
   uint32_t rng;                    /* xorshift32 state, never 0         */
+  /* M12.1: integer min-p gate (docs/ideas-coherence-rescue-plan.md fix
+   * 3) — minp_shift == 0 (the ngpt_reset default) keeps the M4 sampler
+   * exactly as shipped through M12.1's own phase 2; only ngpt_set_minp
+   * turns it on. Additive, same pattern as sample_on/ngpt_set_sampler. */
+  uint8_t minp_shift;
 } ngpt_ctx;
 
 /* Byte-oriented big-endian readers — the reason the blob parses
@@ -166,3 +171,15 @@ void ngpt_set_matvec(ngpt_matvec_fn fn);
  * design + fixed-point formats: docs/milestones/m4.md. */
 void ngpt_set_sampler(ngpt_ctx *ctx, uint32_t seed, uint16_t inv_t_q8,
                       uint16_t top_k);
+
+/* M12.1: integer min-p gate on top of the M4 sampler (additive — never
+ * calling this leaves top-k/temperature sampling exactly as before).
+ * Call AFTER ngpt_set_sampler (ngpt_reset resets shift to 0 = off).
+ * Any top-k candidate whose exp2 sampling weight falls below the best
+ * candidate's weight right-shifted by `shift` is excluded from the
+ * draw — e.g. shift=1 keeps only candidates within 50% of the top
+ * candidate's probability. Chosen value and the sweep that picked it:
+ * docs/milestones/m12.1.md phase 3; design: docs/ideas-coherence-
+ * rescue-plan.md fix 3 (integer form of published min-p sampling,
+ * arXiv 2407.01082). shift=0 is a no-op (all candidates kept). */
+void ngpt_set_minp(ngpt_ctx *ctx, uint8_t shift);

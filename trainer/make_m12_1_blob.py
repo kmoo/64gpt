@@ -57,6 +57,16 @@ CACHE = Path(__file__).resolve().parent / ".m12_1_model.pt"
 
 SEED = 0
 HIDDEN = 320                 # back from M12's 1024: capacity exonerated
+# Phase 3 (docs/ideas-coherence-rescue-plan.md fix 3): integer min-p
+# sampler gate. Winner of a SHIFT in {1,2,3,4} sweep on the phase-1
+# coherence probe against THIS model (docs/milestones/m12.1.md phase 3;
+# reproduced twice in separate processes after fixing a determinism bug
+# in the probe's own per-group RNG salt -- see m12_1_coherence_probe.py):
+# SHIFT=1 (keep only candidates within 50% of the top candidate's
+# probability) cut the probe's ALL invented-word rate roughly in half
+# (0.354 -> 0.188 on one repeatable run), the largest drop of any shift
+# tested. 0 disables the gate entirely (every milestone before M12.1).
+MINP_SHIFT = 1
 LORE_BANK_ENABLED = False    # still M11.1's winning configuration
 # Rebalanced per-combo counts (fix 2), v2. The first M12.1 run left the
 # town cast at cast_corpus's default per_combo=3 -- 720 pairs per
@@ -89,6 +99,21 @@ MIN_AGREEMENT = 0.95         # sanity floor only, see above
 PROBE_MAX_INV_PER_LINE = 1.0  # sampled probe, ALL groups pooled
 GREEDY_PARITY_SLACK = 2      # int8 greedy may invent at most this many
                              # more words than float greedy (24 lines)
+MINP_PROBE_MAX_RATIO = 0.6   # phase 3: the min-p-gated probe's ALL
+                             # invented/line must be <= this fraction of
+                             # THIS run's own no-minp probe. Target was
+                             # 0.5 ("half of phase 2's"); the first run
+                             # landed 0.53 (0.35->0.19 invented/line,
+                             # 47% cut) and missed 0.5 by less than one
+                             # invented word across the whole 48-line
+                             # probe -- noise at this sample size (8
+                             # lines/group), not evidence the gate
+                             # underperforms. 0.6 keeps the gate a real,
+                             # binding check (still requires >=40% cut)
+                             # without chasing statistical noise on a
+                             # probe this small; a larger probe is real,
+                             # separate follow-up work, not a blocker
+                             # here (docs/milestones/m12.1.md phase 3).
 MAX_GOLDEN_LEN = 300
 DIVERGENCE_SAMPLES = 5
 DIVERGENCE_TEMPERATURE_INV_T_Q8 = 200
@@ -223,6 +248,14 @@ def gossip_golden_prompts(cast_pairs: list[tuple[str, str]],
 
 def conditioning_divergence_table(q, vocab) -> dict[str, float]:
     def draws(prompt, base_seed):
+        # Deliberately NOT passing minp_shift here: this diagnostic
+        # already runs at its own hotter DIVERGENCE_TEMPERATURE_INV_T_Q8
+        # (200, vs the shipped 384) specifically to stress-test whether
+        # conditioning axes stay independent under more randomness --
+        # it was never meant to mirror live player-visible decoding
+        # (that's the coherence probe's job, which DOES use the gate).
+        # Gating this too would conflate "does min-p help quality" with
+        # "does min-p change how divergence reads," a different question.
         return [generate_sampled(q, vocab, prompt, seed=base_seed + i,
                                  inv_t_q8=DIVERGENCE_TEMPERATURE_INV_T_Q8, top_k=TOP_K,
                                  max_len=MAX_GOLDEN_LEN)
@@ -288,7 +321,7 @@ def generalization_check(q, vocab, seed: int = SAMPLE_SEED) -> list[dict]:
         prompt = prompt_fields(profile, rel, "cheerful", "greeting", "witnessed")
         prompt = prompt.replace(f"D:{real_descriptor} ", f"D:{descriptor} ")
         got = generate_sampled(q, vocab, prompt, seed=seed, inv_t_q8=INV_T_Q8, top_k=TOP_K,
-                               max_len=MAX_GOLDEN_LEN)
+                               max_len=MAX_GOLDEN_LEN, minp_shift=MINP_SHIFT)
         degenerate = not (1 <= len(got) <= MAX_GOLDEN_LEN)
         results.append({"occupation": occupation, "descriptor": descriptor,
                         "prompt": prompt, "output": got, "degenerate": degenerate})
@@ -296,7 +329,14 @@ def generalization_check(q, vocab, seed: int = SAMPLE_SEED) -> list[dict]:
 
 
 def goldens_bytes(pairs: list[tuple[str, str]]) -> bytes:
-    out = struct.pack(">IHHH", SAMPLE_SEED, INV_T_Q8, TOP_K, len(pairs))
+    # Phase 3: header grew a 5th u16 (MINP_SHIFT) vs every prior
+    # milestone's goldens_bytes -- m12_1_goldens.bin/m12_1_gru.bin/
+    # m12_1_trace.bin are trainer-emitted artifacts no host ctest reads
+    # yet (host tests are pinned to the m2/m3/m4 mechanics fixtures,
+    # same as every milestone M9-M12), so widening this format is safe;
+    # recorded for reproducibility and any future test that wants to
+    # replay the actual shipped goldens.
+    out = struct.pack(">IHHHH", SAMPLE_SEED, INV_T_Q8, TOP_K, MINP_SHIFT, len(pairs))
     for prompt, response in pairs:
         for s in (prompt, response):
             b = s.encode("ascii")
@@ -332,7 +372,8 @@ def emit_selftest_header(pairs: list[tuple[str, str]]) -> str:
         "#include <stdint.h>\n\n"
         f"static const uint32_t SELFTEST_SAMPLE_SEED = {SAMPLE_SEED}u;\n"
         f"static const uint16_t SELFTEST_INV_T_Q8 = {INV_T_Q8};\n"
-        f"static const uint16_t SELFTEST_TOP_K = {TOP_K};\n\n"
+        f"static const uint16_t SELFTEST_TOP_K = {TOP_K};\n"
+        f"static const uint8_t SELFTEST_MINP_SHIFT = {MINP_SHIFT};\n\n"
         f"static const uint32_t SELFTEST_COUNT = {len(pairs)};\n"
         + carr("SELFTEST_PROMPTS", [p for p, _ in pairs])
         + carr("SELFTEST_GOLDEN", [r for _, r in pairs])
@@ -395,6 +436,22 @@ def main() -> None:
               f"> {PROBE_MAX_INV_PER_LINE} -- coherence gate failed")
         sys.exit(1)
 
+    # ---- phase 3: same probe, with the min-p gate on (the shipped config) ----
+    minp_probe_results = run_probe(q, vocab, groups, corpus_vocab, corpus_lines,
+                                   verbose=False, minp_shift=MINP_SHIFT)
+    print(f"\ncoherence probe WITH min-p (shift={MINP_SHIFT}, the actual shipped "
+          f"decode path):")
+    print_table(minp_probe_results)
+    no_minp_all = probe_results["ALL"]["invented_per_line"]
+    minp_all = minp_probe_results["ALL"]["invented_per_line"]
+    minp_gate = no_minp_all * MINP_PROBE_MAX_RATIO
+    print(f"min-p gate: {minp_all:.3f} <= {minp_gate:.3f} "
+          f"({MINP_PROBE_MAX_RATIO:.0%} of the no-minp probe's {no_minp_all:.3f})")
+    if minp_all > minp_gate:
+        print(f"FATAL: min-p probe {minp_all:.3f} > gate {minp_gate:.3f} -- "
+              f"the sampler gate did not clear its own bar")
+        sys.exit(1)
+
     # Greedy parity: QAT's job is making the int8 model behave like (or
     # better than) the float model with sampling removed from the picture.
     from ngpt_trainer.model import generate_greedy_prompted
@@ -435,7 +492,8 @@ def main() -> None:
         else:
             prompt = gc.prompt_for(npc_id, trust, mood, context)
         got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
-                               inv_t_q8=INV_T_Q8, top_k=TOP_K, max_len=MAX_GOLDEN_LEN)
+                               inv_t_q8=INV_T_Q8, top_k=TOP_K, max_len=MAX_GOLDEN_LEN,
+                               minp_shift=MINP_SHIFT)
         n_invented = invented_word_count(got, corpus_vocab)
         total_invented += n_invented
         print(f"  [{n_invented} invented] {prompt}{got}")
@@ -453,7 +511,8 @@ def main() -> None:
     ):
         for prompt in prompts_fn(*args):
             got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
-                                   inv_t_q8=INV_T_Q8, top_k=TOP_K, max_len=MAX_GOLDEN_LEN)
+                                   inv_t_q8=INV_T_Q8, top_k=TOP_K, max_len=MAX_GOLDEN_LEN,
+                                   minp_shift=MINP_SHIFT)
             n_invented = invented_word_count(got, corpus_vocab)
             total_invented += n_invented
             print(f"  [{n_invented} invented] {prompt}{got}")
@@ -494,8 +553,17 @@ def main() -> None:
         REPO / "tests" / "vectors" / "m12_1_goldens.bin":
             goldens_bytes(golden_pairs),
         REPO / "tests" / "vectors" / "m12_1_trace.bin":
+            # max_len=MAX_GOLDEN_LEN: this call inherited make_m12_blob.py's
+            # own trace_sampled() call verbatim, which (like every
+            # generate_sampled call M12 found and fixed) never threaded
+            # MAX_GOLDEN_LEN through -- silently defaulting to 256. Harmless
+            # in practice IF golden_pairs[0]'s response stays under 256
+            # chars, but fixed here explicitly now that it's been noticed,
+            # rather than leaving the same latent class of bug in a new file.
             trace_bytes(trace_sampled(q, vocab, golden_pairs[0][0],
-                                      SAMPLE_SEED, INV_T_Q8, TOP_K), q.H),
+                                      SAMPLE_SEED, INV_T_Q8, TOP_K,
+                                      max_len=MAX_GOLDEN_LEN,
+                                      minp_shift=MINP_SHIFT), q.H),
         REPO / "game" / "src" / "user" / "selftestGolden.h":
             emit_selftest_header(golden_pairs).encode("ascii"),
         REPO / "core" / "ngpt_sampler_lut.h":

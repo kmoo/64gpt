@@ -24,6 +24,7 @@ make_m12_1_blob.py's acceptance gates will call.
 """
 import random
 import sys
+import zlib
 from pathlib import Path
 
 import numpy as np
@@ -40,7 +41,7 @@ from ngpt_trainer.quantize import quantize
 from ngpt_trainer.ref_impl import generate_sampled
 from ngpt_trainer.vocab import Vocab
 
-import make_m12_blob as m12
+import make_m12_1_blob as m12
 
 PROBE_SEED = 0xC0FFEE
 LINES_PER_GROUP = 8
@@ -51,12 +52,20 @@ TOP_K = m12.TOP_K
 
 def build_corpus():
     """Corpus groups keyed by character, plus vocab artifacts -- the
-    exact M11.1/M12 shipped mix (lore bank off)."""
+    exact M12.1 shipped, rebalanced mix (lore bank off). NOTE: this
+    function imports make_m12_1_blob (fixed 2026-07-24 -- it originally
+    imported make_m12_blob, the pre-rebalance M12 script, a phase-1
+    leftover from before make_m12_1_blob.py existed; the real M12.1
+    build gate never used this helper, since make_m12_1_blob.main()
+    builds its own groups/vocab directly, so nothing already shipped
+    was affected -- but any standalone use of this function, like the
+    phase-3 min-p sweep, silently ran against the WRONG 75:1-skewed
+    corpus until this fix)."""
     (selena_pairs, guard_pairs, cast_pairs, shadewrath_pairs,
      korrath_pairs, princess_pairs) = m12.build_all_pairs()
     full_text = (sc.corpus_text(seed=m12.SEED, per_combo=m12.PER_COMBO)
                  + "".join(p + r for p, r in guard_pairs)
-                 + cc.corpus_text(seed=m12.SEED)
+                 + cc.corpus_text(seed=m12.SEED, per_combo=m12.CAST_PER_COMBO)
                  + swc.corpus_text(seed=m12.SEED, per_combo=m12.SHADEWRATH_PER_COMBO,
                                    lore_bank_enabled=m12.LORE_BANK_ENABLED)
                  + kc.corpus_text(seed=m12.SEED, per_combo=m12.KORRATH_PER_COMBO,
@@ -82,18 +91,33 @@ def load_quantized(cache_path: Path, vocab):
 
 def run_probe(q, vocab, groups, corpus_vocab, corpus_lines,
               lines_per_group: int = LINES_PER_GROUP,
-              seed: int = PROBE_SEED, verbose: bool = True) -> dict:
+              seed: int = PROBE_SEED, verbose: bool = True,
+              minp_shift: int = 0) -> dict:
     """Returns {group: {"pairs", "lines", "invented_per_line",
-    "eos_before_cap", "verbatim"}} plus an "ALL" rollup."""
+    "eos_before_cap", "verbatim"}} plus an "ALL" rollup.
+
+    minp_shift (M12.1 phase 3): 0 = disabled (phase-1/2 behavior,
+    unchanged); > 0 applies the integer min-p gate to every draw --
+    passed straight through to generate_sampled/sample_from_logits.
+
+    Per-group salt uses zlib.crc32, NOT Python's builtin hash(): str
+    hashing is randomized per-process (PYTHONHASHSEED) unless disabled,
+    so hash(name) silently drew a DIFFERENT sample of probe lines every
+    fresh process -- found 2026-07-24 while sweeping phase 3's min-p
+    shift, when two supposedly-identical re-runs disagreed. crc32 is a
+    fixed, stable function of the string, restoring this probe's
+    seed-in/result-out determinism (the same principle every sampler
+    seed in this project already depends on)."""
     results = {}
     tot_inv = tot_eos = tot_verb = tot_lines = 0
     for name, pairs in groups.items():
-        rng = random.Random(seed ^ hash(name) & 0xFFFF)
+        rng = random.Random(seed ^ (zlib.crc32(name.encode()) & 0xFFFF))
         prompts = [p for p, _ in rng.sample(pairs, min(lines_per_group, len(pairs)))]
         inv = eos = verb = 0
         for i, prompt in enumerate(prompts):
             got = generate_sampled(q, vocab, prompt, seed=seed + i,
-                                   inv_t_q8=INV_T_Q8, top_k=TOP_K, max_len=MAX_LEN)
+                                   inv_t_q8=INV_T_Q8, top_k=TOP_K, max_len=MAX_LEN,
+                                   minp_shift=minp_shift)
             n = m12.invented_word_count(got, corpus_vocab)
             inv += n
             eos += int(len(got) < MAX_LEN)

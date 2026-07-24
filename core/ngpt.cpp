@@ -55,6 +55,7 @@ void ngpt_reset(ngpt_ctx *ctx, const ngpt_model *m, const char *prompt)
   ctx->inv_t_q8 = 256;
   ctx->top_k = 1;
   ctx->rng = 1;
+  ctx->minp_shift = 0; /* M12.1: gate off unless ngpt_set_minp is called */
 
   /* M3 conditioning: prime the GRU on the prompt (h-updates only, no
    * emission). The canned model ignores prompts. */
@@ -69,6 +70,11 @@ void ngpt_set_sampler(ngpt_ctx *ctx, uint32_t seed, uint16_t inv_t_q8,
   ctx->inv_t_q8 = inv_t_q8;
   ctx->top_k = top_k > 0 ? top_k : 1;
   ctx->rng = seed != 0 ? seed : 1; /* 0 is xorshift32's fixed point */
+}
+
+void ngpt_set_minp(ngpt_ctx *ctx, uint8_t shift)
+{
+  ctx->minp_shift = shift;
 }
 
 int ngpt_step(ngpt_ctx *ctx)
