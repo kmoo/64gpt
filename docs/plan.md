@@ -62,7 +62,35 @@ long survives.
   generalize at all, not how the trade-off curve moves with density) —
   does not substitute for this. Raised 2026-07-17 during M9;
   `docs/milestones/m9.md`'s own DoD.
-- **M9's generated text coherence is inconsistent, unresolved.** Trained
+- **A genuinely improved/expanded corpus, as its own controlled test —
+  raised 2026-07-23, still not started.** M12 (above) deliberately
+  trained the EXACT same corpus/seed as M11.1's H=320 baseline, capacity
+  as the only controlled variable — and, like the other two levers, it
+  didn't close the coherence gap either. A real corpus-quality pass
+  (more/better-authored content at a FIXED H, not combined with any
+  other simultaneous change) is still a real, distinct, untried fourth
+  candidate — but given all three already-tried levers came back
+  negative, it's no longer obviously the next thing to reach for either;
+  worth weighing against non-corpus hypotheses (architecture, decoding,
+  training procedure) before committing to it. Needs its own controlled
+  before/after comparison, same discipline as M11.1's/M12's, not bundled
+  into whatever milestone is active when someone thinks of it.
+
+- **Back-port the golden-generation `max_len` fix to `make_m11_1_blob.py`
+  and earlier `make_mN_blob.py` scripts — raised 2026-07-23, not
+  started.** M12 found and fixed a real bug (see above) in the shared
+  `generate_sampled()` golden-recording pattern that every prior
+  milestone's blob-build script also has, latently. Nothing already
+  shipped is proven wrong by it (M11.1's actual goldens never happened
+  to run past 256 characters), so this isn't urgent, but the risk is
+  real for any of them and the fix is small and mechanical
+  (`max_len=MAX_GOLDEN_LEN` on each `generate_sampled()` call) — worth
+  doing opportunistically rather than waiting for another milestone to
+  hit the same latent failure the way M12 did.
+
+**Closed:**
+
+- **M9's generated text coherence is inconsistent — RESOLVED, M12.1 (2026-07-24).** Trained
   H=320 model (curated cast, template-grammar corpus, gradient clipping)
   measurably improved over an earlier freeform-LLM-corpus attempt (val
   loss, agreement, judge scores) but still produces visibly garbled
@@ -268,41 +296,26 @@ long survives.
   2.60 → 0.50 invented words/line; 36-golden invented-word total 91 →
   26; ROM v1.9 hardware-verified, SELFTEST PASS, RSP ON, XCHK PASS, 44
   ch/s (H=320, capacity confirmed unnecessary — both kernels kept as a
-  build-time toggle rather than one overwriting the other). **This item
-  stays OPEN, not Closed**: 0.50 invented words/line is a large
-  improvement, not zero — two more phases are planned (an integer min-p
-  sampler gate; a lexicon-trie decode guard making invented words
-  structurally impossible) before this can be called fully resolved.
-  Full diagnosis and the 5-phase plan: `docs/ideas-coherence-rescue-
-  plan.md`; execution record: `docs/milestones/m12.1.md`.
+  build-time toggle rather than one overwriting the other).
 
-- **A genuinely improved/expanded corpus, as its own controlled test —
-  raised 2026-07-23, still not started.** M12 (above) deliberately
-  trained the EXACT same corpus/seed as M11.1's H=320 baseline, capacity
-  as the only controlled variable — and, like the other two levers, it
-  didn't close the coherence gap either. A real corpus-quality pass
-  (more/better-authored content at a FIXED H, not combined with any
-  other simultaneous change) is still a real, distinct, untried fourth
-  candidate — but given all three already-tried levers came back
-  negative, it's no longer obviously the next thing to reach for either;
-  worth weighing against non-corpus hypotheses (architecture, decoding,
-  training procedure) before committing to it. Needs its own controlled
-  before/after comparison, same discipline as M11.1's/M12's, not bundled
-  into whatever milestone is active when someone thinks of it.
+  **Phases 3-4 closed this out, M12.1 continued (2026-07-24).** An
+  integer min-p sampler gate (`ngpt_set_minp`, published min-p sampling
+  arXiv 2407.01082 in integer form) cut the 48-line probe's invented
+  rate 0.354 → 0.188 (47%, SHIFT=1 winning a 4-way sweep). A lexicon-
+  trie decode guard (`ngpt_set_trie_guard`) then made invented words
+  **structurally unreachable** rather than merely less likely — every
+  sampler candidate is masked to real corpus-word continuations, with
+  an always-legal full-vocab fallback. Result: **0 invented words across
+  all 36 shipped goldens** (91 → 26 → 0), a hard guarantee, not a probe
+  sample. ROM hardware-verified at each phase: SELFTEST PASS, RSP ON,
+  XCHK PASS, 44 ch/s throughout. **This item is now CLOSED** — this was
+  the M9-raised garbling gap; three prior milestones' capacity/corpus
+  hypotheses were exonerated, and the actual causes (quantization,
+  sampling, corpus skew, plus the sampler's own reachable-token set)
+  are all addressed. Full diagnosis and the 5-phase plan:
+  `docs/ideas-coherence-rescue-plan.md`; execution record:
+  `docs/milestones/m12.1.md`.
 
-- **Back-port the golden-generation `max_len` fix to `make_m11_1_blob.py`
-  and earlier `make_mN_blob.py` scripts — raised 2026-07-23, not
-  started.** M12 found and fixed a real bug (see above) in the shared
-  `generate_sampled()` golden-recording pattern that every prior
-  milestone's blob-build script also has, latently. Nothing already
-  shipped is proven wrong by it (M11.1's actual goldens never happened
-  to run past 256 characters), so this isn't urgent, but the risk is
-  real for any of them and the fix is small and mechanical
-  (`max_len=MAX_GOLDEN_LEN` on each `generate_sampled()` call) — worth
-  doing opportunistically rather than waiting for another milestone to
-  hit the same latent failure the way M12 did.
-
-**Closed:**
 - **RSP fast path was H=128-only; M7 doubled the model to H=256 and lost
   it.** Closed same-session, follow-up work after M7 (`docs/spikes/
   rsp-matvec-h256.md`, adopted on `main`). Generalized the kernel to

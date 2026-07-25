@@ -206,6 +206,166 @@ def trace_sampled(q, vocab, prompt: str, seed: int, inv_t_q8: int,
     return steps
 
 
+# ---- M12.1 phase 4: lexicon-trie decode guard (docs/ideas-coherence-
+# rescue-plan.md fix 4). A compact first-child/next-sibling trie over
+# WORD characters only (A-Z and apostrophe); every other vocab byte
+# (space, punctuation) plus EOS is a "boundary" that's always legal
+# except mid-word, where it's legal only if the current trie node
+# completes a real corpus word. This makes the model structurally
+# unable to emit a word that isn't one its corpus actually contains --
+# it still CHOOSES which word (personality/mood/conditioning still
+# come from the logits), just can't misspell it.
+TRIE_NONE = 0xFFFF
+
+
+def _is_word_byte(b) -> bool:
+    return b is not None and ((65 <= b <= 90) or b == 39)  # 'A'-'Z' or "'"
+
+
+def build_word_trie(words) -> list[tuple[int, int, int, int]]:
+    """words: iterable of corpus words (uppercase, letters+apostrophe only
+    -- the same set make_m12_blob.py's build_corpus_vocab() already
+    computes). Returns a flat node list: (char_byte, flags, first_child,
+    next_sibling); node 0 is the root. flags bit 0 = end-of-word. This
+    exact list is what export.py serializes into the blob and what
+    core/ngpt_sample.cpp walks -- one structure, no drift."""
+    nodes = [[0, 0, TRIE_NONE, TRIE_NONE]]
+    for word in words:
+        cur = 0
+        for ch in word:
+            b = ord(ch)
+            if not _is_word_byte(b):
+                continue  # corpus_vocab is pre-filtered to [A-Z']+, belt-and-suspenders
+            child, prev = nodes[cur][2], TRIE_NONE
+            found = TRIE_NONE
+            while child != TRIE_NONE:
+                if nodes[child][0] == b:
+                    found = child
+                    break
+                prev, child = child, nodes[child][3]
+            if found == TRIE_NONE:
+                nodes.append([b, 0, TRIE_NONE, TRIE_NONE])
+                new_idx = len(nodes) - 1
+                if prev == TRIE_NONE:
+                    nodes[cur][2] = new_idx
+                else:
+                    nodes[prev][3] = new_idx
+                cur = new_idx
+            else:
+                cur = found
+        nodes[cur][1] |= 1
+    return [tuple(n) for n in nodes]
+
+
+def _trie_child(nodes, node: int, byte: int) -> int:
+    c = nodes[node][2]
+    while c != TRIE_NONE:
+        if nodes[c][0] == byte:
+            return c
+        c = nodes[c][3]
+    return TRIE_NONE
+
+
+def _trie_is_end(nodes, node: int) -> bool:
+    return (nodes[node][1] & 1) != 0
+
+
+def _trie_legal(nodes, node: int, idx: int, vocab) -> bool:
+    byte = None if idx == vocab.eos_id else ord(vocab.decode([idx]))
+    if not _is_word_byte(byte):
+        return node == 0 or _trie_is_end(nodes, node)
+    return _trie_child(nodes, node, byte) != TRIE_NONE
+
+
+def _trie_advance(nodes, node: int, idx: int, vocab) -> int:
+    byte = None if idx == vocab.eos_id else ord(vocab.decode([idx]))
+    if not _is_word_byte(byte):
+        return 0
+    return _trie_child(nodes, node, byte)
+
+
+def _trie_fallback(nodes, node: int, logits, vocab) -> int:
+    """Highest-logit LEGAL id over the FULL vocab (not just top-k), ties
+    toward the lowest id (np.argmax's convention). Guaranteed non-empty:
+    every trie node reached by inserting a real word has a child, is an
+    end, or both (build_word_trie()'s own invariant) -- EOS/boundary
+    bytes are always legal at the root, so this can never come up empty
+    on a correctly built trie."""
+    best, best_v = None, None
+    for i in range(len(logits)):
+        if not _trie_legal(nodes, node, i, vocab):
+            continue
+        if best is None or logits[i] > best_v:
+            best, best_v = i, logits[i]
+    assert best is not None, "trie invariant violated: no legal continuation"
+    return best
+
+
+def sample_from_logits_trie(q, logits, rng_state: int, inv_t_q8: int, top_k: int,
+                            minp_shift: int, trie_nodes, trie_node: int, vocab):
+    """Trie-guarded draw: identical top-k/temperature/min-p machinery as
+    sample_from_logits, PLUS a legality filter over the word trie.
+    Returns (token_id, new_rng_state, new_trie_node). trie_nodes=None
+    disables the guard, delegating byte-for-byte to sample_from_logits
+    (kept as a separate function, not a modification of that one, so
+    the 12 already-passing sampler tests have zero exposure to this
+    change)."""
+    if trie_nodes is None:
+        tok, rng_state = sample_from_logits(q, logits, rng_state, inv_t_q8, top_k, minp_shift)
+        return tok, rng_state, trie_node
+
+    from ngpt_trainer.sampler_lut import lut_exp2_lookup
+    V = len(logits)
+    k = min(top_k, V)
+    s = q.k_out + 4
+    order = sorted(range(V), key=lambda i: (-int(logits[i]), i))[:k]
+    scaled = [rshift_round(int(logits[i]) * inv_t_q8, 8) for i in order]
+    top = scaled[0]
+    weights = [lut_exp2_lookup(rshift_round(v - top, s)) for v in scaled]
+    rng_state = xorshift32(rng_state)
+
+    if k == 1 or sum(weights) == 0:
+        tok = order[0] if _trie_legal(trie_nodes, trie_node, order[0], vocab) \
+            else _trie_fallback(trie_nodes, trie_node, logits, vocab)
+        return tok, rng_state, _trie_advance(trie_nodes, trie_node, tok, vocab)
+
+    floor = (weights[0] >> minp_shift) if minp_shift > 0 else 0
+    kept = [(i, w) for i, w in zip(order, weights)
+            if w >= floor and _trie_legal(trie_nodes, trie_node, i, vocab)]
+    if not kept:
+        tok = _trie_fallback(trie_nodes, trie_node, logits, vocab)
+    else:
+        kept_total = sum(w for _, w in kept)
+        draw = rng_state % kept_total
+        cum, tok = 0, kept[-1][0]
+        for i, w in kept:
+            cum += w
+            if cum > draw:
+                tok = i
+                break
+    return tok, rng_state, _trie_advance(trie_nodes, trie_node, tok, vocab)
+
+
+def generate_sampled_trie(q, vocab, prompt: str = "", seed: int = 1,
+                          inv_t_q8: int = 256, top_k: int = 8, max_len: int = 256,
+                          minp_shift: int = 0, trie_nodes=None) -> str:
+    """generate_sampled, trie-guarded: trie_node persists across the
+    whole generation (resets to 0/root at the start, same as h/EOS).
+    trie_nodes=None reproduces generate_sampled byte-for-byte."""
+    h, x = prime(q, vocab, prompt)
+    state = seed if seed != 0 else 1
+    node = 0
+    out = []
+    for _ in range(max_len):
+        h, logits = gru_step(q, h, x)
+        x, state, node = sample_from_logits_trie(q, logits, state, inv_t_q8, top_k,
+                                                 minp_shift, trie_nodes, node, vocab)
+        if x == vocab.eos_id:
+            break
+        out.append(vocab.decode([x]))
+    return "".join(out)
+
+
 def trace(q, vocab, prompt: str = "", max_len: int = 256):
     """Per-step goldens for the C tests: list of (input_id, h_after int16[H],
     argmax_id), generation steps only (priming is replayed by ngpt_reset

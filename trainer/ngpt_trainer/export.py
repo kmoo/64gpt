@@ -5,9 +5,16 @@ from ngpt_trainer.quantize import QuantizedGRU
 
 MAGIC = b'NGPT'
 FORMAT_VERSION = 1
+FORMAT_VERSION_TRIE = 2  # M12.1 phase 4: GRU payload + a trailing word-trie
+                         # section (docs/ideas-coherence-rescue-plan.md fix
+                         # 4). A NEW version, not a change to version 1's
+                         # exact-size formula, because every pre-M12.1
+                         # vector file (m2_gru.bin..m12_1_gru.bin from
+                         # phases 2-3) is version 1 and must keep parsing
+                         # byte-for-byte unchanged -- see core/ngpt_gru.cpp.
 MODEL_TYPE_GRU = 1
 
-def payload(q: QuantizedGRU, vocab: Vocab) -> bytes:
+def payload(q: QuantizedGRU, vocab: Vocab, trie_nodes=None) -> bytes:
     H, V = q.H, q.V
     payload = struct.pack('>HHBB', H, V, q.k_w, q.k_out)
     payload += vocab.to_bytes()
@@ -19,11 +26,16 @@ def payload(q: QuantizedGRU, vocab: Vocab) -> bytes:
     payload += q.b_hh.astype('>i4').tobytes()
     payload += q.W_out.astype('>i1').tobytes()
     payload += q.b_out.astype('>i4').tobytes()
+    if trie_nodes is not None:
+        payload += struct.pack('>I', len(trie_nodes))
+        for char, flags, first_child, next_sibling in trie_nodes:
+            payload += struct.pack('>BBHH', char, flags, first_child, next_sibling)
     return payload
 
-def build_blob(q: QuantizedGRU, vocab: Vocab) -> bytes:
-    p = payload(q, vocab)
-    return MAGIC + struct.pack('>HHI', FORMAT_VERSION, MODEL_TYPE_GRU, len(p)) + p
+def build_blob(q: QuantizedGRU, vocab: Vocab, trie_nodes=None) -> bytes:
+    p = payload(q, vocab, trie_nodes)
+    version = FORMAT_VERSION_TRIE if trie_nodes is not None else FORMAT_VERSION
+    return MAGIC + struct.pack('>HHI', version, MODEL_TYPE_GRU, len(p)) + p
 
 def parse_blob(data: bytes) -> (QuantizedGRU, Vocab):
     if data[:4] != MAGIC:

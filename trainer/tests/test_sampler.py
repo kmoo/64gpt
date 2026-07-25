@@ -174,3 +174,91 @@ def test_minp_deterministic():
 
     assert run(42) == run(42)
     assert run(42) != run(43)
+
+
+# ---- M12.1 phase 4: lexicon-trie decode guard ----
+from ngpt_trainer.ref_impl import (build_word_trie, sample_from_logits_trie,
+                                   generate_sampled_trie, TRIE_NONE)
+from ngpt_trainer.vocab import Vocab
+
+
+def _mini_vocab():
+    # charset must be sorted (Vocab.from_text's own contract)
+    return Vocab.from_text("ABCDEFHIKLNORSTUY '.")
+
+
+def test_trie_disabled_matches_plain_sampler():
+    vocab = _mini_vocab()
+    logits = [i * 100 for i in range(len(vocab))]
+    for seed in (1, 5, 99):
+        tok_a, state_a = sample_from_logits(Q, logits, seed, inv_t_q8=256, top_k=5)
+        tok_b, state_b, node_b = sample_from_logits_trie(
+            Q, logits, seed, inv_t_q8=256, top_k=5, minp_shift=0,
+            trie_nodes=None, trie_node=0, vocab=vocab)
+        assert (tok_a, state_a) == (tok_b, state_b)
+        assert node_b == 0
+
+
+def test_trie_blocks_a_word_not_in_the_corpus():
+    """CAT is in the trie; CAR is not (shares prefix CA, diverges at
+    the 3rd letter). Even if the model's logits strongly favor 'R' as
+    the 3rd letter, the guard must exclude it and fall back to a
+    legal continuation ('T', completing CAT)."""
+    from ngpt_trainer.ref_impl import _trie_advance, _trie_legal
+    vocab = _mini_vocab()
+    trie = build_word_trie(["CAT", "CAN"])
+    node = _trie_advance(trie, 0, vocab.encode("C")[0], vocab)
+    node = _trie_advance(trie, node, vocab.encode("A")[0], vocab)
+    # node now = after "CA"; only 'T' and 'N' are legal next word-chars
+    assert _trie_legal(trie, node, vocab.encode("T")[0], vocab)
+    assert _trie_legal(trie, node, vocab.encode("N")[0], vocab)
+    assert not _trie_legal(trie, node, vocab.encode("R")[0], vocab)
+
+    logits = [0] * len(vocab)
+    logits[vocab.encode("R")[0]] = 10000  # model STRONGLY wants the illegal 'R'
+    logits[vocab.encode("T")[0]] = 1
+    tok, _, _ = sample_from_logits_trie(Q, logits, 1, inv_t_q8=256, top_k=5,
+                                        minp_shift=0, trie_nodes=trie,
+                                        trie_node=node, vocab=vocab)
+    assert tok == vocab.encode("T")[0]  # fell back to the legal, next-best option
+
+
+def test_trie_never_invents_a_word_multistep():
+    """Drive sample_from_logits_trie directly across many steps (no
+    gru_step/full model needed -- this tests the TRIE STATE MACHINE,
+    not the GRU numerics) with logits that favor a DIFFERENT letter
+    every step almost at random, and confirm every space-delimited
+    token completed is a real corpus word -- the actual end-to-end
+    guarantee this feature exists to provide."""
+    vocab = _mini_vocab()
+    words = ["CAT", "CATS", "SAT", "ON", "THE", "MAT", "IT'S", "FINE"]
+    trie = build_word_trie(words)
+    rng = np.random.default_rng(3)
+    for seed in range(1, 20):
+        state, node = seed, 0
+        out = []
+        for _ in range(30):
+            logits = rng.integers(-500, 500, size=len(vocab)).astype(np.int64) << 10
+            tok, state, node = sample_from_logits_trie(
+                Q, logits, state, inv_t_q8=200, top_k=6, minp_shift=0,
+                trie_nodes=trie, trie_node=node, vocab=vocab)
+            if tok == vocab.eos_id:
+                break
+            out.append(vocab.decode([tok]))
+        text = "".join(out)
+        for tok in text.replace(".", " ").split(" "):
+            if tok:
+                assert tok in words, f"invented word {tok!r} (seed={seed}, text={text!r})"
+
+
+def test_trie_fallback_always_terminates_a_word():
+    """A node with no children must be an end-of-word (build_word_trie's
+    invariant) -- if it weren't, the fallback could find no legal
+    continuation and the assert in _trie_fallback would fire."""
+    vocab = _mini_vocab()
+    trie = build_word_trie(["CAT", "DOG"])
+    from ngpt_trainer.ref_impl import _trie_is_end
+    for node in range(len(trie)):
+        has_children = trie[node][2] != TRIE_NONE
+        if not has_children:
+            assert _trie_is_end(trie, node), f"node {node} is a dead end, not marked as a word"

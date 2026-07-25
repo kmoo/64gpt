@@ -23,7 +23,14 @@
 /* ---- blob format constants (see docs/03-blob-format.md) ---- */
 #define NGPT_MAGIC          0x4E475054u /* "NGPT" big-endian */
 #define NGPT_FORMAT_VERSION 1
+/* M12.1 phase 4: GRU payload + a trailing word-trie section (lexicon
+ * decode guard, docs/ideas-coherence-rescue-plan.md fix 4). A NEW
+ * version rather than a change to version 1's exact-size formula, so
+ * every pre-M12.1 vector file keeps parsing byte-for-byte unchanged --
+ * see ngpt_gru_load below and trainer/ngpt_trainer/export.py. */
+#define NGPT_FORMAT_VERSION_TRIE 2
 #define NGPT_HEADER_SIZE    12
+#define NGPT_TRIE_NONE      0xFFFFu
 
 /* model types */
 #define NGPT_MODEL_CANNED   0  /* v0: fixed byte string (walking skeleton) */
@@ -99,6 +106,13 @@ typedef struct ngpt_gru_view {
   const uint8_t *b_hh;      /* 3H x i32 BE                        */
   const uint8_t *w_out;     /* V*H x i8                           */
   const uint8_t *b_out;     /* V x i32 BE, scale 2^(k_out+14)     */
+  /* M12.1 phase 4: word-trie (format version 2 only). trie_count == 0 /
+   * trie_nodes == NULL for version-1 blobs. Flat first-child/next-
+   * sibling nodes, 6 bytes each: char(u8), flags(u8, bit0=end-of-word),
+   * first_child(u16 BE), next_sibling(u16 BE); node 0 is the root.
+   * Mirrors trainer/ngpt_trainer/ref_impl.py's build_word_trie(). */
+  uint32_t trie_count;
+  const uint8_t *trie_nodes;
 } ngpt_gru_view;
 
 typedef struct ngpt_model {
@@ -129,6 +143,15 @@ typedef struct ngpt_ctx {
    * exactly as shipped through M12.1's own phase 2; only ngpt_set_minp
    * turns it on. Additive, same pattern as sample_on/ngpt_set_sampler. */
   uint8_t minp_shift;
+  /* M12.1 phase 4: lexicon-trie decode guard (docs/ideas-coherence-
+   * rescue-plan.md fix 4) -- trie_on == 0 (the ngpt_reset default)
+   * keeps the sampler exactly as shipped through phase 3; only
+   * ngpt_set_trie_guard turns it on, and only on a version-2 blob that
+   * actually carries a trie (gru.trie_nodes != NULL). trie_node tracks
+   * the walk's current position, root = 0, and persists across steps
+   * the same way ctx->h does. */
+  uint8_t trie_on;
+  uint16_t trie_node;
 } ngpt_ctx;
 
 /* Byte-oriented big-endian readers — the reason the blob parses
@@ -183,3 +206,15 @@ void ngpt_set_sampler(ngpt_ctx *ctx, uint32_t seed, uint16_t inv_t_q8,
  * rescue-plan.md fix 3 (integer form of published min-p sampling,
  * arXiv 2407.01082). shift=0 is a no-op (all candidates kept). */
 void ngpt_set_minp(ngpt_ctx *ctx, uint8_t shift);
+
+/* M12.1 phase 4: enable the lexicon-trie decode guard (additive, same
+ * pattern as ngpt_set_minp -- call AFTER ngpt_set_sampler). With `on`
+ * nonzero, every sampled token must keep the walk on a real corpus
+ * word (docs/ideas-coherence-rescue-plan.md fix 4): illegal
+ * continuations are dropped from the min-p/top-k draw, falling back to
+ * the highest-logit legal id over the full vocab if the draw would
+ * otherwise be empty. A no-op if the loaded blob has no trie
+ * (gru.trie_nodes == NULL, i.e. any version-1 blob). Design + trie
+ * layout: docs/milestones/m12.1.md phase 4; C twin of ref_impl.py's
+ * sample_from_logits_trie. */
+void ngpt_set_trie_guard(ngpt_ctx *ctx, uint8_t on);

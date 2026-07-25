@@ -26,6 +26,18 @@ H=320, not 1024: M12's controlled experiment exonerated capacity
 (10.24x parameters, same corpus/seed -> same garbling, worse val loss,
 44 -> 5 ch/s). The K-chunked kernel stays and handles either.
 
+Phase 4 (fix 4): a lexicon-trie decode guard (build_word_trie over the
+corpus vocabulary) makes invented words structurally impossible in the
+shipped decode path rather than merely less likely -- every candidate
+token must keep the walk on a real corpus word, with an always-legal
+full-vocab fallback. This is a hard guarantee, not a statistical one,
+so unlike min-p it needs no accept/reject gate: it's applied to every
+shipped golden below (generate_sampled_trie) and baked into the blob
+(format version 2, build_blob(..., trie_nodes=...)), but left OFF the
+diagnostic-only probes above (top1_agreement, the coherence probe,
+divergence table, generalization check) which are measuring the raw
+model's own tendencies, not the guarded decode path.
+
 Training is cached in trainer/.m12_1_model.pt (git-ignored); delete it
 to retrain.  Run: uv run python make_m12_1_blob.py   (from trainer/)
 """
@@ -48,7 +60,8 @@ from ngpt_trainer.export import build_blob, trace_bytes
 from ngpt_trainer.model import CharGRU, train_corpus_conditioned, qat_finetune
 from ngpt_trainer.npc_service import personality_descriptor, prompt_fields
 from ngpt_trainer.quantize import quantize
-from ngpt_trainer.ref_impl import generate, generate_sampled, gru_step, trace_sampled
+from ngpt_trainer.ref_impl import (build_word_trie, generate, generate_sampled,
+                                   generate_sampled_trie, gru_step, trace_sampled)
 from ngpt_trainer.sampler_lut import LUT_EXP2
 from ngpt_trainer.vocab import Vocab
 
@@ -394,6 +407,8 @@ def main() -> None:
                  + pc.corpus_text(seed=SEED, per_combo=PRINCESS_PER_COMBO, lore_bank_enabled=LORE_BANK_ENABLED))
     vocab = Vocab.from_text(full_text)
     corpus_vocab = build_corpus_vocab(full_text)
+    trie = build_word_trie(corpus_vocab)
+    print(f"word trie: {len(corpus_vocab)} words -> {len(trie)} nodes")
     gossip_count = sum(1 for p, _ in cast_pairs
                        if p.split("EV:")[1].split("|")[0] in cc.GOSSIP_EVENTS)
     groups = {"selena": selena_pairs, "guard": guard_pairs, "cast": cast_pairs,
@@ -491,9 +506,9 @@ def main() -> None:
             prompt = pc.prompt_for(trust, mood, context, event)
         else:
             prompt = gc.prompt_for(npc_id, trust, mood, context)
-        got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
-                               inv_t_q8=INV_T_Q8, top_k=TOP_K, max_len=MAX_GOLDEN_LEN,
-                               minp_shift=MINP_SHIFT)
+        got = generate_sampled_trie(q, vocab, prompt, seed=SAMPLE_SEED,
+                                    inv_t_q8=INV_T_Q8, top_k=TOP_K, max_len=MAX_GOLDEN_LEN,
+                                    minp_shift=MINP_SHIFT, trie_nodes=trie)
         n_invented = invented_word_count(got, corpus_vocab)
         total_invented += n_invented
         print(f"  [{n_invented} invented] {prompt}{got}")
@@ -510,9 +525,9 @@ def main() -> None:
         (princess_golden_prompts, ()),
     ):
         for prompt in prompts_fn(*args):
-            got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
-                                   inv_t_q8=INV_T_Q8, top_k=TOP_K, max_len=MAX_GOLDEN_LEN,
-                                   minp_shift=MINP_SHIFT)
+            got = generate_sampled_trie(q, vocab, prompt, seed=SAMPLE_SEED,
+                                        inv_t_q8=INV_T_Q8, top_k=TOP_K, max_len=MAX_GOLDEN_LEN,
+                                        minp_shift=MINP_SHIFT, trie_nodes=trie)
             n_invented = invented_word_count(got, corpus_vocab)
             total_invented += n_invented
             print(f"  [{n_invented} invented] {prompt}{got}")
@@ -522,7 +537,11 @@ def main() -> None:
             golden_pairs.append((prompt, got))
 
     print(f"\ninvented-word total across {len(golden_pairs)} goldens: {total_invented} "
-          f"(M12's 36-golden set: 91)")
+          f"(M12's 36-golden set: 91; phase 4's trie guard makes this "
+          f"structurally 0 barring a fallback edge case)")
+    if total_invented > 0:
+        print(f"WARNING: trie guard is active but {total_invented} invented words "
+              f"still slipped through -- check the fallback path, this should be 0")
 
     div_table = conditioning_divergence_table(q, vocab)
     print("conditioning-ablation divergence (trigram-Jaccard):")
@@ -546,7 +565,7 @@ def main() -> None:
     if degenerate_count > len(gen_results) // 2:
         print(f"WARNING: more than half of held-out combos degenerated.")
 
-    blob = build_blob(q, vocab)
+    blob = build_blob(q, vocab, trie_nodes=trie)
     targets = {
         REPO / "game" / "rawfs" / "model.bin": blob,
         REPO / "tests" / "vectors" / "m12_1_gru.bin": blob,

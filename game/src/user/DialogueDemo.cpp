@@ -512,6 +512,10 @@ namespace
       // M12.1 phase 3: integer min-p gate, on for live play same as the
       // self-test below (docs/ideas-coherence-rescue-plan.md fix 3).
       ngpt_set_minp(&ctx, SELFTEST_MINP_SHIFT);
+      // M12.1 phase 4: lexicon-trie decode guard, on for live play same
+      // as the self-test below (docs/ideas-coherence-rescue-plan.md
+      // fix 4) -- a no-op if the loaded blob has no trie section.
+      ngpt_set_trie_guard(&ctx, 1);
     }
   }
 
@@ -525,6 +529,7 @@ namespace
     ngpt_set_sampler(&ctx, SELFTEST_SAMPLE_SEED, SELFTEST_INV_T_Q8,
                      SELFTEST_TOP_K);
     ngpt_set_minp(&ctx, SELFTEST_MINP_SHIFT); // M12.1 phase 3
+    ngpt_set_trie_guard(&ctx, 1); // M12.1 phase 4
     uint32_t n = 0, steps = 0;
     int c;
     uint64_t t0 = get_ticks();
@@ -545,6 +550,7 @@ namespace
     ngpt_set_sampler(&ctx, SELFTEST_SAMPLE_SEED, SELFTEST_INV_T_Q8,
                      SELFTEST_TOP_K);
     ngpt_set_minp(&ctx, SELFTEST_MINP_SHIFT); // M12.1 phase 3
+    ngpt_set_trie_guard(&ctx, 1); // M12.1 phase 4
     const char *want = SELFTEST_GOLDEN[p];
     uint32_t i = 0;
     int c;

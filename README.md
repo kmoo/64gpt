@@ -186,12 +186,18 @@ The on-console proof is re-verified continuously:
       int8-vs-float parity. Back on H=320 (capacity exonerated by M12;
       both kernels kept as a build-time toggle, `NGPT_RSP_H`, instead of
       overwriting one in git history). Coherence probe: 2.60 → 0.50
-      invented words/line across 48 sampled lines. SELFTEST PASS, RSP ON,
-      XCHK PASS, **44 ch/s restored** (M5-era bar). Full plan:
+      invented words/line across 48 sampled lines. Two more phases closed
+      this out: an integer min-p sampler gate (`ngpt_set_minp`, arXiv
+      2407.01082) cut the probe's invented rate a further 47% (0.354 →
+      0.188), then a lexicon-trie decode guard (`ngpt_set_trie_guard`)
+      made invented words structurally unreachable — every sampler
+      candidate is masked to real corpus-word continuations, backed by a
+      new blob format version that leaves every pre-M12.1 vector file
+      untouched. Result: 36-golden invented-word total 91 → 26 → **0** (a
+      hard guarantee, not a probe sample). SELFTEST PASS, RSP ON, XCHK
+      PASS, **44 ch/s restored** (M5-era bar) throughout. Full plan:
       `docs/ideas-coherence-rescue-plan.md`; record: `docs/milestones/
-      m12.1.md`. Sampler min-p gate and a lexicon-trie decode guard
-      (guaranteeing zero invented words by construction) are the next,
-      not-yet-started phases.
+      m12.1.md`.
 
 ## Quickstart
 

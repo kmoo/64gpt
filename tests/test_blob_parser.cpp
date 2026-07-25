@@ -65,7 +65,10 @@ static void test_wrong_version(void)
 {
   uint8_t blob[sizeof(VALID_BLOB)];
   memcpy(blob, VALID_BLOB, sizeof(VALID_BLOB));
-  blob[5] = 0x02; /* version 2 does not exist */
+  /* version 3 does not exist -- M12.1 phase 4 legitimately introduced
+   * version 2 (GRU payload + trailing word-trie section), so this must
+   * probe a version that's actually unsupported. */
+  blob[5] = 0x03;
   ngpt_model m;
   CHECK_EQ_INT(ngpt_load(&m, blob, sizeof(blob)), NGPT_ERR_VERSION);
 }

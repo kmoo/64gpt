@@ -32,7 +32,8 @@ int ngpt_load(ngpt_model *m, const void *blob, uint32_t blob_len)
   m->model_type     = ngpt_read_u16be(b + 6);
   uint32_t payload_len = ngpt_read_u32be(b + 8);
 
-  if (m->format_version != NGPT_FORMAT_VERSION) return NGPT_ERR_VERSION;
+  if (m->format_version != NGPT_FORMAT_VERSION &&
+      m->format_version != NGPT_FORMAT_VERSION_TRIE) return NGPT_ERR_VERSION;
   if (m->model_type != NGPT_MODEL_CANNED &&
       m->model_type != NGPT_MODEL_GRU) return NGPT_ERR_MODEL_TYPE;
   if (payload_len > blob_len - NGPT_HEADER_SIZE) return NGPT_ERR_TRUNCATED;
@@ -56,6 +57,8 @@ void ngpt_reset(ngpt_ctx *ctx, const ngpt_model *m, const char *prompt)
   ctx->top_k = 1;
   ctx->rng = 1;
   ctx->minp_shift = 0; /* M12.1: gate off unless ngpt_set_minp is called */
+  ctx->trie_on = 0;    /* M12.1 phase 4: guard off unless ngpt_set_trie_guard is called */
+  ctx->trie_node = 0;  /* root */
 
   /* M3 conditioning: prime the GRU on the prompt (h-updates only, no
    * emission). The canned model ignores prompts. */
@@ -75,6 +78,11 @@ void ngpt_set_sampler(ngpt_ctx *ctx, uint32_t seed, uint16_t inv_t_q8,
 void ngpt_set_minp(ngpt_ctx *ctx, uint8_t shift)
 {
   ctx->minp_shift = shift;
+}
+
+void ngpt_set_trie_guard(ngpt_ctx *ctx, uint8_t on)
+{
+  ctx->trie_on = on;
 }
 
 int ngpt_step(ngpt_ctx *ctx)

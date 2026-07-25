@@ -74,7 +74,14 @@ int ngpt_gru_load(ngpt_model *m)
                       + 3 * H * V + 3 * H * H     /* W_ih, W_hh          */
                       + 12 * H + 12 * H           /* b_ih, b_hh (i32)    */
                       + V * H + 4 * V;            /* W_out, b_out        */
-  if (m->payload_len != need) return NGPT_ERR_TRUNCATED;
+  /* Version 1's exact-size check is untouched; version 2 (M12.1 phase 4)
+   * additionally carries a trailing trie section, whose own length is
+   * self-describing (a u32 node count), so only a MINIMUM is known yet. */
+  if (m->format_version == NGPT_FORMAT_VERSION) {
+    if (m->payload_len != need) return NGPT_ERR_TRUNCATED;
+  } else {
+    if (m->payload_len < need + 4) return NGPT_ERR_TRUNCATED;
+  }
 
   const uint8_t *q = p + 6;
   g->charset = q;            q += V;
@@ -85,8 +92,19 @@ int ngpt_gru_load(ngpt_model *m)
   g->b_ih = q;               q += 12 * H;
   g->b_hh = q;               q += 12 * H;
   g->w_out = q;              q += V * H;
-  g->b_out = q;
+  g->b_out = q;              q += 4 * V;
   if (g->charset[0] != 0) return NGPT_ERR_TRUNCATED; /* EOS slot must be 0 */
+
+  if (m->format_version == NGPT_FORMAT_VERSION_TRIE) {
+    uint32_t trie_count = ngpt_read_u32be(q);
+    q += 4;
+    if (m->payload_len != need + 4 + trie_count * 6u) return NGPT_ERR_TRUNCATED;
+    g->trie_count = trie_count;
+    g->trie_nodes = q;
+  } else {
+    g->trie_count = 0;
+    g->trie_nodes = 0;
+  }
   return NGPT_OK;
 }
 
