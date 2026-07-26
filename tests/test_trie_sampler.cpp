@@ -80,6 +80,14 @@ static uint32_t test_rng(uint32_t *state)
   return x;
 }
 
+/* logits peaked on `fav` -- with top_k=1 the sampler's order[0] is the
+ * argmax, so this forces the deterministic greedy-trie branch (k==1). */
+static void peak_logits(int32_t *lg, uint32_t V, uint32_t fav)
+{
+  for (uint32_t v = 0; v < V; ++v) lg[v] = 0;
+  lg[fav] = 1000 << 14;
+}
+
 int main(void)
 {
   /* ---- Fixture A: trie_nodes == NULL (a version-1 blob) must be a
@@ -147,6 +155,107 @@ int main(void)
         if (strcmp(out, words[w]) == 0) { found = 1; break; }
       }
       CHECK(found); /* else: invented a word not in the corpus */
+    }
+  }
+
+  /* ---- Fixture D: WORD-BOUNDARY bytes -- the trie guard's core rule
+   * that fixtures A-C structurally could not reach (their reduced vocab
+   * had no non-word byte besides EOS, per fixture C's own note). A
+   * boundary byte (space/punctuation) or EOS is legal ONLY at the root
+   * or an end-of-word node, and picking one RESETS the walk to the root
+   * (core/ngpt_sample.cpp trie_legal/trie_advance, mirroring ref_impl.py
+   * _trie_legal/_trie_advance). Without this, the model could end a word
+   * mid-trie ("CA ") -- i.e. emit a fragment that isn't a corpus word,
+   * defeating the whole guard. top_k=1 forces the deterministic greedy
+   * branch (k==1), so each case has exactly one correct answer.
+   *
+   * charset adds id6 = ' ' (a non-word byte); TRIE_NODES is UNCHANGED --
+   * a boundary byte never lives in the trie, so the same 9-node array
+   * from fixtures B/C applies. */
+  {
+    static const uint8_t CHARSET_SP[] = {0, 'C', 'A', 'T', 'N', 'I', ' '};
+    const uint32_t VSP = 7;
+    const uint32_t ID_SPACE = 6;
+    ngpt_model m; memset(&m, 0, sizeof(m));
+    m.model_type = NGPT_MODEL_GRU;
+    m.gru.k_out = 7;
+    m.gru.charset = CHARSET_SP;
+    m.gru.trie_nodes = &TRIE_NODES[0][0];
+    m.gru.trie_count = 9;
+
+    /* D1: mid-word ("CA", node 2, NOT end-of-word) -- a SPACE argmax is
+     * illegal; the guard must exclude it and fall back to the only legal
+     * continuation 'T' (completing CAT), advancing to the CAT end-node. */
+    {
+      int32_t lg[7]; peak_logits(lg, VSP, ID_SPACE);
+      ngpt_ctx ctx; makeCtx(&ctx, &m, /*top_k=*/1, 256, 0, /*trie_on=*/1, /*node=*/2, 1);
+      uint32_t tok = ngpt_sample_pick(&ctx, lg, VSP);
+      CHECK_EQ_INT((int)tok, ID_T);
+      CHECK_EQ_INT((int)ctx.trie_node, 3);
+    }
+    /* D2: end-of-word ("CAT", node 3, end) -- a SPACE argmax IS legal;
+     * the guard keeps it and RESETS the walk to the root for the next
+     * word. This is the case fixtures A-C could never exercise. */
+    {
+      int32_t lg[7]; peak_logits(lg, VSP, ID_SPACE);
+      ngpt_ctx ctx; makeCtx(&ctx, &m, 1, 256, 0, 1, /*node=*/3, 1);
+      uint32_t tok = ngpt_sample_pick(&ctx, lg, VSP);
+      CHECK_EQ_INT((int)tok, (int)ID_SPACE);
+      CHECK_EQ_INT((int)ctx.trie_node, 0); /* boundary resets to root */
+    }
+    /* D3: mid-word ("CA", node 2) -- EOS argmax is illegal too (no ending
+     * a word early); the guard falls back to 'T'. */
+    {
+      int32_t lg[7]; peak_logits(lg, VSP, ID_EOS);
+      ngpt_ctx ctx; makeCtx(&ctx, &m, 1, 256, 0, 1, /*node=*/2, 1);
+      uint32_t tok = ngpt_sample_pick(&ctx, lg, VSP);
+      CHECK_EQ_INT((int)tok, ID_T);
+      CHECK_EQ_INT((int)ctx.trie_node, 3);
+    }
+    /* D4: root (node 0) -- boundary bytes ARE legal; a SPACE argmax is
+     * kept and the walk stays at the root. */
+    {
+      int32_t lg[7]; peak_logits(lg, VSP, ID_SPACE);
+      ngpt_ctx ctx; makeCtx(&ctx, &m, 1, 256, 0, 1, /*node=*/0, 1);
+      uint32_t tok = ngpt_sample_pick(&ctx, lg, VSP);
+      CHECK_EQ_INT((int)tok, (int)ID_SPACE);
+      CHECK_EQ_INT((int)ctx.trie_node, 0);
+    }
+    /* D5: multi-word integrity -- generate across many steps with
+     * adversarial pseudo-random logits over a vocab that DOES contain a
+     * boundary byte. Every space-separated token must be a real corpus
+     * word: the guard must never emit a fragment ("CA", "A") followed by
+     * a space. Strictly stronger than fixture C, which (no space in its
+     * vocab) could only ever produce a single word per run. */
+    {
+      const char *words[] = {"CAT", "CAN", "AT", "IT"};
+      for (uint32_t seed = 1; seed <= 40; ++seed) {
+        ngpt_ctx ctx; makeCtx(&ctx, &m, VSP, 200, 0, 1, 0, seed);
+        uint32_t rngData = seed * 2654435761u + 1;
+        char out[64]; int outLen = 0;
+        for (int step = 0; step < 24; ++step) {
+          int32_t lg[7];
+          for (uint32_t v = 0; v < VSP; ++v)
+            lg[v] = (int32_t)(int16_t)(test_rng(&rngData) & 0xFFFF) << 8;
+          uint32_t tok = ngpt_sample_pick(&ctx, lg, VSP);
+          if (tok == ID_EOS) break;
+          CHECK(outLen < (int)sizeof(out) - 1);
+          out[outLen++] = (char)CHARSET_SP[tok];
+        }
+        out[outLen] = '\0';
+        /* split on spaces; each non-empty token must be a corpus word */
+        int i = 0;
+        while (i < outLen) {
+          if (out[i] == ' ') { i++; continue; }
+          char tokbuf[8]; int tl = 0;
+          while (i < outLen && out[i] != ' ') { CHECK(tl < 7); tokbuf[tl++] = out[i++]; }
+          tokbuf[tl] = '\0';
+          int found = 0;
+          for (unsigned w = 0; w < sizeof(words) / sizeof(words[0]); ++w)
+            if (strcmp(tokbuf, words[w]) == 0) { found = 1; break; }
+          CHECK(found); /* else: emitted a fragment that isn't a corpus word */
+        }
+      }
     }
   }
 

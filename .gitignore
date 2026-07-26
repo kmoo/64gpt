@@ -38,6 +38,7 @@ __pycache__/
 .m11_1_model.pt
 .m12_model.pt
 .m12_1_model.pt
+.m12_1_model.pt.m12_1bak
 
 # M9 bulk LLM-generated corpus (regenerable via generate_m9_corpus_llm.py)
 trainer/m9_corpus_llm.json
