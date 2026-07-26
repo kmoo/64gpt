@@ -332,7 +332,7 @@ just because it sounded plausible.
   about, real candidates for a *different* pass at ch/s if H=768 wins
   the quality question but the speed cost turns out to matter more
   than expected.
-- Final milestone numbering (M12 vs M13) — outside this plan's scope,
+- Final milestone numbering (M12 vs M14) — outside this plan's scope,
   a docs-organization call Luke is making separately.
 
 ## Reviewer suggestions considered and explicitly scoped down (not silently dropped)

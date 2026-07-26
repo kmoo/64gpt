@@ -1,7 +1,7 @@
 # The coherence rescue plan — a data-science diagnosis of the garbling problem
 
 **Status: ACCEPTED as M12.1 (2026-07-23), written after M12's honest
-negative.** Milestone doc: `docs/milestones/m12.1.md`. M13 = portability
+negative.** Milestone doc: `docs/milestones/m12.1.md`. M14 = portability
 is unaffected.
 
 ## Executive summary
