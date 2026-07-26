@@ -270,6 +270,35 @@ def prompt_fields(profile: dict, relationship: dict, mood: str, context: str,
             f"AUD:{audience} EV:{ev}|")
 
 
+def parse_prompt_fields(prompt: str) -> dict[str, str]:
+    """Inverse of prompt_fields(): colon-delimited tokens back into a
+    dict, e.g. {"P": "girl", "D": "sassy", ..., "M": "cheerful", ...}.
+    Every corpus generator funnels through prompt_fields(), so this one
+    parser covers all six without touching any of them -- same technique
+    selena_corpus.combo_key() already uses locally for R:/M:/C:. M12.3
+    uses this to recover D:/M: for per-step attribute embeddings without
+    threading a parallel structured-data path through corpus generation."""
+    fields = {}
+    for tok in prompt.rstrip("|").split(" "):
+        k, _, v = tok.partition(":")
+        fields[k] = v
+    return fields
+
+
+def strip_prompt_fields(prompt: str, keys: set[str]) -> str:
+    """Inverse-ish of parse_prompt_fields: removes the given colon-tokens
+    (e.g. {"D", "M"}) from a prompt string, keeping every other token in
+    its original order and re-attaching the trailing "|". M12.4's
+    redundancy-ablation spike uses this to strip D:/M: from what the
+    model actually sees as its text prefix, while
+    parse_prompt_fields(prompt) on the ORIGINAL (unstripped) prompt still
+    supplies the per-step attribute columns -- isolating whether M12.3's
+    regression came from the columns being redundant with the prefix."""
+    kept = [tok for tok in prompt.rstrip("|").split(" ")
+            if tok.partition(":")[0] not in keys]
+    return " ".join(kept) + "|"
+
+
 def generate_sample_population(n: int, seed: int = 0) -> list[dict]:
     """n randomized NPCs (profile + relationship), for coverage-checking
     the vocabulary and grounding docs in real generated examples rather

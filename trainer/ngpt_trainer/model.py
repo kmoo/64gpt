@@ -11,9 +11,20 @@ import torch.nn as nn
 
 
 class CharGRU(nn.Module):
-    def __init__(self, vocab_size: int, hidden: int):
+    def __init__(self, vocab_size: int, hidden: int, input_size: int | None = None):
+        """input_size defaults to vocab_size (every milestone before
+        M12.3). M12.3's per-step D:/M: attribute conditioning passes a
+        wider input_size (vocab_size + n_desc + n_mood): a learned
+        embedding concatenated onto the char one-hot at every timestep
+        is mathematically identical to appending MORE one-hot columns
+        that feed the SAME weight_ih_l0 matrix (nn.Embedding(n, d)
+        applied to id i selects row i, exactly what a linear layer does
+        to a one-hot vector) -- so no separate embedding table or GRU
+        subclass is needed, only a wider input and an unchanged head
+        (predictions stay over the vocab_size char set only)."""
         super().__init__()
-        self.gru = nn.GRU(input_size=vocab_size, hidden_size=hidden, batch_first=True)
+        self.gru = nn.GRU(input_size=input_size or vocab_size, hidden_size=hidden,
+                          batch_first=True)
         self.head = nn.Linear(hidden, vocab_size)
 
     def forward(self, x, h=None):
@@ -448,6 +459,297 @@ def qat_finetune(model: CharGRU, train_pairs: list[tuple[str, str]],
         h.remove()
     # Restore plain float weights (best raw state) so quantize() sees the
     # standard CharGRU attribute layout.
+    for name in ("weight_ih_l0", "weight_hh_l0"):
+        w = getattr(gru, name + "_raw").detach().clone()
+        delattr(gru, name + "_raw")
+        if hasattr(gru, name):
+            delattr(gru, name)
+        gru.register_parameter(name, nn.Parameter(w))
+    w = head.weight_raw.detach().clone()
+    delattr(head, "weight_raw")
+    if hasattr(head, "weight"):
+        del head.weight
+    head.register_parameter("weight", nn.Parameter(w))
+    gru._init_flat_weights()
+
+    model = model.to("cpu").eval()
+    model.final_loss = best
+    return model
+
+
+def one_hot_attr(ids: list[int], vocab_size: int, desc_id: int, n_desc: int,
+                 mood_id: int, n_mood: int) -> torch.Tensor:
+    """M12.3: one_hot() widened with two constant attribute columns, set
+    at EVERY timestep (an NPC's voice/mood doesn't change mid-reply).
+    Columns [0,V) = char one-hot, [V,V+n_desc) = D: one-hot,
+    [V+n_desc, V+n_desc+n_mood) = M: one-hot. A learned embedding
+    concatenated onto the input is mathematically identical to this: an
+    nn.Embedding lookup IS a one-hot-times-weight-matrix select, so
+    widening the one-hot and letting the existing weight_ih_l0 matrix
+    learn the projection (via a plain CharGRU(..., input_size=vocab_size
+    + n_desc + n_mood)) gives the same model with no new module, no
+    rank-bottleneck attr_dim, and no new quantize()/qat_finetune() code
+    path -- both already operate generically on whatever width
+    weight_ih_l0 has."""
+    width = vocab_size + n_desc + n_mood
+    t = torch.zeros(1, len(ids), width, dtype=torch.float32)
+    for pos, i in enumerate(ids):
+        t[0, pos, i] = 1.0
+        t[0, pos, vocab_size + desc_id] = 1.0
+        t[0, pos, vocab_size + n_desc + mood_id] = 1.0
+    return t
+
+
+def generate_greedy_prompted_attr(model: CharGRU, vocab, prompt: str,
+                                  desc_id: int, n_desc: int, mood_id: int, n_mood: int,
+                                  max_len: int = 256) -> str:
+    """generate_greedy_prompted's shape, widened for attribute columns --
+    torch-side sanity check during training (NOT the shipped gate; the
+    coherence probe measures the quantized model via ref_impl, same as
+    every other milestone)."""
+    V = len(vocab)
+    out = []
+    with torch.no_grad():
+        x = one_hot_attr([vocab.eos_id] + vocab.encode(prompt), V,
+                         desc_id, n_desc, mood_id, n_mood)
+        logits, h = model(x)
+        current = int(torch.argmax(logits[0, -1]).item())
+        for _ in range(max_len):
+            if current == vocab.eos_id:
+                break
+            out.append(vocab.decode([current]))
+            x = one_hot_attr([current], V, desc_id, n_desc, mood_id, n_mood)
+            logits, h = model(x, h)
+            current = int(torch.argmax(logits[0, -1]).item())
+    return "".join(out)
+
+
+def _batchify_masked_attr(seqs: list[list[int]], prompt_lens: list[int],
+                          desc_ids: list[int], n_desc: int,
+                          mood_ids: list[int], n_mood: int, vocab_size: int,
+                          pad_target: int = -100):
+    """_batchify_masked widened with constant per-sequence attribute
+    columns (one_hot_attr's convention) -- targets are unaffected (still
+    over vocab_size only; attributes condition generation, they are
+    never predicted)."""
+    B = len(seqs)
+    T = max(len(s) + 1 for s in seqs)
+    width = vocab_size + n_desc + n_mood
+    inputs = torch.zeros(B, T, width, dtype=torch.float32)
+    targets = torch.full((B, T), pad_target, dtype=torch.long)
+    for b, (ids, plen, desc_id, mood_id) in enumerate(
+            zip(seqs, prompt_lens, desc_ids, mood_ids)):
+        eos_first = [0] + ids
+        for pos, i in enumerate(eos_first):
+            inputs[b, pos, i] = 1.0
+            inputs[b, pos, vocab_size + desc_id] = 1.0
+            inputs[b, pos, vocab_size + n_desc + mood_id] = 1.0
+        full_targets = ids + [0]
+        for pos in range(plen, len(full_targets)):
+            targets[b, pos] = full_targets[pos]
+    return inputs, targets
+
+
+def train_corpus_conditioned_attr(train_pairs: list[tuple[str, str]],
+                                  val_pairs: list[tuple[str, str]],
+                                  train_attrs: list[tuple[int, int]],
+                                  val_attrs: list[tuple[int, int]],
+                                  vocab, n_desc: int, n_mood: int,
+                                  hidden: int = 256, seed: int = 0, lr: float = 3e-3,
+                                  batch_size: int = 64, max_epochs: int = 60,
+                                  patience: int = 5,
+                                  device: str | None = None) -> CharGRU:
+    """train_corpus_conditioned's shape (prefix-loss masking, combo-level
+    val split, early-stop on best val, restore best), widened input via
+    one_hot_attr/_batchify_masked_attr instead of one_hot/_batchify_masked.
+    train_attrs/val_attrs are parallel (desc_id, mood_id) lists, one pair
+    per train_pairs/val_pairs entry -- the caller resolves prompt ->
+    (desc_id, mood_id) via npc_service.parse_prompt_fields() + a
+    corpus-built vocab, once, outside this function (keeps this function
+    corpus-agnostic, like train_corpus_conditioned itself)."""
+    if device is None:
+        device = "mps" if torch.backends.mps.is_available() else "cpu"
+    torch.manual_seed(seed)
+    V = len(vocab)
+    model = CharGRU(vocab_size=V, hidden=hidden,
+                    input_size=V + n_desc + n_mood).to(device)
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=-100)
+
+    def encode_split(pairs):
+        ids = [vocab.encode(p) + vocab.encode(r) for p, r in pairs]
+        plens = [len(vocab.encode(p)) for p, _ in pairs]
+        return ids, plens
+
+    train_ids, train_plens = encode_split(train_pairs)
+    val_ids, val_plens = encode_split(val_pairs)
+    train_desc = [d for d, _ in train_attrs]
+    train_mood = [m for _, m in train_attrs]
+    val_desc = [d for d, _ in val_attrs]
+    val_mood = [m for _, m in val_attrs]
+    assert vocab.eos_id == 0
+
+    def val_loss() -> float:
+        model.eval()
+        total, count = 0.0, 0
+        with torch.no_grad():
+            for i in range(0, len(val_ids), batch_size):
+                inputs, targets = _batchify_masked_attr(
+                    val_ids[i:i + batch_size], val_plens[i:i + batch_size],
+                    val_desc[i:i + batch_size], n_desc,
+                    val_mood[i:i + batch_size], n_mood, V)
+                logits, _ = model(inputs.to(device))
+                n = (targets != -100).sum().item()
+                total += loss_fn(logits.reshape(-1, V),
+                                 targets.reshape(-1).to(device)).item() * n
+                count += n
+        model.train()
+        return total / count if count else float("inf")
+
+    rng = torch.Generator().manual_seed(seed)
+    best, best_state, since_best = float("inf"), None, 0
+    for epoch in range(max_epochs):
+        order = torch.randperm(len(train_ids), generator=rng).tolist()
+        for i in range(0, len(order), batch_size):
+            idx = order[i:i + batch_size]
+            inputs, targets = _batchify_masked_attr(
+                [train_ids[j] for j in idx], [train_plens[j] for j in idx],
+                [train_desc[j] for j in idx], n_desc,
+                [train_mood[j] for j in idx], n_mood, V)
+            opt.zero_grad()
+            logits, _ = model(inputs.to(device))
+            loss = loss_fn(logits.reshape(-1, V),
+                           targets.reshape(-1).to(device))
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            opt.step()
+        v = val_loss()
+        print(f"epoch {epoch}: val loss {v:.4f}", flush=True)
+        if v < best:
+            best, since_best = v, 0
+            best_state = {k: t.detach().cpu().clone()
+                          for k, t in model.state_dict().items()}
+        else:
+            since_best += 1
+            if since_best >= patience:
+                break
+
+    model.load_state_dict(best_state)
+    model = model.to("cpu").eval()
+    model.final_loss = best
+    return model
+
+
+def qat_finetune_attr(model: CharGRU, train_pairs: list[tuple[str, str]],
+                      val_pairs: list[tuple[str, str]],
+                      train_attrs: list[tuple[int, int]],
+                      val_attrs: list[tuple[int, int]], vocab,
+                      n_desc: int, n_mood: int,
+                      seed: int = 0, lr: float = 3e-4, batch_size: int = 64,
+                      max_epochs: int = 30, patience: int = 6,
+                      device: str | None = None) -> CharGRU:
+    """qat_finetune, widened input via _batchify_masked_attr. The hook
+    logic is UNCHANGED from qat_finetune: weight_ih_l0 already covers the
+    D:/M: one-hot columns (they're just more columns of the same matrix,
+    see one_hot_attr), so fake-quantizing it at its own pow2_shift
+    automatically keeps the attribute columns on the same int8 grid as
+    the char columns and W_hh -- no separate embedding table, no second
+    k, nothing extra to keep in lockstep. Kept as its own function (not a
+    parameter added to qat_finetune) only because the batching differs,
+    matching this file's established convention of a new function per
+    input-shape change rather than widening an already-tested one."""
+    if device is None:
+        device = "mps" if torch.backends.mps.is_available() else "cpu"
+    torch.manual_seed(seed)
+    V = len(vocab)
+    model = model.to(device)
+    model.train()
+
+    gru, head = model.gru, model.head
+    raw = {}
+    for name in ("weight_ih_l0", "weight_hh_l0"):
+        raw[name] = nn.Parameter(getattr(gru, name).detach().clone())
+        delattr(gru, name)
+        gru.register_parameter(name + "_raw", raw[name])
+    raw["head"] = nn.Parameter(head.weight.detach().clone())
+    del head.weight
+    head.register_parameter("weight_raw", raw["head"])
+
+    def quantize_gru_weights(module, inputs):
+        k_w = min(_pow2_shift_t(raw["weight_ih_l0"]), _pow2_shift_t(raw["weight_hh_l0"]))
+        module.weight_ih_l0 = _fake_quant(raw["weight_ih_l0"], k_w)
+        module.weight_hh_l0 = _fake_quant(raw["weight_hh_l0"], k_w)
+
+    def quantize_head_weight(module, inputs):
+        module.weight = _fake_quant(raw["head"], _pow2_shift_t(raw["head"]))
+
+    hooks = [gru.register_forward_pre_hook(quantize_gru_weights),
+             head.register_forward_pre_hook(quantize_head_weight)]
+
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=-100)
+
+    def encode_split(pairs):
+        ids = [vocab.encode(p) + vocab.encode(r) for p, r in pairs]
+        plens = [len(vocab.encode(p)) for p, _ in pairs]
+        return ids, plens
+
+    train_ids, train_plens = encode_split(train_pairs)
+    val_ids, val_plens = encode_split(val_pairs)
+    train_desc = [d for d, _ in train_attrs]
+    train_mood = [m for _, m in train_attrs]
+    val_desc = [d for d, _ in val_attrs]
+    val_mood = [m for _, m in val_attrs]
+    assert vocab.eos_id == 0
+
+    def val_loss() -> float:
+        model.eval()
+        total, count = 0.0, 0
+        with torch.no_grad():
+            for i in range(0, len(val_ids), batch_size):
+                inputs, targets = _batchify_masked_attr(
+                    val_ids[i:i + batch_size], val_plens[i:i + batch_size],
+                    val_desc[i:i + batch_size], n_desc,
+                    val_mood[i:i + batch_size], n_mood, V)
+                logits, _ = model(inputs.to(device))
+                n = (targets != -100).sum().item()
+                total += loss_fn(logits.reshape(-1, V),
+                                 targets.reshape(-1).to(device)).item() * n
+                count += n
+        model.train()
+        return total / count if count else float("inf")
+
+    rng = torch.Generator().manual_seed(seed)
+    best, best_state, since_best = float("inf"), None, 0
+    for epoch in range(max_epochs):
+        order = torch.randperm(len(train_ids), generator=rng).tolist()
+        for i in range(0, len(order), batch_size):
+            idx = order[i:i + batch_size]
+            inputs, targets = _batchify_masked_attr(
+                [train_ids[j] for j in idx], [train_plens[j] for j in idx],
+                [train_desc[j] for j in idx], n_desc,
+                [train_mood[j] for j in idx], n_mood, V)
+            opt.zero_grad()
+            logits, _ = model(inputs.to(device))
+            loss = loss_fn(logits.reshape(-1, V),
+                           targets.reshape(-1).to(device))
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            opt.step()
+        v = val_loss()
+        print(f"qat epoch {epoch}: val loss (quantized forward) {v:.4f}", flush=True)
+        if v < best:
+            best, since_best = v, 0
+            best_state = {k: t.detach().cpu().clone()
+                          for k, t in model.state_dict().items()}
+        else:
+            since_best += 1
+            if since_best >= patience:
+                break
+
+    model.load_state_dict(best_state)
+    for h in hooks:
+        h.remove()
     for name in ("weight_ih_l0", "weight_hh_l0"):
         w = getattr(gru, name + "_raw").detach().clone()
         delattr(gru, name + "_raw")

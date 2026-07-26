@@ -1,10 +1,18 @@
 # Better conditioning strategies — getting emotion/trust/personality *into* a tiny model
 
-**Status: PROPOSED as M12.3 (2026-07-25).** Forward-looking design
-exploration, not yet accepted. Builds directly on M12's honest negative
-(capacity doesn't help) and M12.1's diagnosis (`docs/ideas-coherence-
-rescue-plan.md`). M12.2 (the corpus voice-polish pass) is option **E**
-below and is already in flight. Nothing here changes M13 (portability).
+**Status: option A tried as M12.3 (honest negative, 2.33 inv/line) then
+ablated as M12.4 (2026-07-26) — real progress, gate not yet cleared**
+(`docs/milestones/m12.4.md`): stripping D:/M: out of the text prefix
+(columns become the sole signal, instead of duplicating it) brought
+1.44 inv/line — beats BOTH M12.2's 1.65 and M12.3's 2.33, confirming
+the redundancy hypothesis had real teeth, but still short of the ≤1.0
+gate. Per-group results show selena/cast already clearing it; guard/
+korrath are the laggards. Next: push further on this track (corpus
+density check on the lagging groups) before reaching for option **B**
+(FiLM) — see m12.4.md's "For M12.5" section. Builds directly on M12's
+honest negative (capacity doesn't help) and M12.1's diagnosis
+(`docs/ideas-coherence-rescue-plan.md`). M12.2 (the corpus voice-polish
+pass) is option **E** below. Nothing here changes M13 (portability).
 
 Audience note (per `CLAUDE.md`): written for a good software engineer
 with zero ML background — the *why* matters as much as the *what*.
@@ -165,17 +173,27 @@ From `CLAUDE.md` / `docs/plan.md`:
 
 ## Recommended sequencing
 
-1. **E — done/ongoing (M12.2).** Measure how much the sharpened voices
-   alone buy us once the current retrain lands. If coherence is fixed,
-   stop here.
-2. **A — host-only spike first.** Prototype per-step attribute embeddings
-   in `trainer/` + `ref_impl.py`, no N64 changes yet. Reuse M12.1's
-   coherence probe (`trainer/m12_1_coherence_probe.py`): invented-word
-   count + cross-set divergence + golden samples, greedy and sampled.
-   **Decision gate:** does it beat the M12.2 prefix baseline on the same
-   probe? Only then commit to blob + kernel work.
-3. **B — if A helps but not enough.** FiLM on top of, or instead of, the
-   concatenation in A. Same host-first discipline.
+1. **E — done (M12.2).** Honest negative — sharpened voices alone
+   regress coherence at H=320, richer corpus outstrips the prefix's
+   capacity (`docs/milestones/m12.2.md`).
+2. **A — done (M12.3), a second honest negative.** Host-only spike,
+   per-step D:/M: attribute columns, prefix left in place. 2.33
+   invented/line — worse than M12.2's own 1.65, does not clear the gate
+   (`docs/milestones/m12.3.md`). Did NOT proceed to blob/kernel work,
+   per this decision gate.
+2a. **A-ablation — done (M12.4), real progress.** Retrained with D:/M:
+   stripped from the text prefix. 1.44 inv/line: beats both M12.2 (1.65)
+   and M12.3 (2.33), confirms redundancy was a real contributor, but
+   still above the ≤1.0 gate (`docs/milestones/m12.4.md`). Per-group:
+   selena/cast already clear it; guard/korrath don't.
+2b. **Corpus-density check on the lagging groups — recommended next.**
+   Before another architecture change, check whether guard/korrath's
+   specific phrase-bank density (not conditioning mechanism) explains
+   the remaining gap, following M8's density-table precedent.
+3. **B — if 2b doesn't close the gap.** FiLM instead of plain
+   concatenation. Same host-first discipline. A real kernel-shape change
+   unlike A (per-channel multiply-and-add, not an additive column
+   lookup), so only worth it once the cheaper levers are exhausted.
 4. **C — cheap add-on.** Fold an attribute logit-bias table into whichever
    of A/B ships; also viable as a standalone low-risk experiment.
 5. **D — skip** for N64 (second model too heavy); C is the affordable

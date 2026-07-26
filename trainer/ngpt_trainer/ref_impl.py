@@ -36,13 +36,28 @@ def lut_lookup(lut: np.ndarray, x_q11: np.ndarray) -> np.ndarray:
     return lut[(clamped + 16384) >> 7].astype(np.int64)
 
 
-def gru_h_update(q, h: np.ndarray, x_id: int) -> np.ndarray:
+def gru_h_update(q, h: np.ndarray, x_id: int, attr_cols=()) -> np.ndarray:
     """The gate math only: consume token x_id, return h_next. Priming
-    uses this without computing logits (mirrors the C split exactly)."""
+    uses this without computing logits (mirrors the C split exactly).
+
+    attr_cols (M12.3, docs/ideas-m12.3-conditioning-strategies.md option
+    A): optional extra column indices into q.W_ih to add into acc_i
+    alongside x_id -- e.g. (V + desc_id, V + n_desc + mood_id) for the
+    D:/M: per-step attribute conditioning. A learned embedding
+    concatenated onto the char one-hot at every timestep is
+    mathematically identical to appending more one-hot columns that
+    share the SAME W_ih matrix (model.one_hot_attr's convention), so
+    this is just more of the exact column-lookup trick already used for
+    x_id -- no new accumulator shape, no rescale. Empty tuple (the
+    default) reproduces every pre-M12.3 call byte-for-byte, same opt-in
+    pattern as sample_from_logits's minp_shift."""
     H = q.H
     # Input-side "matvec" is a column lookup: one-hot in Q14 is a single
     # 16384, so acc = W_ih[:, x] << 14, already in scale 2^(k_w+14).
-    acc_i = (q.W_ih[:, x_id].astype(np.int64) << 14) + q.b_ih.astype(np.int64)
+    acc_i = q.W_ih[:, x_id].astype(np.int64) << 14
+    for col in attr_cols:
+        acc_i = acc_i + (q.W_ih[:, col].astype(np.int64) << 14)
+    acc_i = acc_i + q.b_ih.astype(np.int64)
     acc_h = q.W_hh.astype(np.int64) @ h + q.b_hh.astype(np.int64)
 
     s = q.k_w + 3  # rescale 2^(k_w+14) -> Q11 for the LUTs
@@ -93,6 +108,49 @@ def generate(q, vocab, prompt: str = "", max_len: int = 256) -> str:
     for _ in range(max_len):
         h, logits = gru_step(q, h, x)
         x = int(np.argmax(logits))
+        if x == vocab.eos_id:
+            break
+        out.append(vocab.decode([x]))
+    return "".join(out)
+
+
+def gru_step_attr(q, h: np.ndarray, x_id: int, attr_cols=()):
+    """gru_step, threading attr_cols through to gru_h_update (M12.3)."""
+    h_next = gru_h_update(q, h, x_id, attr_cols)
+    acc_o = q.W_out.astype(np.int64) @ h_next + q.b_out.astype(np.int64)
+    return h_next, acc_o
+
+
+def prime_attr(q, vocab, prompt: str, attr_cols=()):
+    """prime, threading attr_cols through to gru_h_update (M12.3). The
+    same fixed attr_cols apply for the whole prompt AND the whole
+    generation that follows -- an NPC's voice/mood is constant for one
+    reply, mirroring model.one_hot_attr's training-time convention."""
+    h = np.zeros(q.H, dtype=np.int64)
+    cur = vocab.eos_id
+    for ch in prompt:
+        try:
+            nxt = vocab.encode(ch)[0]
+        except KeyError:
+            continue
+        h = gru_h_update(q, h, cur, attr_cols)
+        cur = nxt
+    return h, cur
+
+
+def generate_sampled_attr(q, vocab, prompt: str = "", attr_cols=(), seed: int = 1,
+                          inv_t_q8: int = 256, top_k: int = 8,
+                          max_len: int = 256, minp_shift: int = 0) -> str:
+    """generate_sampled, threading attr_cols through priming and every
+    generation step (M12.3). Sampling itself (sample_from_logits) is
+    unchanged -- attribute conditioning only ever touches the hidden
+    state via acc_i, never the decode-time sampler."""
+    h, x = prime_attr(q, vocab, prompt, attr_cols)
+    state = seed if seed != 0 else 1
+    out = []
+    for _ in range(max_len):
+        h, logits = gru_step_attr(q, h, x, attr_cols)
+        x, state = sample_from_logits(q, logits, state, inv_t_q8, top_k, minp_shift)
         if x == vocab.eos_id:
             break
         out.append(vocab.decode([x]))

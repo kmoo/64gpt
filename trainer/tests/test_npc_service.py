@@ -10,11 +10,13 @@ from ngpt_trainer.npc_service import (
     closeness,
     conditioning_features,
     generate_sample_population,
+    parse_prompt_fields,
     personality_descriptor,
     prompt_fields,
     random_npc_profile,
     random_relationship_state,
     relationship_label,
+    strip_prompt_fields,
     xorshift32,
 )
 
@@ -177,6 +179,77 @@ def test_species_and_bond_vocab_sizes():
     assert BOND_TYPES == ("stranger", "ally", "rival", "enemy", "captor",
                           "captive", "family", "mentor", "romantic")
     assert AUDIENCE_TYPES == ("alone", "witnessed")
+
+
+def test_parse_prompt_fields_round_trips_prompt_fields():
+    profile = {"occupation": "guard", "age": 30, "gender": "male",
+               "species": "human", "bond": "rival",
+               "traits": {"warmth": 90, "humor": 85, "impulsivity": 70,
+                          "bravery": 55, "focus": 30}}
+    relationship = {"familiarity": 1.0, "affection": 1.0, "trust": 1.0, "respect": 1.0}
+    prompt = prompt_fields(profile, relationship, "cheerful", "greeting",
+                           "witnessed", "found_gem")
+    fields = parse_prompt_fields(prompt)
+    assert fields == {
+        "P": "man", "D": "sassy", "OCC": "guard", "SPECIES": "human",
+        "R": "best_friend", "BOND": "rival", "M": "cheerful",
+        "C": "greeting", "AUD": "witnessed", "EV": "found_gem",
+    }
+
+
+def test_parse_prompt_fields_every_token_recovers_a_value():
+    # Belt-and-suspenders against a future prompt_fields() field that
+    # forgets its own colon -- every token must parse to a non-empty key.
+    profile = {"occupation": "healer", "age": 70, "gender": "female",
+               "species": "human", "bond": "stranger",
+               "traits": {"warmth": 50, "humor": 50, "impulsivity": 50,
+                          "bravery": 50, "focus": 50}}
+    relationship = {"familiarity": 0.0, "affection": 0.0, "trust": 0.0, "respect": 0.0}
+    prompt = prompt_fields(profile, relationship, "worried", "farewell")
+    fields = parse_prompt_fields(prompt)
+    assert all(k for k in fields)
+    assert fields["D"] in ("anxious", "gentle", "cold", "measured", "stoic",
+                           "cheerful", "sassy", "gruff", "reckless",
+                           "warm", "playful", "serious", "impulsive",
+                           "careful", "bold", "timid", "focused", "distracted")
+
+
+def test_strip_prompt_fields_removes_only_named_keys():
+    prompt = ("P:man D:sassy OCC:guard SPECIES:human R:best_friend "
+              "BOND:rival M:cheerful C:greeting AUD:witnessed EV:found_gem|")
+    stripped = strip_prompt_fields(prompt, {"D", "M"})
+    assert stripped == ("P:man OCC:guard SPECIES:human R:best_friend "
+                        "BOND:rival C:greeting AUD:witnessed EV:found_gem|")
+    # every remaining token still carries its own colon
+    for tok in stripped.rstrip("|").split(" "):
+        assert ":" in tok
+
+
+def test_strip_prompt_fields_empty_keys_is_identity():
+    prompt = prompt_fields(
+        {"occupation": "guard", "age": 30, "gender": "male", "species": "human",
+         "bond": "rival", "traits": {"warmth": 90, "humor": 85, "impulsivity": 70,
+                                     "bravery": 55, "focus": 30}},
+        {"familiarity": 1.0, "affection": 1.0, "trust": 1.0, "respect": 1.0},
+        "cheerful", "greeting")
+    assert strip_prompt_fields(prompt, set()) == prompt
+
+
+def test_strip_prompt_fields_round_trips_with_parse_prompt_fields():
+    # The M12.4 usage pattern: parse attrs from the ORIGINAL prompt, then
+    # strip the same keys from what the model actually sees.
+    prompt = prompt_fields(
+        {"occupation": "healer", "age": 70, "gender": "female", "species": "human",
+         "bond": "stranger", "traits": {"warmth": 50, "humor": 50, "impulsivity": 50,
+                                        "bravery": 50, "focus": 50}},
+        {"familiarity": 0.0, "affection": 0.0, "trust": 0.0, "respect": 0.0},
+        "worried", "farewell")
+    fields_before = parse_prompt_fields(prompt)
+    stripped = strip_prompt_fields(prompt, {"D", "M"})
+    fields_after = parse_prompt_fields(stripped)
+    assert "D" not in fields_after and "M" not in fields_after
+    assert fields_after["P"] == fields_before["P"]
+    assert fields_after["OCC"] == fields_before["OCC"]
 
 
 def test_generate_sample_population_different_seed_differs():
