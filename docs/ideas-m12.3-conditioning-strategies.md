@@ -12,7 +12,7 @@ density check on the lagging groups) before reaching for option **B**
 (FiLM) — see m12.4.md's "For M12.5" section. Builds directly on M12's
 honest negative (capacity doesn't help) and M12.1's diagnosis
 (`docs/ideas-coherence-rescue-plan.md`). M12.2 (the corpus voice-polish
-pass) is option **E** below. Nothing here changes M13 (portability).
+pass) is option **E** below. Nothing here changes M14 (portability).
 
 Audience note (per `CLAUDE.md`): written for a good software engineer
 with zero ML background — the *why* matters as much as the *what*.

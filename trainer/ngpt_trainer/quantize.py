@@ -74,3 +74,52 @@ def quantize(model) -> QuantizedGRU:
         lut_sigmoid=make_lut(lambda x: 1.0 / (1.0 + np.exp(-x))),
         lut_tanh=make_lut(np.tanh),
     )
+
+
+@dataclass
+class QuantizedGRUFiLM(QuantizedGRU):
+    """M12.5 (option B, FiLM): adds a per-channel scale/shift derived
+    from the attribute one-hot on top of the base GRU quantized
+    artifacts. gamma/beta share the SAME int8-weight + Q14-accumulator
+    convention as W_ih/W_hh/W_out -- a new application site (see
+    ref_impl.film_gamma_beta), not a new number format."""
+    k_film: int = 0
+    W_film: np.ndarray = None   # int8  [2H, n_attr]
+    b_film: np.ndarray = None   # int32 [2H], scale 2^(k_film+14)
+
+
+def quantize_film(model) -> QuantizedGRUFiLM:
+    """quantize()'s shape for CharGRUFiLM (model.cell is an nn.GRUCell,
+    so its weights are named weight_ih/weight_hh/bias_ih/bias_hh, no
+    _l0 suffix -- otherwise identical to quantize()'s base GRU fields),
+    plus film.weight/film.bias quantized the same way as W_out/b_out."""
+    W_ih = model.cell.weight_ih.detach().numpy()
+    W_hh = model.cell.weight_hh.detach().numpy()
+    b_ih = model.cell.bias_ih.detach().numpy()
+    b_hh = model.cell.bias_hh.detach().numpy()
+    W_out = model.head.weight.detach().numpy()
+    b_out = model.head.bias.detach().numpy()
+    W_film = model.film.weight.detach().numpy()
+    b_film = model.film.bias.detach().numpy()
+
+    k_w = min(pow2_shift(W_ih), pow2_shift(W_hh))
+    k_out = pow2_shift(W_out)
+    k_film = pow2_shift(W_film)
+
+    return QuantizedGRUFiLM(
+        H=W_hh.shape[1],
+        V=W_ih.shape[1],
+        k_w=k_w,
+        W_ih=np.round(W_ih * 2**k_w).astype(np.int8),
+        W_hh=np.round(W_hh * 2**k_w).astype(np.int8),
+        b_ih=np.round(b_ih * 2 ** (k_w + 14)).astype(np.int32),
+        b_hh=np.round(b_hh * 2 ** (k_w + 14)).astype(np.int32),
+        k_out=k_out,
+        W_out=np.round(W_out * 2**k_out).astype(np.int8),
+        b_out=np.round(b_out * 2 ** (k_out + 14)).astype(np.int32),
+        lut_sigmoid=make_lut(lambda x: 1.0 / (1.0 + np.exp(-x))),
+        lut_tanh=make_lut(np.tanh),
+        k_film=k_film,
+        W_film=np.round(W_film * 2**k_film).astype(np.int8),
+        b_film=np.round(b_film * 2 ** (k_film + 14)).astype(np.int32),
+    )
