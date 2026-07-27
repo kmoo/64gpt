@@ -783,3 +783,360 @@ def generate_greedy_prompted(model: CharGRU, vocab, prompt: str,
             logits, h = model(one_hot([current], len(vocab)), h)
             current = int(torch.argmax(logits[0, -1]).item())
     return "".join(out)
+
+
+FILM_SCALE = 0.2
+"""Bounds CharGRUFiLM's gamma to (1-FILM_SCALE, 1+FILM_SCALE) and beta to
+(-FILM_SCALE, FILM_SCALE). Must stay in lockstep with ref_impl.FILM_SCALE_Q14
+-- the ref_impl integer path re-derives its own Q14 constant from this
+same value, they are not independently tunable."""
+
+
+class CharGRUFiLM(nn.Module):
+    def __init__(self, vocab_size: int, hidden: int, n_attr: int):
+        """M12.5 (option B, docs/ideas-m12.3-conditioning-strategies.md):
+        feature-wise linear modulation applied to the hidden state INSIDE
+        the recurrence, every timestep -- h_t = gamma*cell(x_t, h_{t-1}) +
+        beta -- so the attribute signal can't decay across a long unroll
+        the way M12.3/M12.4's one-shot input columns could (M12.3's
+        redundant-columns result: 2.33 inv/line; M12.4's ablation: 1.44,
+        still short of the <=1.0 gate). Needs nn.GRUCell + a manual
+        per-step loop instead of nn.GRU, since gamma/beta must feed back
+        into the NEXT step's hidden state, not just reweight the final
+        output.
+
+        gamma/beta are SQUASHED through tanh (gamma = 1+tanh(raw), beta =
+        tanh(raw)) rather than left as a raw linear output. An early
+        version without this bound trained fine in float (unconstrained
+        gamma stayed near 1 for this toy corpus) but diverged catastrophically
+        once quantized to int16 Q14: gamma feeds back into h every step, so
+        even a mildly-off-1.0 gamma compounds multiplicatively across a long
+        unroll and saturates the fixed-point range within a handful of
+        steps (traced: h hit int16's floor after just 2 primed characters).
+        tanh bounds gamma to (0, 2) unconditionally, which the raw-linear
+        version could not guarantee. film is zero-initialized so both raw
+        pre-tanh values are 0 -> gamma=1, beta=0 at the start of training
+        (identity -- standard FiLM stability trick, Perez et al. 2017),
+        letting training discover a useful (bounded) deviation instead of
+        starting from a random reshaping of every hidden unit.
+
+        Bounding gamma to (0,2) alone is NOT enough: gamma feeds back into
+        h every step, so even a gamma of 1.4-1.6 (well inside that bound,
+        and what an early version actually trained to) compounds
+        multiplicatively across a long unroll -- 1.46 squared is already
+        past 2x, enough to blow through int16's range in 2 steps (traced:
+        saturated after priming just 2 characters, before FILM_SCALE was
+        added). FILM_SCALE further squashes the perturbation to (1-scale,
+        1+scale) / (-scale, scale), trading modulation strength for
+        stability -- the amount of per-step drift the fixed-point hidden
+        state can absorb over a realistic reply length without saturating."""
+        super().__init__()
+        self.hidden = hidden
+        self.cell = nn.GRUCell(vocab_size, hidden)
+        self.film = nn.Linear(n_attr, 2 * hidden)
+        nn.init.zeros_(self.film.weight)
+        nn.init.zeros_(self.film.bias)
+        self.head = nn.Linear(hidden, vocab_size)
+
+    def forward(self, x, attr, h=None):
+        """x: [B,T,V] one-hot char input, batch_first (same convention as
+        CharGRU). attr: [B, n_attr] one-hot attribute vector, CONSTANT
+        across the sequence (an NPC's voice/mood doesn't change mid-reply,
+        same assumption as one_hot_attr). Returns (logits [B,T,V], h)."""
+        B, T, _ = x.shape
+        if h is None:
+            h = x.new_zeros(B, self.hidden)
+        gamma_beta_raw = self.film(attr)
+        gamma_raw = gamma_beta_raw[:, :self.hidden]
+        beta_raw = gamma_beta_raw[:, self.hidden:]
+        gamma = 1.0 + FILM_SCALE * torch.tanh(gamma_raw)
+        beta = FILM_SCALE * torch.tanh(beta_raw)
+        outs = []
+        for t in range(T):
+            h = self.cell(x[:, t], h)
+            h = gamma * h + beta
+            outs.append(h)
+        out = torch.stack(outs, dim=1)
+        return self.head(out), h
+
+
+def one_hot_attr_vec(desc_id: int, n_desc: int, mood_id: int, n_mood: int) -> torch.Tensor:
+    """[1, n_desc+n_mood] one-hot attribute vector for CharGRUFiLM's film
+    input. Unlike one_hot_attr (M12.3), this is NOT concatenated onto the
+    char input at every timestep -- it's consumed once per generation by
+    film to produce gamma/beta, and THOSE are what gets reapplied every
+    step (see CharGRUFiLM.forward)."""
+    t = torch.zeros(1, n_desc + n_mood, dtype=torch.float32)
+    t[0, desc_id] = 1.0
+    t[0, n_desc + mood_id] = 1.0
+    return t
+
+
+def generate_greedy_prompted_film(model: CharGRUFiLM, vocab, prompt: str,
+                                  desc_id: int, n_desc: int, mood_id: int, n_mood: int,
+                                  max_len: int = 256) -> str:
+    """generate_greedy_prompted's shape for CharGRUFiLM -- torch-side
+    sanity check during training (NOT the shipped gate; the coherence
+    probe measures the quantized model via ref_impl, same as every other
+    milestone)."""
+    V = len(vocab)
+    attr = one_hot_attr_vec(desc_id, n_desc, mood_id, n_mood)
+    out = []
+    with torch.no_grad():
+        x = one_hot([vocab.eos_id] + vocab.encode(prompt), V)
+        logits, h = model(x, attr)
+        current = int(torch.argmax(logits[0, -1]).item())
+        for _ in range(max_len):
+            if current == vocab.eos_id:
+                break
+            out.append(vocab.decode([current]))
+            x = one_hot([current], V)
+            logits, h = model(x, attr, h)
+            current = int(torch.argmax(logits[0, -1]).item())
+    return "".join(out)
+
+
+def _batchify_masked_film(seqs: list[list[int]], prompt_lens: list[int],
+                          desc_ids: list[int], n_desc: int,
+                          mood_ids: list[int], n_mood: int, vocab_size: int,
+                          pad_target: int = -100):
+    """_batchify_masked's char-input/target shape, UNCHANGED (FiLM's char
+    input is plain one_hot, not widened -- unlike M12.3/M12.4's option A),
+    plus a separate constant per-sequence attribute one-hot vector for
+    film's input."""
+    B = len(seqs)
+    T = max(len(s) + 1 for s in seqs)
+    inputs = torch.zeros(B, T, vocab_size, dtype=torch.float32)
+    attrs = torch.zeros(B, n_desc + n_mood, dtype=torch.float32)
+    targets = torch.full((B, T), pad_target, dtype=torch.long)
+    for b, (ids, plen, desc_id, mood_id) in enumerate(
+            zip(seqs, prompt_lens, desc_ids, mood_ids)):
+        eos_first = [0] + ids
+        for pos, i in enumerate(eos_first):
+            inputs[b, pos, i] = 1.0
+        attrs[b, desc_id] = 1.0
+        attrs[b, n_desc + mood_id] = 1.0
+        full_targets = ids + [0]
+        for pos in range(plen, len(full_targets)):
+            targets[b, pos] = full_targets[pos]
+    return inputs, attrs, targets
+
+
+def train_corpus_conditioned_film(train_pairs: list[tuple[str, str]],
+                                  val_pairs: list[tuple[str, str]],
+                                  train_attrs: list[tuple[int, int]],
+                                  val_attrs: list[tuple[int, int]],
+                                  vocab, n_desc: int, n_mood: int,
+                                  hidden: int = 256, seed: int = 0, lr: float = 3e-3,
+                                  batch_size: int = 64, max_epochs: int = 60,
+                                  patience: int = 5,
+                                  device: str | None = None) -> CharGRUFiLM:
+    """train_corpus_conditioned_attr's shape (prefix-loss masking,
+    combo-level val split, early-stop/restore-best), for CharGRUFiLM
+    (M12.5, option B): gamma/beta modulate the hidden state every step
+    instead of widening the input (option A, M12.3/M12.4)."""
+    if device is None:
+        device = "mps" if torch.backends.mps.is_available() else "cpu"
+    torch.manual_seed(seed)
+    V = len(vocab)
+    model = CharGRUFiLM(vocab_size=V, hidden=hidden, n_attr=n_desc + n_mood).to(device)
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=-100)
+
+    def encode_split(pairs):
+        ids = [vocab.encode(p) + vocab.encode(r) for p, r in pairs]
+        plens = [len(vocab.encode(p)) for p, _ in pairs]
+        return ids, plens
+
+    train_ids, train_plens = encode_split(train_pairs)
+    val_ids, val_plens = encode_split(val_pairs)
+    train_desc = [d for d, _ in train_attrs]
+    train_mood = [m for _, m in train_attrs]
+    val_desc = [d for d, _ in val_attrs]
+    val_mood = [m for _, m in val_attrs]
+    assert vocab.eos_id == 0
+
+    def val_loss() -> float:
+        model.eval()
+        total, count = 0.0, 0
+        with torch.no_grad():
+            for i in range(0, len(val_ids), batch_size):
+                inputs, attrs, targets = _batchify_masked_film(
+                    val_ids[i:i + batch_size], val_plens[i:i + batch_size],
+                    val_desc[i:i + batch_size], n_desc,
+                    val_mood[i:i + batch_size], n_mood, V)
+                logits, _ = model(inputs.to(device), attrs.to(device))
+                n = (targets != -100).sum().item()
+                total += loss_fn(logits.reshape(-1, V),
+                                 targets.reshape(-1).to(device)).item() * n
+                count += n
+        model.train()
+        return total / count if count else float("inf")
+
+    rng = torch.Generator().manual_seed(seed)
+    best, best_state, since_best = float("inf"), None, 0
+    for epoch in range(max_epochs):
+        order = torch.randperm(len(train_ids), generator=rng).tolist()
+        for i in range(0, len(order), batch_size):
+            idx = order[i:i + batch_size]
+            inputs, attrs, targets = _batchify_masked_film(
+                [train_ids[j] for j in idx], [train_plens[j] for j in idx],
+                [train_desc[j] for j in idx], n_desc,
+                [train_mood[j] for j in idx], n_mood, V)
+            opt.zero_grad()
+            logits, _ = model(inputs.to(device), attrs.to(device))
+            loss = loss_fn(logits.reshape(-1, V),
+                           targets.reshape(-1).to(device))
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            opt.step()
+        v = val_loss()
+        print(f"epoch {epoch}: val loss {v:.4f}", flush=True)
+        if v < best:
+            best, since_best = v, 0
+            best_state = {k: t.detach().cpu().clone()
+                          for k, t in model.state_dict().items()}
+        else:
+            since_best += 1
+            if since_best >= patience:
+                break
+
+    model.load_state_dict(best_state)
+    model = model.to("cpu").eval()
+    model.final_loss = best
+    return model
+
+
+def qat_finetune_film(model: CharGRUFiLM, train_pairs: list[tuple[str, str]],
+                      val_pairs: list[tuple[str, str]],
+                      train_attrs: list[tuple[int, int]],
+                      val_attrs: list[tuple[int, int]], vocab,
+                      n_desc: int, n_mood: int,
+                      seed: int = 0, lr: float = 3e-4, batch_size: int = 64,
+                      max_epochs: int = 30, patience: int = 6,
+                      device: str | None = None) -> CharGRUFiLM:
+    """qat_finetune's shape for CharGRUFiLM: fake-quantizes cell.weight_ih/
+    weight_hh and head.weight exactly like qat_finetune/qat_finetune_attr,
+    PLUS a new hook for film.weight -- M12.5's only new quantized tensor.
+    gamma/beta ride the SAME int8-weight + Q14-fixed-point machinery as
+    everything else (see ref_impl.film_gamma_beta), just a new
+    application site rather than a new number format."""
+    if device is None:
+        device = "mps" if torch.backends.mps.is_available() else "cpu"
+    torch.manual_seed(seed)
+    V = len(vocab)
+    model = model.to(device)
+    model.train()
+
+    cell, head, film = model.cell, model.head, model.film
+    raw = {}
+    for name in ("weight_ih", "weight_hh"):
+        raw[name] = nn.Parameter(getattr(cell, name).detach().clone())
+        delattr(cell, name)
+        cell.register_parameter(name + "_raw", raw[name])
+    raw["head"] = nn.Parameter(head.weight.detach().clone())
+    del head.weight
+    head.register_parameter("weight_raw", raw["head"])
+    raw["film"] = nn.Parameter(film.weight.detach().clone())
+    del film.weight
+    film.register_parameter("weight_raw", raw["film"])
+
+    def quantize_cell_weights(module, inputs):
+        k_w = min(_pow2_shift_t(raw["weight_ih"]), _pow2_shift_t(raw["weight_hh"]))
+        module.weight_ih = _fake_quant(raw["weight_ih"], k_w)
+        module.weight_hh = _fake_quant(raw["weight_hh"], k_w)
+
+    def quantize_head_weight(module, inputs):
+        module.weight = _fake_quant(raw["head"], _pow2_shift_t(raw["head"]))
+
+    def quantize_film_weight(module, inputs):
+        module.weight = _fake_quant(raw["film"], _pow2_shift_t(raw["film"]))
+
+    hooks = [cell.register_forward_pre_hook(quantize_cell_weights),
+             head.register_forward_pre_hook(quantize_head_weight),
+             film.register_forward_pre_hook(quantize_film_weight)]
+
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=-100)
+
+    def encode_split(pairs):
+        ids = [vocab.encode(p) + vocab.encode(r) for p, r in pairs]
+        plens = [len(vocab.encode(p)) for p, _ in pairs]
+        return ids, plens
+
+    train_ids, train_plens = encode_split(train_pairs)
+    val_ids, val_plens = encode_split(val_pairs)
+    train_desc = [d for d, _ in train_attrs]
+    train_mood = [m for _, m in train_attrs]
+    val_desc = [d for d, _ in val_attrs]
+    val_mood = [m for _, m in val_attrs]
+    assert vocab.eos_id == 0
+
+    def val_loss() -> float:
+        model.eval()
+        total, count = 0.0, 0
+        with torch.no_grad():
+            for i in range(0, len(val_ids), batch_size):
+                inputs, attrs, targets = _batchify_masked_film(
+                    val_ids[i:i + batch_size], val_plens[i:i + batch_size],
+                    val_desc[i:i + batch_size], n_desc,
+                    val_mood[i:i + batch_size], n_mood, V)
+                logits, _ = model(inputs.to(device), attrs.to(device))
+                n = (targets != -100).sum().item()
+                total += loss_fn(logits.reshape(-1, V),
+                                 targets.reshape(-1).to(device)).item() * n
+                count += n
+        model.train()
+        return total / count if count else float("inf")
+
+    rng = torch.Generator().manual_seed(seed)
+    best, best_state, since_best = float("inf"), None, 0
+    for epoch in range(max_epochs):
+        order = torch.randperm(len(train_ids), generator=rng).tolist()
+        for i in range(0, len(order), batch_size):
+            idx = order[i:i + batch_size]
+            inputs, attrs, targets = _batchify_masked_film(
+                [train_ids[j] for j in idx], [train_plens[j] for j in idx],
+                [train_desc[j] for j in idx], n_desc,
+                [train_mood[j] for j in idx], n_mood, V)
+            opt.zero_grad()
+            logits, _ = model(inputs.to(device), attrs.to(device))
+            loss = loss_fn(logits.reshape(-1, V),
+                           targets.reshape(-1).to(device))
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            opt.step()
+        v = val_loss()
+        print(f"qat epoch {epoch}: val loss (quantized forward) {v:.4f}", flush=True)
+        if v < best:
+            best, since_best = v, 0
+            best_state = {k: t.detach().cpu().clone()
+                          for k, t in model.state_dict().items()}
+        else:
+            since_best += 1
+            if since_best >= patience:
+                break
+
+    model.load_state_dict(best_state)
+    for h in hooks:
+        h.remove()
+    for name in ("weight_ih", "weight_hh"):
+        w = getattr(cell, name + "_raw").detach().clone()
+        delattr(cell, name + "_raw")
+        if hasattr(cell, name):
+            delattr(cell, name)
+        cell.register_parameter(name, nn.Parameter(w))
+    w = head.weight_raw.detach().clone()
+    delattr(head, "weight_raw")
+    if hasattr(head, "weight"):
+        del head.weight
+    head.register_parameter("weight", nn.Parameter(w))
+    w = film.weight_raw.detach().clone()
+    delattr(film, "weight_raw")
+    if hasattr(film, "weight"):
+        del film.weight
+    film.register_parameter("weight", nn.Parameter(w))
+
+    model = model.to("cpu").eval()
+    model.final_loss = best
+    return model
