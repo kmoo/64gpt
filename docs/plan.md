@@ -87,6 +87,21 @@ long survives.
   (`max_len=MAX_GOLDEN_LEN` on each `generate_sampled()` call) — worth
   doing opportunistically rather than waiting for another milestone to
   hit the same latent failure the way M12 did.
+- **Long MPS training runs have zero on-disk checkpointing until the
+  very end (QAT) — raised 2026-07-26 during M12.5.** Every
+  `train_corpus_conditioned_*`-style loop keeps its best-so-far weights
+  as an in-memory CPU-cloned `best_state`, reverted to on patience
+  expiry — real protection against a *bad* epoch, but not against the
+  *process* dying (a real GPU/Metal command-buffer OOM crashed M12.5's
+  ~3-hour float phase mid-run; it recovered only because the corruption
+  happened to manifest as unambiguous NaN and the process survived
+  rather than getting hard-killed — neither was guaranteed, see the
+  m12.5-film-conditioning-negative memory). A long run has no recovery
+  path if the process itself is killed before QAT's `torch.save()`.
+  Worth adding periodic mid-run checkpointing (e.g. every N epochs, or
+  on every new `best_state`) to the shared training-loop code, not just
+  at the final QAT step — small, mechanical, and would have made M12.5's
+  near-miss a total non-event instead of a lucky recovery.
 
 **Closed:**
 

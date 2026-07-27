@@ -16,6 +16,10 @@ Number formats (see docs/milestones/m2.md):
 import numpy as np
 
 Q14_ONE = 1 << 14
+FILM_SCALE_Q14 = round(0.2 * 16384)
+"""M12.5 FiLM's gamma/beta amplitude bound, in Q14 -- must equal
+round(model.FILM_SCALE * 2**14). The two are the same constant in two
+number systems, not independently tunable (see film_gamma_beta)."""
 
 
 def rshift_round(x, s: int):
@@ -150,6 +154,98 @@ def generate_sampled_attr(q, vocab, prompt: str = "", attr_cols=(), seed: int = 
     out = []
     for _ in range(max_len):
         h, logits = gru_step_attr(q, h, x, attr_cols)
+        x, state = sample_from_logits(q, logits, state, inv_t_q8, top_k, minp_shift)
+        if x == vocab.eos_id:
+            break
+        out.append(vocab.decode([x]))
+    return "".join(out)
+
+
+def film_gamma_beta(q, attr_cols=()):
+    """M12.5 (option B, FiLM): precompute the per-channel scale/shift
+    ONCE per generation from the quantized film weights. attr_cols are
+    indices into q.W_film's n_attr axis (e.g. (desc_id, n_desc+mood_id)),
+    mirroring gru_h_update's attr_cols convention for W_ih. An NPC's
+    voice/mood is constant for the whole reply (model.one_hot_attr_vec's
+    convention), so gamma/beta are computed once and reused for every
+    step -- unlike gru_h_update's per-step column lookup, there is no
+    per-token recomputation needed since attr_cols never change mid-
+    generation.
+
+    gamma/beta are squashed through the SAME lut_tanh already used for
+    the GRU's n-gate (model.CharGRUFiLM applies gamma=1+SCALE*tanh(raw),
+    beta=SCALE*tanh(raw) in float; this is that operation's integer twin,
+    no new LUT). Bounding gamma to (0,2) alone is NOT load-bearing enough:
+    gamma feeds back into h every step, so even a gamma of 1.4-1.6 (well
+    inside that bound) compounds multiplicatively across a long unroll and
+    saturates int16 within a handful of steps (measured: hit the int16
+    floor after priming just 2 characters, before FILM_SCALE_Q14 was
+    added). FILM_SCALE_Q14 must equal round(model.FILM_SCALE * 2**14) --
+    the two are the same constant in two number systems, not independently
+    tunable. Returns (gamma_q14, beta_q14), each int64[H]."""
+    acc = q.b_film.astype(np.int64).copy()
+    for col in attr_cols:
+        acc = acc + (q.W_film[:, col].astype(np.int64) << 14)
+    # acc is scale 2^(k_film+14); rescale to Q11 for the tanh LUT, same
+    # shape as gru_h_update's own LUT rescale (s = k_w+3).
+    s = q.k_film + 3
+    tanh_q14 = lut_lookup(q.lut_tanh, rshift_round(acc, s))
+    scaled_q14 = rshift_round(tanh_q14 * FILM_SCALE_Q14, 14)
+    H = q.H
+    gamma_q14 = sat16(Q14_ONE + scaled_q14[:H])
+    beta_q14 = scaled_q14[H:]
+    return gamma_q14, beta_q14
+
+
+def apply_film(h: np.ndarray, gamma_q14: np.ndarray, beta_q14: np.ndarray) -> np.ndarray:
+    """h' = gamma*h + beta, all Q14 (gamma is a Q14 multiplier: 16384 ==
+    1.0x, matching CharGRUFiLM's zero-init bias[:hidden]=1 -- identity at
+    the start of training). Same product-then-rescale-then-saturate shape
+    as gru_h_update's own h' = (1-z)*n + z*h."""
+    return sat16(rshift_round(gamma_q14 * h, 14) + beta_q14)
+
+
+def gru_step_film(q, h: np.ndarray, x_id: int, gamma_q14: np.ndarray, beta_q14: np.ndarray):
+    """gru_step, with FiLM modulation applied to h AFTER the ordinary
+    gate update. gamma_q14/beta_q14 are precomputed once via
+    film_gamma_beta (see its docstring) and passed in unchanged for
+    every step of one generation."""
+    h_next = apply_film(gru_h_update(q, h, x_id), gamma_q14, beta_q14)
+    acc_o = q.W_out.astype(np.int64) @ h_next + q.b_out.astype(np.int64)
+    return h_next, acc_o
+
+
+def prime_film(q, vocab, prompt: str, gamma_q14: np.ndarray, beta_q14: np.ndarray):
+    """prime, with FiLM modulation applied after every h-update -- mirrors
+    CharGRUFiLM.forward's per-step h = gamma*cell(x,h)+beta exactly,
+    including the very first step (h starts at zero, unmodulated, same
+    as training's x.new_zeros before the loop)."""
+    h = np.zeros(q.H, dtype=np.int64)
+    cur = vocab.eos_id
+    for ch in prompt:
+        try:
+            nxt = vocab.encode(ch)[0]
+        except KeyError:
+            continue
+        h = apply_film(gru_h_update(q, h, cur), gamma_q14, beta_q14)
+        cur = nxt
+    return h, cur
+
+
+def generate_sampled_film(q, vocab, prompt: str = "", attr_cols=(), seed: int = 1,
+                          inv_t_q8: int = 256, top_k: int = 8,
+                          max_len: int = 256, minp_shift: int = 0) -> str:
+    """generate_sampled's shape for FiLM (M12.5): gamma/beta computed once
+    up front from attr_cols, then threaded through priming and every
+    generation step. Sampling itself (sample_from_logits) is unchanged --
+    attribute conditioning only ever touches the hidden state, never the
+    decode-time sampler, same invariant as M12.3/M12.4's attr_cols."""
+    gamma_q14, beta_q14 = film_gamma_beta(q, attr_cols)
+    h, x = prime_film(q, vocab, prompt, gamma_q14, beta_q14)
+    state = seed if seed != 0 else 1
+    out = []
+    for _ in range(max_len):
+        h, logits = gru_step_film(q, h, x, gamma_q14, beta_q14)
         x, state = sample_from_logits(q, logits, state, inv_t_q8, top_k, minp_shift)
         if x == vocab.eos_id:
             break
