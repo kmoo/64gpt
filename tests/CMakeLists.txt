@@ -158,3 +158,11 @@ target_include_directories(test_npc_secret PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_npc_secret PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_npc_secret PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_npc_secret COMMAND test_npc_secret)
+
+# Word-picker selection validator (docs/ideas.md #7), bounds-safety
+# slice only -- see WordPicker.h's own header comment for scope.
+add_executable(test_word_picker test_word_picker.cpp)
+target_include_directories(test_word_picker PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_word_picker PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_word_picker PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_word_picker COMMAND test_word_picker)
