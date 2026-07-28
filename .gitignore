@@ -43,6 +43,7 @@ __pycache__/
 .m12_4_attr_ablation_model.pt
 .m12_5_film_model.pt
 .m12_6_density_model.pt
+trainer/m13_mechanism4_checkpoints/
 
 # M9 bulk LLM-generated corpus (regenerable via generate_m9_corpus_llm.py)
 trainer/m9_corpus_llm.json
