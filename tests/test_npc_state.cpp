@@ -39,6 +39,29 @@ static void test_apply_delta_adds_and_clamps()
   CHECK_EQ_INT(low.affection, -100);
 }
 
+static void test_apply_delta_compounds_across_sequential_calls()
+{
+  /* Regression coverage for real in-place mutation across separate calls
+   * (not just a single call's own add-then-clamp), including a second
+   * call whose delta alone wouldn't clamp but the ALREADY-clamped state
+   * from the first call does interact with. */
+  Relationship rel{50, 0, 50, 50, 50};
+  applyDelta(rel, 40, 40, 40, 40, 40); /* -> 90,40,90,90,90 */
+  CHECK_EQ_INT(rel.familiarity, 90);
+  CHECK_EQ_INT(rel.affection, 40);
+  CHECK_EQ_INT(rel.trust, 90);
+
+  applyDelta(rel, 20, 20, 20, 20, 20); /* would be 110 -- must clamp to 100 */
+  CHECK_EQ_INT(rel.familiarity, 100);
+  CHECK_EQ_INT(rel.affection, 60); /* affection's ceiling is also 100, not yet hit */
+  CHECK_EQ_INT(rel.trust, 100);
+
+  applyDelta(rel, -150, -150, -150, -150, -150); /* swings hard the other way */
+  CHECK_EQ_INT(rel.familiarity, 0);
+  CHECK_EQ_INT(rel.affection, -90); /* 60 - 150 = -90, within [-100,100] */
+  CHECK_EQ_INT(rel.trust, 0);
+}
+
 static void test_record_memory_fills_empty_slots_in_index_order()
 {
   MemoryBlock block{};
@@ -73,6 +96,26 @@ static void test_record_memory_evicts_lowest_salience_tie_by_oldest_age()
   CHECK_EQ_INT(block.slots[5].salience, 77);
   CHECK_EQ_INT(block.slots[5].ageTicks, 0);
   CHECK_EQ_INT(block.slots[2].eventId, 202); // untouched, not evicted
+}
+
+static void test_record_memory_full_tie_evicts_lowest_index()
+{
+  /* All 8 slots identical on BOTH salience and ageTicks -- the final
+   * tie-break (lowest array index) must decide, with nothing else to
+   * go on. */
+  MemoryBlock block{};
+  for (int i = 0; i < MEMORY_SLOTS; ++i) {
+    block.slots[i].eventId = 300 + i;
+    block.slots[i].salience = 42;
+    block.slots[i].confidence = 42;
+    block.slots[i].ageTicks = 42;
+  }
+
+  recordMemory(block, 999, 77, 88);
+
+  CHECK_EQ_INT(block.slots[0].eventId, 999); // lowest index evicted
+  for (int i = 1; i < MEMORY_SLOTS; ++i)
+    CHECK_EQ_INT(block.slots[i].eventId, 300 + i); // everything else untouched
 }
 
 static void test_age_memories_advances_and_decays_with_integer_division()
@@ -302,8 +345,10 @@ static void test_select_by_relevance_zero_relevance_excludes_via_zero_score()
 int main()
 {
   test_apply_delta_adds_and_clamps();
+  test_apply_delta_compounds_across_sequential_calls();
   test_record_memory_fills_empty_slots_in_index_order();
   test_record_memory_evicts_lowest_salience_tie_by_oldest_age();
+  test_record_memory_full_tie_evicts_lowest_index();
   test_age_memories_advances_and_decays_with_integer_division();
   test_age_memories_leaves_empty_slots_untouched();
   test_select_top_memories_sorted_with_salience_tie_by_age();
