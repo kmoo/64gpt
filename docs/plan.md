@@ -33,23 +33,6 @@ rather than deleting it, so the record of what regressed and for how
 long survives.
 
 **Open:**
-- **Archetype instance spawning has no seed-source strategy yet — M8
-  trains 4 fixed guard seeds (`0x1001`-`0x1004`, hand-picked), but
-  nothing decides which seed gets placed where in the game world.**
-  `NPCDatabase::spawnInstance(archetype, seed)` is intentionally a pure
-  function (same seed -> same guard forever, so a save file only needs
-  to store a seed, not a character record) — that determinism is
-  correct and shouldn't change. What's missing is the *spawn-time*
-  logic that picks *which* seed to use per dungeon level / spawn slot,
-  so the world doesn't always place the same 4 guards in the same
-  order. Also note: this only covers *choosing among the trained set* —
-  generalizing to arbitrary *untrained* seeds (true unlimited procedural
-  variety) is a separate, harder, unproven capability, explicitly out of
-  scope until M10's procedural spawning work (renumbered 2026-07-17 when
-  compositional conditioning became M9 — see `docs/milestones/m9.md`).
-  Raised 2026-07-17 during M8 corpus work; not required for M8's own DoD
-  (3-4 named instances in one demo scene), but M10 shouldn't start
-  procedural spawning without addressing it.
 - **M9's capacity-dilution density sweep was never re-run under
   compositional conditioning.** M8's Data Science Review measured a real
   trade-off (guard density up, Selena val loss up) using a density
@@ -76,34 +59,57 @@ long survives.
   before/after comparison, same discipline as M11.1's/M12's, not bundled
   into whatever milestone is active when someone thinks of it.
 
-- **Back-port the golden-generation `max_len` fix to `make_m11_1_blob.py`
-  and earlier `make_mN_blob.py` scripts — raised 2026-07-23, not
-  started.** M12 found and fixed a real bug (see above) in the shared
-  `generate_sampled()` golden-recording pattern that every prior
-  milestone's blob-build script also has, latently. Nothing already
-  shipped is proven wrong by it (M11.1's actual goldens never happened
-  to run past 256 characters), so this isn't urgent, but the risk is
-  real for any of them and the fix is small and mechanical
-  (`max_len=MAX_GOLDEN_LEN` on each `generate_sampled()` call) — worth
-  doing opportunistically rather than waiting for another milestone to
-  hit the same latent failure the way M12 did.
+- **Back-port the golden-generation `max_len` fix to earlier
+  `make_mN_blob.py` scripts — raised 2026-07-23, PARTIALLY closed
+  2026-07-27/28 (overnight session).** M12 found and fixed a real bug
+  (see below) in the shared `generate_sampled()` golden-recording
+  pattern that every prior milestone's blob-build script also has,
+  latently. `make_m11_1_blob.py` (the script explicitly named when this
+  was raised) is now fixed — all 5 of its `generate_sampled`/
+  `trace_sampled` call sites thread `max_len=MAX_GOLDEN_LEN` through,
+  matching M12.1's own already-fixed pattern. **Still open:**
+  `make_m10_blob.py` and earlier (`make_m3_blob.py` through
+  `make_m9_rsp_spike_blob.py`) have the same latent bug and were
+  deliberately NOT swept in one pass (real risk/scope trade-off for a
+  "worth doing opportunistically" item touching many old build scripts
+  at once) — still worth doing opportunistically, one file at a time.
 - **Long MPS training runs have zero on-disk checkpointing until the
-  very end (QAT) — raised 2026-07-26 during M12.5.** Every
-  `train_corpus_conditioned_*`-style loop keeps its best-so-far weights
-  as an in-memory CPU-cloned `best_state`, reverted to on patience
-  expiry — real protection against a *bad* epoch, but not against the
-  *process* dying (a real GPU/Metal command-buffer OOM crashed M12.5's
-  ~3-hour float phase mid-run; it recovered only because the corruption
-  happened to manifest as unambiguous NaN and the process survived
-  rather than getting hard-killed — neither was guaranteed, see the
-  m12.5-film-conditioning-negative memory). A long run has no recovery
-  path if the process itself is killed before QAT's `torch.save()`.
-  Worth adding periodic mid-run checkpointing (e.g. every N epochs, or
-  on every new `best_state`) to the shared training-loop code, not just
-  at the final QAT step — small, mechanical, and would have made M12.5's
-  near-miss a total non-event instead of a lucky recovery.
+  very end (QAT) — raised 2026-07-26 during M12.5, PARTIALLY closed
+  2026-07-27/28 (overnight session).** Every `train_corpus_conditioned_
+  *`-style loop keeps its best-so-far weights as an in-memory
+  CPU-cloned `best_state`, reverted to on patience expiry — real
+  protection against a *bad* epoch, but not against the *process* dying
+  (a real GPU/Metal command-buffer OOM crashed M12.5's ~3-hour float
+  phase mid-run; it recovered only because the corruption happened to
+  manifest as unambiguous NaN and the process survived rather than
+  getting hard-killed — neither was guaranteed, see the
+  m12.5-film-conditioning-negative memory). `train_corpus_conditioned_
+  attr`/`qat_finetune_attr` (the functions M13's own mechanism-4
+  validation runs use, `trainer/m13_mechanism4_validation.py`) now take
+  an optional `checkpoint_path` and write best-so-far state to disk on
+  every improving epoch, verified on a fast toy run
+  (`trainer/tests/test_checkpointing.py`). **Still open:** the plain
+  `train_corpus_conditioned`/`qat_finetune` pair (the ones
+  `make_m12_1_blob.py`'s actual SHIPPED build path uses) and the `_film`
+  variant (where the original M12.5 incident happened) were not
+  touched — the risk this item exists to close is still real for those.
 
 **Closed:**
+
+- **Archetype instance spawning had no seed-source strategy — RESOLVED,
+  overnight session 2026-07-27/28.** M8 trained 4 fixed guard seeds
+  (`0x1001`-`0x1004`, hand-picked), but nothing decided which seed got
+  placed where in the game world. `NPCDatabase::spawnInstance(archetype,
+  seed)` stays a pure function (same seed -> same guard forever, so a
+  save file only needs to store a seed) — unchanged and correct.
+  `game/src/user/SpawnSeedSource.h` adds the spawn-TIME logic: a
+  deterministic (levelId, slotIndex) -> seed-pool-index hash, so the
+  world doesn't always place the same 4 guards in the same order, with
+  no dependency on NPCDatabase.h (seed pool/size passed in by the
+  caller). Still only covers *choosing among the trained set* —
+  generalizing to arbitrary untrained seeds stays out of scope for M10's
+  separate, harder, unproven procedural-spawning work, exactly as this
+  item always said.
 
 - **M9's generated text coherence is inconsistent — RESOLVED, M12.1 (2026-07-24).** Trained
   H=320 model (curated cast, template-grammar corpus, gradient clipping)
