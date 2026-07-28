@@ -125,3 +125,11 @@ target_include_directories(test_spawn_seed_source PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_spawn_seed_source PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_spawn_seed_source PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_spawn_seed_source COMMAND test_spawn_seed_source)
+
+# Quest-state memory (docs/ideas.md #8), pure game-state half only --
+# see QuestState.h's own header comment for scope.
+add_executable(test_quest_state test_quest_state.cpp)
+target_include_directories(test_quest_state PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_quest_state PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_quest_state PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_quest_state COMMAND test_quest_state)
