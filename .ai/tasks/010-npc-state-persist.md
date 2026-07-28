@@ -129,16 +129,44 @@ verification:
 ## COMPLETION
 
 ```yaml
-status: pending
-summary:
-files_changed: []
+status: done
+summary: |
+  1 dispatch attempt, discarded, module written directly by lead. The
+  test-designer role (blind to the implementation, per split-mode)
+  misunderstood the split: instead of writing tests that #include
+  "NPCState.h" and exercise it, it redeclared the entire SUT (struct
+  Relationship/Memory/MemoryBlock, all four function signatures) directly
+  inside tests/test_npc_state.cpp, then opened the file with `#pragma
+  once` as if the .cpp itself were the header -- a hard compile error
+  under -Werror -Wpragma-once-outside-header. Separately, the
+  programmer's NPCState.h (attempt 1) only had function DECLARATIONS,
+  no definitions, and was missing #include <stdint.h> -- would have
+  failed to link even past the .cpp's compile error. Given the structural
+  misunderstanding (not a small format slip) plus a related real gap in
+  task 011 that day, wrote NPCState.h + test_npc_state.cpp directly,
+  mirroring SaveData.h/test_save_data.cpp's real style.
+files_changed:
+  - game/src/user/NPCState.h
+  - tests/test_npc_state.cpp
+  - tests/CMakeLists.txt (test_npc_state target wiring, pre-existing from
+    worktree setup, carried through the main merge)
 verification: |
+  rm -rf build && cmake -B build tests -DNGPT_SANITIZE=OFF && cmake --build build && ctest --test-dir build --output-on-failure
+  100% tests passed out of 15 (full suite, no regressions)
 risks: []
 needs_review: []
 ```
 
 ## METRICS
 
-- dispatches / retries / escalated: 0 / 0 / no
-- claude tokens spent (contract + review, est.) vs doing it directly:
-- defects: caught in review = 0, slipped past review = 0
+- dispatches / retries / escalated: 1 / 0 / no (lead-authored after attempt 1)
+- claude tokens spent (contract + review, est.) vs doing it directly: the acceptance_criteria for this task were already fully deterministic (exact struct layout, exact tie-break rules for recordMemory/selectTopMemories) -- writing directly from that spec was likely cheaper than a contract-authoring + dispatch + review cycle would have been, in hindsight
+- defects: caught in review = 2 (test file redeclaring the SUT instead of including it; header with declarations but no definitions), slipped past review = 0
+
+## WORKER RESULT (qwen-worker) — attempt 1, discarded
+
+test-designer redeclared the whole SUT inside the test .cpp (see
+COMPLETION summary above) and opened it with `#pragma once`, which
+fails to compile under -Werror -Wpragma-once-outside-header
+(`#pragma once in main file`). programmer's NPCState.h separately had
+only function declarations, no bodies. Both discarded; written directly.
