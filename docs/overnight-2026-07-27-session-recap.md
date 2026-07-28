@@ -11,13 +11,17 @@ full commit list (18 commits as of writing).
   living-NPC-state) already landed on `main` before this session started.
 - This session: 2 real tooling bugs found and fixed with TDD
   (`~/bin/opencoder`, `~/bin/qwen-worker`) so the delegation pipeline
-  actually works; M13 mechanism 4 run through steps 1-5 with two honest
-  mid-course corrections; 7 new host-tested C++ headers; 3 Python test/
-  tooling additions; 2 real `docs/plan.md` follow-ups partially closed.
-- One training run (M13 baseline, seed A) was still in progress when
-  this was written — check `trainer/m13_mechanism4_results/` for
-  whether it finished. Seed B and the approved/rejected runs were
-  **deliberately not started** — see "What's still open" below.
+  actually works; M13 mechanism 4 run through steps 1-5 plus both
+  baseline training runs (step 6's noise-floor half), with three honest
+  mid-course corrections along the way; 6 new host-tested C++ headers
+  plus `NPCState.h` extended with 4 more mechanisms;
+  3 Python test/tooling additions; the max_len golden-truncation
+  follow-up fully closed (not just the one file originally raised).
+- Both M13 baseline runs finished: **noise floor is 0.31 inv/line,
+  larger than M12.2->M12.4's own real confirmed improvement (~0.21)** —
+  a real, not-encouraging finding, written up in `docs/milestones/m13.md`.
+  The approved/rejected runs were **deliberately not started** — still
+  waiting on your spot-check, see "What's still open" below.
 - Everything is real, tested, and reviewed as it landed (not a queue of
   unverified diffs) — but a second pass from you before merging is
   still the right move, same as any other night's work.
@@ -132,27 +136,30 @@ full commit list (18 commits as of writing).
 
 ## What's still open (don't assume any of this is done)
 
-1. **M13 baseline seed-A training run** — was still running (MPS) when
-   this was written. Check `trainer/m13_mechanism4_results/
-   baseline_seedA.json` — if it doesn't exist yet, it's still going or
-   it crashed; check `/tmp/m13_baseline_seedA.log` and the watchdog log
-   (`watchdog_overnight.log` in the scratchpad) for what happened.
-2. **Seed-B baseline run** — not started. Needed for the noise-floor
-   measurement the pre-registered bar depends on.
-3. **The approved/rejected training runs** — not started, on purpose.
+1. ~~M13 baseline seed-A/seed-B training runs~~ — **UPDATE: both
+   finished later in the session, results committed.** `guard+korrath`:
+   seed A 1.50, seed B 1.81 inv/line. **Real finding, not a good one:**
+   the noise floor between them is 0.31 inv/line — larger than
+   M12.2->M12.4's own confirmed real improvement (~0.21). QAT-phase
+   variance (0.1413 vs 0.1818) drives most of the gap; float phase was
+   stable across seeds. Full writeup in `docs/milestones/m13.md`. This
+   sets honest expectations for item 2 below: the pre-registered bar
+   will plausibly land INCONCLUSIVE given this noise floor, and that's
+   expected, not a broken pipeline.
+2. **The approved/rejected training runs** — not started, on purpose.
    The protocol requires your spot-check of `trainer/m13_final_split.json`
    first. That's steps 6-7 of `docs/milestones/m13.md`'s mechanism-4
    protocol, still fully outstanding.
-4. **`clang-format` pass** — blocked on `brew install clang-format` (not
+3. **`clang-format` pass** — blocked on `brew install clang-format` (not
    installed) and your go-ahead to install it. Didn't install a new
    tool unilaterally overnight.
-5. ~~Older `make_mN_blob.py` scripts still have the `max_len` bug~~ —
+4. ~~Older `make_mN_blob.py` scripts still have the `max_len` bug~~ —
    **UPDATE: finished the sweep later in the session.**
    `make_m10_blob.py`/`m9`/`m8`/`m7` all fixed too; verified (not
    assumed) that `make_m4_blob.py` and `make_m9_rsp_spike_blob.py`
    genuinely don't need it and `make_m3_blob.py` has no relevant calls.
    `docs/plan.md` now shows this item fully Closed.
-6. **`train_corpus_conditioned`/`qat_finetune`** (the plain, non-`_attr`
+5. **`train_corpus_conditioned`/`qat_finetune`** (the plain, non-`_attr`
    pair `make_m12_1_blob.py`'s actual SHIPPED path uses) and the
    `_film` variant (where the original M12.5 incident happened) still
    have no mid-run checkpointing — only the `_attr` variant used by
