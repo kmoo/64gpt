@@ -133,3 +133,11 @@ target_include_directories(test_quest_state PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_quest_state PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_quest_state PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_quest_state COMMAND test_quest_state)
+
+# NPC-to-NPC disposition scoring (docs/ideas.md #4), data-layer slice
+# only -- see NpcDisposition.h's own header comment for scope.
+add_executable(test_npc_disposition test_npc_disposition.cpp)
+target_include_directories(test_npc_disposition PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_npc_disposition PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_npc_disposition PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_npc_disposition COMMAND test_npc_disposition)
