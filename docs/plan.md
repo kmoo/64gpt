@@ -59,20 +59,6 @@ long survives.
   before/after comparison, same discipline as M11.1's/M12's, not bundled
   into whatever milestone is active when someone thinks of it.
 
-- **Back-port the golden-generation `max_len` fix to earlier
-  `make_mN_blob.py` scripts — raised 2026-07-23, PARTIALLY closed
-  2026-07-27/28 (overnight session).** M12 found and fixed a real bug
-  (see below) in the shared `generate_sampled()` golden-recording
-  pattern that every prior milestone's blob-build script also has,
-  latently. `make_m11_1_blob.py` (the script explicitly named when this
-  was raised) is now fixed — all 5 of its `generate_sampled`/
-  `trace_sampled` call sites thread `max_len=MAX_GOLDEN_LEN` through,
-  matching M12.1's own already-fixed pattern. **Still open:**
-  `make_m10_blob.py` and earlier (`make_m3_blob.py` through
-  `make_m9_rsp_spike_blob.py`) have the same latent bug and were
-  deliberately NOT swept in one pass (real risk/scope trade-off for a
-  "worth doing opportunistically" item touching many old build scripts
-  at once) — still worth doing opportunistically, one file at a time.
 - **Long MPS training runs have zero on-disk checkpointing until the
   very end (QAT) — raised 2026-07-26 during M12.5, PARTIALLY closed
   2026-07-27/28 (overnight session).** Every `train_corpus_conditioned_
@@ -95,6 +81,29 @@ long survives.
   touched — the risk this item exists to close is still real for those.
 
 **Closed:**
+
+- **Back-port the golden-generation `max_len` fix to earlier
+  `make_mN_blob.py` scripts — raised 2026-07-23, RESOLVED 2026-07-27/28
+  (overnight session).** M12 found and fixed a real bug in the shared
+  `generate_sampled()`/`trace_sampled()` golden-recording pattern
+  (`max_len` defaults to 256, but `MAX_GOLDEN_LEN` is 300 — any golden
+  that would naturally run 256-300 chars got silently truncated instead
+  of correctly triggering the "degenerate" length check, since the
+  truncated length still passed it). Every script with schema-value
+  goldens this bug could actually hide in is now fixed:
+  `make_m11_1_blob.py`, `make_m10_blob.py`, `make_m9_blob.py`,
+  `make_m8_blob.py`, `make_m7_blob.py` (matching M12.1's own
+  already-fixed pattern, 4-5 call sites each). **Verified, not just
+  swept, that the remaining two aren't silently skipped:**
+  `make_m4_blob.py` uses a stricter local threshold (200, below the
+  256 default cap) so a truncation scenario would still correctly
+  trigger FATAL rather than hide — this bug class genuinely doesn't
+  apply there. `make_m9_rsp_spike_blob.py` is an explicitly throwaway
+  script with random (untrained) weights and no length check at all —
+  its own docstring says garbled output is expected and irrelevant.
+  `make_m3_blob.py` has no `generate_sampled` calls. Code-correctness
+  fixes only; none of this re-ran training or regenerated a shipped
+  artifact.
 
 - **Archetype instance spawning had no seed-source strategy — RESOLVED,
   overnight session 2026-07-27/28.** M8 trained 4 fixed guard seeds
