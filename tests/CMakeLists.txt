@@ -141,3 +141,11 @@ target_include_directories(test_npc_disposition PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_npc_disposition PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_npc_disposition PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_npc_disposition COMMAND test_npc_disposition)
+
+# Player reputation as global state (docs/ideas-m7-living-npcs.md Part
+# 4), see PlayerReputation.h's own header comment for scope.
+add_executable(test_player_reputation test_player_reputation.cpp)
+target_include_directories(test_player_reputation PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_player_reputation PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_player_reputation PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_player_reputation COMMAND test_player_reputation)
