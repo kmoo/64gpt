@@ -1,0 +1,38 @@
+{
+  "label": "baseline_seedB",
+  "seed": 1,
+  "extra_fragments_path": null,
+  "float_val_loss": 0.13394052360875247,
+  "qat_val_loss": 0.18179156900949903,
+  "per_group": {
+    "selena": {
+      "lines": 8,
+      "invented_per_line": 1.75
+    },
+    "guard": {
+      "lines": 8,
+      "invented_per_line": 2.25
+    },
+    "cast": {
+      "lines": 8,
+      "invented_per_line": 2.0
+    },
+    "shadewrath": {
+      "lines": 8,
+      "invented_per_line": 2.5
+    },
+    "korrath": {
+      "lines": 8,
+      "invented_per_line": 1.375
+    },
+    "elowen": {
+      "lines": 8,
+      "invented_per_line": 2.625
+    },
+    "ALL": {
+      "lines": 48,
+      "invented_per_line": 2.0833333333333335
+    }
+  },
+  "guard_korrath_inv_per_line": 1.8125
+}
