@@ -105,3 +105,14 @@ target_include_directories(test_save_data PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_save_data PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_save_data PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_save_data COMMAND test_save_data)
+
+# Living-NPC-state spike (docs/ideas-living-npc-state.md #6 step 1):
+# relationship vector + memory-block pure logic. Same ADR 0001 treatment
+# as test_save_data above -- NPCState.h is header-only, no .cpp, no
+# libdragon include, no real EEPROM/SD I/O (that wiring is future,
+# hardware-only work per the ideas doc itself).
+add_executable(test_npc_state test_npc_state.cpp)
+target_include_directories(test_npc_state PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_npc_state PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_npc_state PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_npc_state COMMAND test_npc_state)
