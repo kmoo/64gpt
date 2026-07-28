@@ -558,7 +558,8 @@ def train_corpus_conditioned_attr(train_pairs: list[tuple[str, str]],
                                   hidden: int = 256, seed: int = 0, lr: float = 3e-3,
                                   batch_size: int = 64, max_epochs: int = 60,
                                   patience: int = 5,
-                                  device: str | None = None) -> CharGRU:
+                                  device: str | None = None,
+                                  checkpoint_path: str | None = None) -> CharGRU:
     """train_corpus_conditioned's shape (prefix-loss masking, combo-level
     val split, early-stop on best val, restore best), widened input via
     one_hot_attr/_batchify_masked_attr instead of one_hot/_batchify_masked.
@@ -566,7 +567,16 @@ def train_corpus_conditioned_attr(train_pairs: list[tuple[str, str]],
     per train_pairs/val_pairs entry -- the caller resolves prompt ->
     (desc_id, mood_id) via npc_service.parse_prompt_fields() + a
     corpus-built vocab, once, outside this function (keeps this function
-    corpus-agnostic, like train_corpus_conditioned itself)."""
+    corpus-agnostic, like train_corpus_conditioned itself).
+
+    checkpoint_path: if set, best_state is ALSO written to disk (not just
+    kept in memory) every time a new best is found -- protects a long run
+    against the process itself dying (a real GPU/Metal command-buffer OOM
+    killed M12.5's ~3-hour float phase mid-run; it happened to recover
+    only because the corruption manifested as NaN rather than a hard
+    kill). The in-memory best_state/restore-at-the-end behavior is
+    unchanged either way; this only adds a recovery path for a crash
+    mid-run. Caller's job to load it back (torch.load) if resuming."""
     if device is None:
         device = "mps" if torch.backends.mps.is_available() else "cpu"
     torch.manual_seed(seed)
@@ -629,6 +639,11 @@ def train_corpus_conditioned_attr(train_pairs: list[tuple[str, str]],
             best, since_best = v, 0
             best_state = {k: t.detach().cpu().clone()
                           for k, t in model.state_dict().items()}
+            if checkpoint_path is not None:
+                torch.save({"state": best_state, "val_loss": best,
+                            "epoch": epoch, "hidden": hidden,
+                            "n_desc": n_desc, "n_mood": n_mood},
+                           checkpoint_path)
         else:
             since_best += 1
             if since_best >= patience:
@@ -647,7 +662,8 @@ def qat_finetune_attr(model: CharGRU, train_pairs: list[tuple[str, str]],
                       n_desc: int, n_mood: int,
                       seed: int = 0, lr: float = 3e-4, batch_size: int = 64,
                       max_epochs: int = 30, patience: int = 6,
-                      device: str | None = None) -> CharGRU:
+                      device: str | None = None,
+                      checkpoint_path: str | None = None) -> CharGRU:
     """qat_finetune, widened input via _batchify_masked_attr. The hook
     logic is UNCHANGED from qat_finetune: weight_ih_l0 already covers the
     D:/M: one-hot columns (they're just more columns of the same matrix,
@@ -657,7 +673,12 @@ def qat_finetune_attr(model: CharGRU, train_pairs: list[tuple[str, str]],
     k, nothing extra to keep in lockstep. Kept as its own function (not a
     parameter added to qat_finetune) only because the batching differs,
     matching this file's established convention of a new function per
-    input-shape change rather than widening an already-tested one."""
+    input-shape change rather than widening an already-tested one.
+
+    checkpoint_path: see train_corpus_conditioned_attr's docstring --
+    same on-disk recovery path for the QAT phase, not just the float
+    phase (M12.5's real crash was in the float phase, but QAT runs are
+    not immune to the same class of process-level failure)."""
     if device is None:
         device = "mps" if torch.backends.mps.is_available() else "cpu"
     torch.manual_seed(seed)
@@ -742,6 +763,10 @@ def qat_finetune_attr(model: CharGRU, train_pairs: list[tuple[str, str]],
             best, since_best = v, 0
             best_state = {k: t.detach().cpu().clone()
                           for k, t in model.state_dict().items()}
+            if checkpoint_path is not None:
+                torch.save({"state": best_state, "val_loss": best,
+                            "epoch": epoch, "n_desc": n_desc,
+                            "n_mood": n_mood}, checkpoint_path)
         else:
             since_best += 1
             if since_best >= patience:
