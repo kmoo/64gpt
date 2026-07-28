@@ -159,6 +159,68 @@ namespace NPCState
     return written;
   }
 
+  // Retrieval score (docs/ideas-living-npc-state.md section 1c: "simple
+  // score: salience x recency x relevance to current goal or player
+  // utterance") -- selectTopMemories() above only orders by salience/
+  // ageTicks; this adds the third factor, RELEVANCE, which depends on
+  // external context (current goal/player utterance) this header has no
+  // knowledge of, so it's caller-supplied per call rather than a new
+  // Memory field (keeps the already-shipped Memory struct unchanged).
+  // recency is a linear falloff derived from ageTicks against a
+  // caller-supplied maxAgeTicks horizon (memories older than that score
+  // zero recency, not negative). Integer-only: the salience*recency*
+  // relevance product is scaled back down by /10000 instead of using
+  // three independent [0,1] float multipliers.
+  inline int memoryRetrievalScore(const Memory &mem, uint32_t maxAgeTicks, int relevance)
+  {
+    int recency;
+    if (maxAgeTicks == 0 || mem.ageTicks >= maxAgeTicks) {
+      recency = 0;
+    } else {
+      recency = 100 - (int)((mem.ageTicks * 100) / maxAgeTicks);
+    }
+    if (relevance < 0) relevance = 0;
+    if (relevance > 100) relevance = 100;
+
+    long long product = (long long)mem.salience * recency * relevance;
+    return (int)(product / 10000);
+  }
+
+  // Sorts occupied slots by memoryRetrievalScore (descending, ties
+  // broken by ascending array index via the same stable-sort pattern as
+  // selectTopMemories) and writes up to `n` winning eventIds into
+  // outEventIds. relevance[i] applies to block.slots[i] -- caller-owned,
+  // parallel array, same length as MemoryBlock. Does not modify `block`.
+  inline int selectByRelevance(const MemoryBlock &block, const int relevance[MEMORY_SLOTS],
+                                uint32_t maxAgeTicks, int n, uint32_t outEventIds[])
+  {
+    int idx[MEMORY_SLOTS];
+    int scores[MEMORY_SLOTS];
+    int count = 0;
+    for (int i = 0; i < MEMORY_SLOTS; ++i) {
+      if (block.slots[i].eventId != EMPTY_EVENT_ID) {
+        idx[count] = i;
+        scores[i] = memoryRetrievalScore(block.slots[i], maxAgeTicks, relevance[i]);
+        ++count;
+      }
+    }
+
+    for (int i = 1; i < count; ++i) {
+      int key = idx[i];
+      int j = i - 1;
+      while (j >= 0 && scores[key] > scores[idx[j]]) {
+        idx[j + 1] = idx[j];
+        --j;
+      }
+      idx[j + 1] = key;
+    }
+
+    int written = n < count ? n : count;
+    if (written < 0) written = 0;
+    for (int i = 0; i < written; ++i) outEventIds[i] = block.slots[idx[i]].eventId;
+    return written;
+  }
+
   // "Profile" (docs/ideas-living-npc-state.md section 1a): personality
   // axes/occupation/species/bond already live in NPCDatabase::NPC --
   // this only adds what NPCDatabase does NOT have. publicBeliefId/

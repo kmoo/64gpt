@@ -194,6 +194,58 @@ static void test_apply_event_reaction_clamps_like_applyDelta()
   CHECK_EQ_INT(rel.fear, 0);
 }
 
+static void test_memory_retrieval_score_extremes()
+{
+  Memory m{1, 100, 0, 0}; /* fresh, max salience */
+  CHECK_EQ_INT(memoryRetrievalScore(m, 1000, 100), 100); /* 100*100*100/10000 */
+
+  Memory old{1, 100, 0, 1000}; /* at the max-age horizon exactly */
+  CHECK_EQ_INT(memoryRetrievalScore(old, 1000, 100), 0);
+
+  Memory irrelevant{1, 100, 0, 0};
+  CHECK_EQ_INT(memoryRetrievalScore(irrelevant, 1000, 0), 0);
+}
+
+static void test_memory_retrieval_score_clamps_relevance()
+{
+  Memory m{1, 100, 0, 0};
+  CHECK_EQ_INT(memoryRetrievalScore(m, 1000, 999), memoryRetrievalScore(m, 1000, 100));
+  CHECK_EQ_INT(memoryRetrievalScore(m, 1000, -5), memoryRetrievalScore(m, 1000, 0));
+}
+
+static void test_select_by_relevance_orders_by_combined_score()
+{
+  MemoryBlock block{};
+  block.slots[0] = Memory{401, 50, 0, 0};   /* low salience, but... */
+  block.slots[1] = Memory{402, 100, 0, 0};  /* highest salience+recency */
+  block.slots[2] = Memory{403, 100, 0, 900}; /* high salience, nearly aged out */
+
+  int relevance[MEMORY_SLOTS] = {100, 100, 100, 0, 0, 0, 0, 0};
+
+  uint32_t out[MEMORY_SLOTS];
+  int n = selectByRelevance(block, relevance, 1000, 3, out);
+
+  CHECK_EQ_INT(n, 3);
+  CHECK_EQ_INT(out[0], 402); /* highest salience, freshest */
+  CHECK_EQ_INT(out[1], 401); /* mid: lower salience but fully fresh beats... */
+  CHECK_EQ_INT(out[2], 403); /* ...high salience but nearly fully aged out */
+}
+
+static void test_select_by_relevance_zero_relevance_excludes_via_zero_score()
+{
+  MemoryBlock block{};
+  block.slots[0] = Memory{501, 100, 0, 0};
+  block.slots[1] = Memory{502, 100, 0, 0};
+  int relevance[MEMORY_SLOTS] = {100, 0, 0, 0, 0, 0, 0, 0};
+
+  uint32_t out[MEMORY_SLOTS];
+  int n = selectByRelevance(block, relevance, 1000, 2, out);
+
+  CHECK_EQ_INT(n, 2); /* both occupied slots still returned (n=2 requested)... */
+  CHECK_EQ_INT(out[0], 501); /* ...but the relevant one is ranked first */
+  CHECK_EQ_INT(out[1], 502);
+}
+
 int main()
 {
   test_apply_delta_adds_and_clamps();
@@ -203,6 +255,10 @@ int main()
   test_age_memories_leaves_empty_slots_untouched();
   test_select_top_memories_sorted_with_salience_tie_by_age();
   test_select_top_memories_returns_fewer_than_n_when_sparse();
+  test_memory_retrieval_score_extremes();
+  test_memory_retrieval_score_clamps_relevance();
+  test_select_by_relevance_orders_by_combined_score();
+  test_select_by_relevance_zero_relevance_excludes_via_zero_score();
   test_resolve_belief_id_below_and_above_threshold();
   test_resolve_belief_id_reverts_if_trust_drops();
   test_apply_event_reaction_known_event();
