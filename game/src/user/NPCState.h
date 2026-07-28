@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <string.h>
 
 // "Living NPC state" step 1 (docs/ideas-living-npc-state.md section 6):
 // the pure, host-testable data model for a per-NPC relationship vector
@@ -191,5 +192,49 @@ namespace NPCState
     return rel.trust >= PRIVATE_BELIEF_TRUST_THRESHOLD
              ? profile.privateBeliefId
              : profile.publicBeliefId;
+  }
+
+  // EventBus -> reaction table -> relationship update (docs/ideas-living-
+  // npc-state.md section 6 step 2): "the update rules that turn world
+  // events into relationship deltas belong in a small, data-driven
+  // reaction table, not inside the GRU." No heap/hash-map available, so
+  // this is a small fixed array + linear scan -- fine at N64 scale for a
+  // handful of world events, matching the fixed-size discipline every
+  // other NPCState structure here already follows.
+  struct ReactionRule
+  {
+    const char *eventTag;
+    int dFamiliarity, dAffection, dTrust, dRespect, dFear;
+  };
+
+  // Tags match WorldState::GOSSIP_EVENTS exactly (game/src/user/
+  // WorldState.cpp) -- the only concrete world events this project
+  // publishes today (DialogueDemo.cpp's EventBus::publish() call sites).
+  // Delta VALUES are a first tuning pass, not narrative content (same
+  // "opaque id, not invented fiction" discipline as Profile above) --
+  // expected to be revised as real gameplay balance work happens; the
+  // reusable piece is the table-driven MECHANISM, not these numbers.
+  constexpr ReactionRule REACTION_TABLE[] = {
+    {"shadewrath_allied", 10, 20, 15, 10, -10},
+    {"korrath_pleaded",    5, 10,  5, 15,   0},
+    {"princess_freed",    15, 25, 20, 20, -15},
+  };
+  constexpr int REACTION_TABLE_SIZE =
+    sizeof(REACTION_TABLE) / sizeof(REACTION_TABLE[0]);
+
+  // Looks up eventTag in REACTION_TABLE and applies its deltas to rel via
+  // applyDelta() if found. Returns true if a matching rule existed and
+  // was applied; false (a no-op, not an error) if eventTag has no
+  // reaction rule -- most published events won't affect every NPC.
+  inline bool applyEventReaction(Relationship &rel, const char *eventTag)
+  {
+    for (int i = 0; i < REACTION_TABLE_SIZE; ++i) {
+      if (strcmp(REACTION_TABLE[i].eventTag, eventTag) == 0) {
+        const ReactionRule &r = REACTION_TABLE[i];
+        applyDelta(rel, r.dFamiliarity, r.dAffection, r.dTrust, r.dRespect, r.dFear);
+        return true;
+      }
+    }
+    return false;
   }
 }

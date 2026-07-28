@@ -159,6 +159,41 @@ static void test_resolve_belief_id_reverts_if_trust_drops()
   CHECK_EQ_INT(resolveBeliefId(profile, rel), 10);
 }
 
+static void test_apply_event_reaction_known_event()
+{
+  Relationship rel{50, 0, 50, 50, 50};
+  bool applied = applyEventReaction(rel, "princess_freed");
+  CHECK(applied);
+  CHECK_EQ_INT(rel.familiarity, 65);
+  CHECK_EQ_INT(rel.affection, 25);
+  CHECK_EQ_INT(rel.trust, 70);
+  CHECK_EQ_INT(rel.respect, 70);
+  CHECK_EQ_INT(rel.fear, 35);
+}
+
+static void test_apply_event_reaction_unknown_event_is_noop()
+{
+  Relationship rel{50, 0, 50, 50, 50};
+  bool applied = applyEventReaction(rel, "no_such_event");
+  CHECK(!applied);
+  CHECK_EQ_INT(rel.familiarity, 50);
+  CHECK_EQ_INT(rel.affection, 0);
+  CHECK_EQ_INT(rel.trust, 50);
+  CHECK_EQ_INT(rel.respect, 50);
+  CHECK_EQ_INT(rel.fear, 50);
+}
+
+static void test_apply_event_reaction_clamps_like_applyDelta()
+{
+  Relationship rel{95, 90, 90, 95, 5};
+  applyEventReaction(rel, "princess_freed"); /* would overshoot 100 on several axes */
+  CHECK_EQ_INT(rel.familiarity, 100);
+  CHECK_EQ_INT(rel.affection, 100);
+  CHECK_EQ_INT(rel.trust, 100);
+  CHECK_EQ_INT(rel.respect, 100);
+  CHECK_EQ_INT(rel.fear, 0);
+}
+
 int main()
 {
   test_apply_delta_adds_and_clamps();
@@ -170,5 +205,8 @@ int main()
   test_select_top_memories_returns_fewer_than_n_when_sparse();
   test_resolve_belief_id_below_and_above_threshold();
   test_resolve_belief_id_reverts_if_trust_drops();
+  test_apply_event_reaction_known_event();
+  test_apply_event_reaction_unknown_event_is_noop();
+  test_apply_event_reaction_clamps_like_applyDelta();
   return test_summary("test_npc_state");
 }
