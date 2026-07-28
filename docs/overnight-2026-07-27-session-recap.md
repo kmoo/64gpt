@@ -116,9 +116,13 @@ full commit list (18 commits as of writing).
   final QAT save. Closes (partially — see `docs/plan.md`) the M12.5
   near-miss follow-up. Verified on a fast toy run
   (`trainer/tests/test_checkpointing.py`), not production scale.
-- `make_m11_1_blob.py`: back-ported the `max_len=MAX_GOLDEN_LEN` fix
-  M12.1 found (5 call sites) — a latent bug that silently truncates
-  golden generations instead of correctly flagging them as degenerate.
+- `make_m11_1_blob.py`, `make_m10_blob.py`, `make_m9_blob.py`,
+  `make_m8_blob.py`, `make_m7_blob.py`: back-ported the
+  `max_len=MAX_GOLDEN_LEN` fix M12.1 found (4-5 call sites each) — a
+  latent bug that silently truncates golden generations instead of
+  correctly flagging them as degenerate. Verified (not assumed) that
+  `make_m4_blob.py`/`make_m9_rsp_spike_blob.py`/`make_m3_blob.py` don't
+  need it — full sweep, `docs/plan.md`'s follow-up is fully Closed now.
 
 **Docs**
 - `docs/plan.md` Known Follow-ups: closed the spawn-seed-source item,
@@ -142,9 +146,12 @@ full commit list (18 commits as of writing).
 4. **`clang-format` pass** — blocked on `brew install clang-format` (not
    installed) and your go-ahead to install it. Didn't install a new
    tool unilaterally overnight.
-5. **Older `make_mN_blob.py` scripts** (`make_m10_blob.py` and earlier)
-   still have the `max_len` bug — only `make_m11_1_blob.py` was fixed,
-   deliberately not swept in one pass (see `docs/plan.md`).
+5. ~~Older `make_mN_blob.py` scripts still have the `max_len` bug~~ —
+   **UPDATE: finished the sweep later in the session.**
+   `make_m10_blob.py`/`m9`/`m8`/`m7` all fixed too; verified (not
+   assumed) that `make_m4_blob.py` and `make_m9_rsp_spike_blob.py`
+   genuinely don't need it and `make_m3_blob.py` has no relevant calls.
+   `docs/plan.md` now shows this item fully Closed.
 6. **`train_corpus_conditioned`/`qat_finetune`** (the plain, non-`_attr`
    pair `make_m12_1_blob.py`'s actual SHIPPED path uses) and the
    `_film` variant (where the original M12.5 incident happened) still
