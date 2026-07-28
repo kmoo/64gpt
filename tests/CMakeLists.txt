@@ -149,3 +149,12 @@ target_include_directories(test_player_reputation PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_player_reputation PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_player_reputation PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_player_reputation COMMAND test_player_reputation)
+
+# NPC secrets (docs/ideas-m7-living-npcs.md "The feature I would add:
+# NPC secrets" -- the SECRET slot; Public/Private already covered by
+# NPCState::Profile.resolveBeliefId()).
+add_executable(test_npc_secret test_npc_secret.cpp)
+target_include_directories(test_npc_secret PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_npc_secret PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_npc_secret PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_npc_secret COMMAND test_npc_secret)
