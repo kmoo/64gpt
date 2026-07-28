@@ -116,3 +116,12 @@ target_include_directories(test_npc_state PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_npc_state PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_npc_state PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_npc_state COMMAND test_npc_state)
+
+# Archetype spawn-seed-source strategy (docs/plan.md Known Follow-ups,
+# raised 2026-07-17 during M8): deterministic (levelId, slotIndex) ->
+# which trained seed to spawn. Header-only, no NPCDatabase.h dependency.
+add_executable(test_spawn_seed_source test_spawn_seed_source.cpp)
+target_include_directories(test_spawn_seed_source PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_spawn_seed_source PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_spawn_seed_source PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_spawn_seed_source COMMAND test_spawn_seed_source)
