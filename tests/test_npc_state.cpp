@@ -133,6 +133,32 @@ static void test_select_top_memories_returns_fewer_than_n_when_sparse()
   CHECK_EQ_INT(out[1], 501);
 }
 
+static void test_resolve_belief_id_below_and_above_threshold()
+{
+  Profile profile{100, 200, 999};
+
+  Relationship low{0, 0, PRIVATE_BELIEF_TRUST_THRESHOLD - 1, 0, 0};
+  CHECK_EQ_INT(resolveBeliefId(profile, low), 100);
+
+  Relationship atThreshold{0, 0, PRIVATE_BELIEF_TRUST_THRESHOLD, 0, 0};
+  CHECK_EQ_INT(resolveBeliefId(profile, atThreshold), 200);
+
+  Relationship high{0, 0, 100, 0, 0};
+  CHECK_EQ_INT(resolveBeliefId(profile, high), 200);
+}
+
+static void test_resolve_belief_id_reverts_if_trust_drops()
+{
+  /* No one-way "has revealed" flag -- a betrayal that drops trust back
+   * below the threshold must correctly revert to the public belief. */
+  Profile profile{10, 20, 0};
+  Relationship rel{0, 0, PRIVATE_BELIEF_TRUST_THRESHOLD, 0, 0};
+  CHECK_EQ_INT(resolveBeliefId(profile, rel), 20);
+
+  rel.trust = PRIVATE_BELIEF_TRUST_THRESHOLD - 1;
+  CHECK_EQ_INT(resolveBeliefId(profile, rel), 10);
+}
+
 int main()
 {
   test_apply_delta_adds_and_clamps();
@@ -142,5 +168,7 @@ int main()
   test_age_memories_leaves_empty_slots_untouched();
   test_select_top_memories_sorted_with_salience_tie_by_age();
   test_select_top_memories_returns_fewer_than_n_when_sparse();
+  test_resolve_belief_id_below_and_above_threshold();
+  test_resolve_belief_id_reverts_if_trust_drops();
   return test_summary("test_npc_state");
 }

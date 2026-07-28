@@ -157,4 +157,39 @@ namespace NPCState
     for (int i = 0; i < written; ++i) outEventIds[i] = block.slots[idx[i]].eventId;
     return written;
   }
+
+  // "Profile" (docs/ideas-living-npc-state.md section 1a): personality
+  // axes/occupation/species/bond already live in NPCDatabase::NPC --
+  // this only adds what NPCDatabase does NOT have. publicBeliefId/
+  // privateBeliefId are deliberately opaque ids, not enums with invented
+  // fictional values -- resolving an id to actual belief CONTENT is
+  // game-content work for later, not this header's job. defaultGoalId
+  // is the same kind of opaque handle for the "default goal/role" the
+  // ideas doc lists.
+  struct Profile
+  {
+    int publicBeliefId;
+    int privateBeliefId;
+    int defaultGoalId;
+  };
+
+  // Trust threshold at which an NPC's PRIVATE belief becomes the one
+  // Context Builder should surface instead of the public one (section 2:
+  // "Read the current Profile + Relationship... pack a compact priming
+  // string") -- this is the one piece of real decision logic Profile
+  // needs, matching Relationship's own [0,100] trust scale.
+  constexpr int PRIVATE_BELIEF_TRUST_THRESHOLD = 60;
+
+  // Returns publicBeliefId below the reveal threshold, privateBeliefId
+  // at or above it. Pure, no side effects -- Context Builder calls this
+  // fresh every utterance rather than caching a "has revealed" flag,
+  // so a relationship that later DROPS back below the threshold (e.g.
+  // a betrayal) correctly reverts to the public face without needing
+  // separate one-way-reveal bookkeeping.
+  inline int resolveBeliefId(const Profile &profile, const Relationship &rel)
+  {
+    return rel.trust >= PRIVATE_BELIEF_TRUST_THRESHOLD
+             ? profile.privateBeliefId
+             : profile.publicBeliefId;
+  }
 }
