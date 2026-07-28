@@ -105,6 +105,23 @@ namespace NPCState
     block.slots[target].ageTicks = 0;
   }
 
+  // Gossip propagation (docs/ideas-living-npc-state.md section 1c: "a
+  // gossip variant may be seeded into nearby NPCs' memory pools").
+  // confidence degrades each hop -- secondhand information is less
+  // certain than firsthand; salience carries over UNCHANGED (how much
+  // an event matters doesn't depend on how many people it passed
+  // through, only how sure you are it's true). Reuses recordMemory()'s
+  // existing eviction rules -- propagating into a full pool follows the
+  // same lowest-salience/oldest tie-break as any other new memory.
+  constexpr int GOSSIP_CONFIDENCE_DECAY_PERCENT = 25;
+
+  inline void propagateGossip(const Memory &source, MemoryBlock &targetBlock)
+  {
+    int degraded = source.confidence
+                 - (source.confidence * GOSSIP_CONFIDENCE_DECAY_PERCENT) / 100;
+    recordMemory(targetBlock, source.eventId, source.salience, degraded);
+  }
+
   // Advances ageTicks and decays salience for every occupied slot;
   // empty slots are left completely untouched.
   inline void ageMemories(MemoryBlock &block, uint32_t ticksElapsed)

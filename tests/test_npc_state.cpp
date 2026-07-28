@@ -159,6 +159,59 @@ static void test_resolve_belief_id_reverts_if_trust_drops()
   CHECK_EQ_INT(resolveBeliefId(profile, rel), 10);
 }
 
+static void test_propagate_gossip_degrades_confidence_carries_salience()
+{
+  Memory source{701, 80, 100, 0}; /* eventId, salience, confidence, ageTicks */
+  MemoryBlock target{};
+  propagateGossip(source, target);
+
+  CHECK_EQ_INT(target.slots[0].eventId, 701);
+  CHECK_EQ_INT(target.slots[0].salience, 80);   /* unchanged */
+  CHECK_EQ_INT(target.slots[0].confidence, 75); /* 100 - 25% */
+  CHECK_EQ_INT(target.slots[0].ageTicks, 0);    /* fresh in the new pool */
+}
+
+static void test_propagate_gossip_multi_hop_compounds()
+{
+  Memory hop1{801, 50, 100, 0};
+  MemoryBlock npcB{};
+  propagateGossip(hop1, npcB); /* 100 -> 75 */
+
+  Memory hop2 = npcB.slots[0]; /* B re-gossips what it heard */
+  MemoryBlock npcC{};
+  propagateGossip(hop2, npcC); /* 75 -> 75 - 18 = 57 */
+
+  CHECK_EQ_INT(npcC.slots[0].confidence, 57);
+  CHECK_EQ_INT(npcC.slots[0].salience, 50); /* still unchanged after 2 hops */
+}
+
+static void test_propagate_gossip_zero_confidence_stays_zero()
+{
+  Memory source{901, 30, 0, 0};
+  MemoryBlock target{};
+  propagateGossip(source, target);
+  CHECK_EQ_INT(target.slots[0].confidence, 0);
+}
+
+static void test_propagate_gossip_uses_normal_eviction_rules()
+{
+  /* Propagating into a full pool follows recordMemory()'s own eviction
+   * rule -- not special-cased for gossip. */
+  MemoryBlock target{};
+  for (int i = 0; i < MEMORY_SLOTS; ++i) {
+    target.slots[i].eventId = 1000 + i;
+    target.slots[i].salience = 50;
+    target.slots[i].confidence = 50;
+    target.slots[i].ageTicks = 0;
+  }
+  target.slots[3].salience = 5; /* uniquely lowest -- must be the one evicted */
+
+  Memory gossip{999, 60, 80, 0};
+  propagateGossip(gossip, target);
+
+  CHECK_EQ_INT(target.slots[3].eventId, 999);
+}
+
 static void test_apply_event_reaction_known_event()
 {
   Relationship rel{50, 0, 50, 50, 50};
@@ -264,5 +317,9 @@ int main()
   test_apply_event_reaction_known_event();
   test_apply_event_reaction_unknown_event_is_noop();
   test_apply_event_reaction_clamps_like_applyDelta();
+  test_propagate_gossip_degrades_confidence_carries_salience();
+  test_propagate_gossip_multi_hop_compounds();
+  test_propagate_gossip_zero_confidence_stays_zero();
+  test_propagate_gossip_uses_normal_eviction_rules();
   return test_summary("test_npc_state");
 }
