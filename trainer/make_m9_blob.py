@@ -160,7 +160,8 @@ def m9_golden_prompts(m9_pairs: list[tuple[str, str]], n: int = 6,
 def conditioning_divergence_table(q, vocab, held_combos) -> dict[str, float]:
     def draws(prompt, base_seed):
         return [generate_sampled(q, vocab, prompt, seed=base_seed + i,
-                                 inv_t_q8=DIVERGENCE_TEMPERATURE_INV_T_Q8, top_k=TOP_K)
+                                 inv_t_q8=DIVERGENCE_TEMPERATURE_INV_T_Q8, top_k=TOP_K,
+                                 max_len=MAX_GOLDEN_LEN)
                for i in range(DIVERGENCE_SAMPLES)]
 
     trust, mood, context = 2, "cheerful", "item-found"
@@ -217,7 +218,8 @@ def generalization_check(q, vocab, seed: int = SAMPLE_SEED) -> list[dict]:
         rel = random_relationship_state(seed + combo_checksum)
         prompt = prompt_fields(profile, rel, "cheerful", "greeting")
         prompt = prompt.replace(f"D:{real_descriptor} ", f"D:{descriptor} ")
-        got = generate_sampled(q, vocab, prompt, seed=seed, inv_t_q8=INV_T_Q8, top_k=TOP_K)
+        got = generate_sampled(q, vocab, prompt, seed=seed, inv_t_q8=INV_T_Q8, top_k=TOP_K,
+                               max_len=MAX_GOLDEN_LEN)
         degenerate = not (1 <= len(got) <= MAX_GOLDEN_LEN)
         results.append({"occupation": occupation, "descriptor": descriptor,
                         "prompt": prompt, "output": got, "degenerate": degenerate})
@@ -314,7 +316,8 @@ def main() -> None:
             _, trust, mood, context = combo
             prompt = gc.prompt_for(npc_id, trust, mood, context)
         got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
-                               inv_t_q8=INV_T_Q8, top_k=TOP_K)
+                               inv_t_q8=INV_T_Q8, top_k=TOP_K,
+                               max_len=MAX_GOLDEN_LEN)
         print(f"  {prompt}{got}")
         if not (1 <= len(got) <= MAX_GOLDEN_LEN):
             print(f"FATAL: degenerate golden for {prompt!r}: {got!r}")
@@ -323,7 +326,8 @@ def main() -> None:
 
     for prompt in m9_golden_prompts(m9_pairs):
         got = generate_sampled(q, vocab, prompt, seed=SAMPLE_SEED,
-                               inv_t_q8=INV_T_Q8, top_k=TOP_K)
+                               inv_t_q8=INV_T_Q8, top_k=TOP_K,
+                               max_len=MAX_GOLDEN_LEN)
         print(f"  {prompt}{got}")
         if not (1 <= len(got) <= MAX_GOLDEN_LEN):
             print(f"FATAL: degenerate golden for {prompt!r}: {got!r}")
@@ -366,8 +370,11 @@ def main() -> None:
         REPO / "tests" / "vectors" / "m9_goldens.bin":
             goldens_bytes(golden_pairs),
         REPO / "tests" / "vectors" / "m9_trace.bin":
+            # max_len=MAX_GOLDEN_LEN: same latent bug class M12.1 found and
+            # fixed (docs/plan.md Known Follow-ups) -- back-ported here.
             trace_bytes(trace_sampled(q, vocab, golden_pairs[0][0],
-                                      SAMPLE_SEED, INV_T_Q8, TOP_K), q.H),
+                                      SAMPLE_SEED, INV_T_Q8, TOP_K,
+                                      max_len=MAX_GOLDEN_LEN), q.H),
         REPO / "game" / "src" / "user" / "selftestGolden.h":
             emit_selftest_header(golden_pairs).encode("ascii"),
         REPO / "core" / "ngpt_sampler_lut.h":
