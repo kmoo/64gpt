@@ -1,0 +1,272 @@
+[
+  {
+    "slot": "KORRATH_WORRIED",
+    "line": "THE YEARS BLUR TOGETHER. I FORGET WHAT I FOUGHT FOR.",
+    "score": 5
+  },
+  {
+    "slot": "KORRATH_WORRIED",
+    "line": "I FEAR I HAVE FORGOTTEN MY OWN NAME.",
+    "score": 5
+  },
+  {
+    "slot": "KORRATH_CHEERFUL",
+    "line": "YOU HAVE DONE WELL. I AM STILL BOUND HERE.",
+    "score": 5
+  },
+  {
+    "slot": "KORRATH_CHEERFUL",
+    "line": "A SMALL KINDNESS, GIVEN FREELY. RARE, HERE.",
+    "score": 5
+  },
+  {
+    "slot": "BRAM_CHEERFUL",
+    "line": "THAT WILL DO.",
+    "score": 5
+  },
+  {
+    "slot": "EDRIC_CHEERFUL",
+    "line": "I WILL ALLOW IT. WELL DONE.",
+    "score": 5
+  },
+  {
+    "slot": "BRAM_WORRIED",
+    "line": "NO ONE MOVES UNTIL I SAY.",
+    "score": 4
+  },
+  {
+    "slot": "BRAM_WORRIED",
+    "line": "I DO NOT LIKE THIS QUIET.",
+    "score": 4
+  },
+  {
+    "slot": "BRAM_WORRIED",
+    "line": "HOLD YOUR POSITION. WAIT FOR MY WORD.",
+    "score": 4
+  },
+  {
+    "slot": "BRAM_WORRIED",
+    "line": "THAT WAS NOT NOTHING. STAY SHARP.",
+    "score": 4
+  },
+  {
+    "slot": "EDRIC_WORRIED",
+    "line": "I WOULD RATHER BE SURE THAN SORRY.",
+    "score": 4
+  },
+  {
+    "slot": "EDRIC_WORRIED",
+    "line": "THIS DOES NOT SIT RIGHT WITH ME.",
+    "score": 4
+  },
+  {
+    "slot": "EDRIC_WORRIED",
+    "line": "GIVE ME A MOMENT TO THINK THIS THROUGH.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_WORRIED",
+    "line": "THE PRINCESS'S SAFETY IS MY DUTY. I AM WEARY OF IT.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_WORRIED",
+    "line": "I FEEL SOMETHING COMING. I CANNOT NAME IT.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_WORRIED",
+    "line": "SOMETHING FEELS DIFFERENT TONIGHT. I DO NOT KNOW WHY.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_WORRIED",
+    "line": "SHE DOES NOT SLEEP TONIGHT. NEITHER DO I.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_WORRIED",
+    "line": "THE OATH HOLDS. I AM NOT SURE I DO.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_CHEERFUL",
+    "line": "A RARE GOOD MOMENT. I WILL NOT FORGET IT.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_CHEERFUL",
+    "line": "A SMALL VICTORY. I WILL COUNT IT.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_CHEERFUL",
+    "line": "SMALL MERCIES. I WILL TAKE THEM.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_CHEERFUL",
+    "line": "A QUIET HOUR. I WILL NOT WASTE IT.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_CHEERFUL",
+    "line": "SHE SMILED TODAY. I WILL REMEMBER THAT.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_CHEERFUL",
+    "line": "NOT EVERY DAY IS BAD. THIS ONE WAS NOT.",
+    "score": 4
+  },
+  {
+    "slot": "KORRATH_CHEERFUL",
+    "line": "I ALMOST FELT LIKE MYSELF TODAY.",
+    "score": 4
+  },
+  {
+    "slot": "BRAM_CHEERFUL",
+    "line": "GOOD. NOW MOVE ON.",
+    "score": 4
+  },
+  {
+    "slot": "EDRIC_CHEERFUL",
+    "line": "THAT WENT BETTER THAN I EXPECTED.",
+    "score": 4
+  },
+  {
+    "slot": "BRAM_WORRIED",
+    "line": "UNEXPECTED SILENCE IS SUSPICIOUS.",
+    "score": 3
+  },
+  {
+    "slot": "BRAM_WORRIED",
+    "line": "KEEP A SHARP EYE OUT.",
+    "score": 3
+  },
+  {
+    "slot": "BRAM_WORRIED",
+    "line": "THE AIR FEELS CHANGED.",
+    "score": 3
+  },
+  {
+    "slot": "BRAM_WORRIED",
+    "line": "SOMETHING IS OFF. CHECK IT AGAIN.",
+    "score": 3
+  },
+  {
+    "slot": "BRAM_WORRIED",
+    "line": "THIS FEELS WRONG. KEEP YOUR EYES SHARP.",
+    "score": 3
+  },
+  {
+    "slot": "BRAM_WORRIED",
+    "line": "SOMETHING FEELS OFF HERE.",
+    "score": 3
+  },
+  {
+    "slot": "BRAM_WORRIED",
+    "line": "SOMETHING IS WRONG. STAY CLOSE.",
+    "score": 3
+  },
+  {
+    "slot": "EDRIC_WORRIED",
+    "line": "LET'S VERIFY OUR POSITION.",
+    "score": 3
+  },
+  {
+    "slot": "EDRIC_WORRIED",
+    "line": "A SECOND OPINION IS NEEDED.",
+    "score": 3
+  },
+  {
+    "slot": "EDRIC_WORRIED",
+    "line": "SOMETHING MAY HAVE BEEN MISSED. LET'S RECOUNT.",
+    "score": 3
+  },
+  {
+    "slot": "EDRIC_WORRIED",
+    "line": "SOMETHING HERE DOESN'T ADD UP.",
+    "score": 3
+  },
+  {
+    "slot": "EDRIC_WORRIED",
+    "line": "THIS WARRANTS A SECOND LOOK.",
+    "score": 3
+  },
+  {
+    "slot": "EDRIC_WORRIED",
+    "line": "LET ME COUNT THIS AGAIN.",
+    "score": 3
+  },
+  {
+    "slot": "EDRIC_WORRIED",
+    "line": "LET ME LOOK AGAIN. SOMETHING IS OFF.",
+    "score": 3
+  },
+  {
+    "slot": "EDRIC_WORRIED",
+    "line": "I HAVE SEEN THIS BEFORE. IT WAS NOT GOOD.",
+    "score": 3
+  },
+  {
+    "slot": "KORRATH_WORRIED",
+    "line": "THESE DUNGEON WALLS FEEL MORE QUIET THAN USUAL.",
+    "score": 3
+  },
+  {
+    "slot": "KORRATH_WORRIED",
+    "line": "I AM STILL BOUND HERE. NOTHING HAS CHANGED.",
+    "score": 3
+  },
+  {
+    "slot": "KORRATH_WORRIED",
+    "line": "THE DUTY IS HEAVIER SOME DAYS THAN OTHERS.",
+    "score": 3
+  },
+  {
+    "slot": "KORRATH_WORRIED",
+    "line": "I DO NOT KNOW HOW MUCH LONGER I CAN BEAR THIS.",
+    "score": 3
+  },
+  {
+    "slot": "KORRATH_CHEERFUL",
+    "line": "SMALL VICTORIES ARE STILL VICTORIES.",
+    "score": 3
+  },
+  {
+    "slot": "KORRATH_CHEERFUL",
+    "line": "A FINE EFFORT, TRUE ENOUGH.",
+    "score": 3
+  },
+  {
+    "slot": "BRAM_CHEERFUL",
+    "line": "WELL DONE. THAT IS ALL.",
+    "score": 3
+  },
+  {
+    "slot": "EDRIC_CHEERFUL",
+    "line": "WELL. I STAND CORRECTED.",
+    "score": 3
+  },
+  {
+    "slot": "EDRIC_CHEERFUL",
+    "line": "NOT MUCH TO ADD. IT WAS FINE.",
+    "score": 3
+  },
+  {
+    "slot": "BRAM_CHEERFUL",
+    "line": "NOTHING WENT WRONG. FINE BY ME.",
+    "score": 2
+  },
+  {
+    "slot": "EDRIC_CHEERFUL",
+    "line": "I HAD MY DOUBTS. GLAD TO BE WRONG.",
+    "score": 2
+  },
+  {
+    "slot": "BRAM_CHEERFUL",
+    "line": "NOT BAD. KEEP IT UP.",
+    "score": 1
+  }
+]

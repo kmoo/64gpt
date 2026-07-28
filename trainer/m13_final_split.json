@@ -1,0 +1,67 @@
+{
+  "approved": [
+    {
+      "slot": "KORRATH_WORRIED",
+      "line": "THE YEARS BLUR TOGETHER. I FORGET WHAT I FOUGHT FOR.",
+      "score": 5
+    },
+    {
+      "slot": "KORRATH_WORRIED",
+      "line": "I FEAR I HAVE FORGOTTEN MY OWN NAME.",
+      "score": 5
+    },
+    {
+      "slot": "KORRATH_CHEERFUL",
+      "line": "YOU HAVE DONE WELL. I AM STILL BOUND HERE.",
+      "score": 5
+    },
+    {
+      "slot": "KORRATH_CHEERFUL",
+      "line": "A SMALL KINDNESS, GIVEN FREELY. RARE, HERE.",
+      "score": 5
+    },
+    {
+      "slot": "BRAM_CHEERFUL",
+      "line": "THAT WILL DO.",
+      "score": 5
+    },
+    {
+      "slot": "EDRIC_CHEERFUL",
+      "line": "I WILL ALLOW IT. WELL DONE.",
+      "score": 5
+    }
+  ],
+  "rejected": [
+    {
+      "slot": "BRAM_CHEERFUL",
+      "line": "WELL DONE. THAT IS ALL.",
+      "score": 3
+    },
+    {
+      "slot": "EDRIC_CHEERFUL",
+      "line": "WELL. I STAND CORRECTED.",
+      "score": 3
+    },
+    {
+      "slot": "EDRIC_CHEERFUL",
+      "line": "NOT MUCH TO ADD. IT WAS FINE.",
+      "score": 3
+    },
+    {
+      "slot": "BRAM_CHEERFUL",
+      "line": "NOTHING WENT WRONG. FINE BY ME.",
+      "score": 2
+    },
+    {
+      "slot": "EDRIC_CHEERFUL",
+      "line": "I HAD MY DOUBTS. GLAD TO BE WRONG.",
+      "score": 2
+    },
+    {
+      "slot": "BRAM_CHEERFUL",
+      "line": "NOT BAD. KEEP IT UP.",
+      "score": 1
+    }
+  ],
+  "K": 6
+}
