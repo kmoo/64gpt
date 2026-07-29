@@ -123,3 +123,91 @@ conversation unlock; **6** is the moonshot worth one dedicated day.
 continuity of existence, external memory/personality/world state,
 gossip, Old Man Rowan test, engine-first Pyrite64 architecture).
 Supersedes the scale-focused framing of several entries above.
+
+## 12. Seed ensembling as a training-variance mitigation (2026-07-28/29, prompted by M13's noise-floor finding)
+
+M13's own baseline experiment measured something not previously
+quantified: two IDENTICAL training runs (same corpus, same
+architecture, only the random seed differing) produced a guard+korrath
+coherence gap of 0.31 invented-words/line -- bigger than M12.2->M12.4's
+own real, confirmed improvement (0.21). The QAT phase specifically is
+where the two seeds diverged (float losses nearly matched); the float
+phase looks stable. If that pattern holds up under more sampling, an
+obvious mitigation is training 2-3 seeds and either (a) picking the one
+with best QAT-phase val loss (cheap, no inference-time cost, but throws
+away the other runs' work) or (b) averaging weights across seeds
+(cheaper still to deploy, unproven whether GRU weight-averaging even
+produces a coherent model rather than a Frankenstein of two solutions).
+**Not costed or tried.** Worth a small spike measuring whether (a) or
+(b) actually shrinks the noise floor before trusting either for a real
+milestone decision -- same "measure before committing corpus budget"
+discipline as every conditioning-mechanism idea in this doc. If QAT
+variance turns out to be fixable directly (idea 13 below) rather than
+just something to average away, that's the better fix.
+
+## 13. Diagnose WHY quantization-aware fine-tuning is the noisy phase (2026-07-28/29, companion to idea 12)
+
+A narrower, more targeted version of idea 12: M13's baseline pair
+showed the float phase converging to nearly identical val loss across
+seeds (0.1341 vs 0.1339) while QAT diverged sharply (0.1413 vs 0.1818)
+from the same two starting points. That's a specific, falsifiable
+question -- is this inherent to the straight-through-estimator fake-
+quant setup at this model size (small weight matrices mean each
+int8-grid rounding decision is a bigger relative perturbation), or is
+it something more mundane and fixable (QAT's learning rate/patience
+tuned for the general case but happening to sit in a locally unstable
+regime, or the fake-quant hooks having their own seed-sensitivity
+`qat_finetune`'s `torch.manual_seed(seed)` doesn't fully pin down)? A
+small controlled sweep (several seeds x a couple of QAT learning rates/
+patience values, float-phase-only weights held fixed as the starting
+point so only the QAT hyperparameters vary) would tell the difference
+directly, and unlike idea 12's ensembling this could actually close the
+noise floor rather than just average around it. **Not costed or
+tried** -- flagged as the more scientifically satisfying follow-up to
+M13's own "worth separately investigating, NOT done tonight" note.
+
+## 14. Conditions stack: one greeting, four independently-varying axes (2026-07-28/29, prompted by tonight's NPC-engine headers)
+
+Tonight's session built five small, independent state-layer headers
+(`TimeOfDay.h`, `NpcCondition.h`, `LocationAtmosphere.h`,
+`VisitFrequency.h`, `PlayerAppearance.h`) alongside the existing
+`PlayerReputation.h`/`NPCState.h::Relationship` -- each one answers a
+different "why does this line read differently" question from
+`ideas-m7-living-npcs.md` Part 4, but none of them are wired into the
+actual conditioning string yet (deliberately -- each header's own
+comment says so). The idea, not yet built: a single demo *moment* where
+several of these axes are visibly true at once for the same NPC and the
+player can see the game state driving it -- e.g. a guard who is
+NIGHT + TIRED + at a TENSE location + being visited by a RAGS-appearing
+player for the first time in weeks, versus the same guard DAY +
+NORMAL + NEUTRAL location + a FINE-appearing regular. This is a demo/
+staging idea, not a training idea -- the actual dialogue difference
+still requires deriving new conditioning tokens and retraining (real,
+separate corpus work, same caution as every other new schema axis in
+this doc), but even BEFORE that retrain exists, the game-state layer
+alone could drive a visible on-screen debug readout ("GUARD#1002:
+NIGHT, TIRED, TENSE, first visit in 34 days") as a talk-demo moment
+proving the world-state plumbing is real, ahead of the model actually
+reacting to it. **Low effort for the debug-readout version (all the
+state headers already exist and are tested), medium-to-high effort for
+the version where the model's dialogue actually changes.**
+
+## 15. A "genre starter pack" alongside the porting guide (2026-07-28/29, prompted by the M14 portability proof)
+
+M14's portability proof (`manifests/scifi_freighter.json`,
+`trainer/ngpt_trainer/scifi_engineer_corpus.py`) demonstrates the
+toolkit ports to a new genre by hand-authoring one archetype's schema
+fields and corpus from scratch. If that proof holds up (real coherence,
+not just a clean manifest validation), a natural next idea is a small
+library of PRE-BUILT starter schema_fields blocks for a few common
+genres (fantasy, sci-fi, contemporary/noir) -- mood/trust_tiers/
+audience already established as genre-agnostic and reusable as-is;
+occupations/context/species per genre would still need real authored
+corpus content (this doesn't shortcut that), but a new project could at
+least start from "here's a sci-fi schema_fields block with 15 sensible
+occupation names" instead of inventing the vocabulary from zero. **Not
+costed.** Only worth pursuing if a second real project actually adopts
+the toolkit -- speculative infrastructure for a user that doesn't exist
+yet is exactly the kind of premature abstraction this project's own
+engineering discipline warns against, so this stays an idea, not a
+task, until that changes.
