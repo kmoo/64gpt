@@ -96,3 +96,37 @@ amortize, if it's ever worth paying at all.
   in this document invalidates that result. This idea is worth having
   written down for when/if the cast outgrows what prompt-conditioning
   alone can carry, not a signal that day has arrived.
+
+## Update (2026-07-29) — the trigger this doc gestured at is now real
+
+When this doc was written (2026-07-17), "when/if the cast outgrows
+prompt-conditioning" was an intentionally vague placeholder — no
+numeric rule existed for deciding that day had arrived. M14 has since
+turned that into a concrete, calibrated decision rule (`docs/milestones/
+m14.md`'s capacity split-trigger, `trainer/ngpt_trainer/
+capacity_monitor.py`'s `held_out_loss_for_subset()`): if a named
+full-tier character's own held-out **float-phase** val loss degrades by
+more than **5%** versus its own prior-cast baseline, that's the signal
+this doc's "one model for everyone" premise has stopped holding for that
+character.
+
+This connects the two documents without changing either one's status:
+
+- **The split-trigger firing is the concrete event that would make this
+  doc's Tier 2/3 (one model per archetype-type / one model per named
+  individual) worth actually building** — not a vague future mood, a
+  specific, checkable number.
+- **Nothing has fired it yet.** As of this update, the split-trigger
+  tooling exists but has never been run against a real checkpoint (real,
+  unstarted work per `m14.md`) — there is no current evidence any named
+  character's capacity is actually degrading.
+- **Swap latency remains genuinely unmeasured**, exactly as this doc
+  said in 2026-07-17 — nothing built since then touches real EverDrive
+  DMA timing. If the split-trigger ever does fire, that measurement
+  becomes the first real engineering task before Tier 2/3 is buildable,
+  not an afterthought.
+- **This document's own three tiers are still not a roadmap.** The
+  split-trigger existing and being calibrated doesn't mean this
+  architecture is scheduled — it means the project would finally *know*,
+  with a number instead of a guess, if and when it's time to consider
+  it.
