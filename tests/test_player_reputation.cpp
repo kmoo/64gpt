@@ -68,6 +68,39 @@ static void test_spread_rumor_works_when_public_ahead_of_true()
   CHECK_EQ_INT(rep.publicScore, 50); /* 80 + (-60*50/100) = 80-30=50 */
 }
 
+static void test_repeated_partial_rumors_converge_toward_true_score()
+{
+  /* each call closes a FRACTION of the *remaining* gap, so repeated
+   * partial-strength rumors should approach trueScore monotonically
+   * without ever overshooting it. */
+  Reputation rep{0, 100};
+  spreadReputationRumor(rep, 50);
+  CHECK_EQ_INT(rep.publicScore, 50); /* gap 100 -> +50 */
+  spreadReputationRumor(rep, 50);
+  CHECK_EQ_INT(rep.publicScore, 75); /* gap 50 -> +25 */
+  spreadReputationRumor(rep, 50);
+  CHECK_EQ_INT(rep.publicScore, 87); /* gap 25 -> +12 (integer truncation) */
+  CHECK(rep.publicScore < rep.trueScore); /* still converging, not there yet */
+}
+
+static void test_tiny_gap_can_get_permanently_stuck_below_full_strength()
+{
+  /* integer division truncates: a gap of 1 at any strength < 100 always
+   * computes delta = (1 * strength) / 100 = 0, so publicScore NEVER
+   * moves no matter how many partial-strength rumors spread -- only a
+   * strength of exactly 100 can close a gap this small. Real behavior
+   * worth documenting, not obviously a bug given the "fraction of the
+   * gap" spec, but a caller relying on eventual convergence at low
+   * strength would be surprised. */
+  Reputation rep{99, 100};
+  spreadReputationRumor(rep, 50);
+  CHECK_EQ_INT(rep.publicScore, 99); /* unmoved */
+  spreadReputationRumor(rep, 99);
+  CHECK_EQ_INT(rep.publicScore, 99); /* still unmoved, even at 99% strength */
+  spreadReputationRumor(rep, 100);
+  CHECK_EQ_INT(rep.publicScore, 100); /* only full strength closes it */
+}
+
 int main()
 {
   test_apply_true_score_delta_clamps();
@@ -77,5 +110,7 @@ int main()
   test_spread_rumor_zero_strength_is_noop();
   test_spread_rumor_clamps_strength_percent();
   test_spread_rumor_works_when_public_ahead_of_true();
+  test_repeated_partial_rumors_converge_toward_true_score();
+  test_tiny_gap_can_get_permanently_stuck_below_full_strength();
   return test_summary("test_player_reputation");
 }

@@ -50,6 +50,28 @@ static void test_resolve_zero_count_always_rejects()
   CHECK(out == (const char *)0x1);
 }
 
+static void test_resolve_rejects_negative_count()
+{
+  /* count itself is caller-supplied and could be malformed, not just
+   * index -- a negative count must not accidentally pass index>=count
+   * for some in-range-looking index. */
+  const char *out = (const char *)0x1;
+  CHECK(!resolveSelection(TOKENS, -1, 0, &out));
+  CHECK(out == (const char *)0x1);
+}
+
+static void test_resolve_single_element_list_boundary()
+{
+  static const char *const single[1] = {"ONLY"};
+  const char *out = nullptr;
+  CHECK(resolveSelection(single, 1, 0, &out));
+  CHECK_EQ_INT(strcmp(out, "ONLY"), 0);
+
+  out = (const char *)0x1;
+  CHECK(!resolveSelection(single, 1, 1, &out)); /* one past the only valid index */
+  CHECK(out == (const char *)0x1);
+}
+
 int main()
 {
   test_resolve_valid_selection();
@@ -57,5 +79,7 @@ int main()
   test_resolve_rejects_negative_index();
   test_resolve_rejects_index_at_and_past_count();
   test_resolve_zero_count_always_rejects();
+  test_resolve_rejects_negative_count();
+  test_resolve_single_element_list_boundary();
   return test_summary("test_word_picker");
 }

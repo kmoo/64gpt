@@ -50,6 +50,31 @@ static void test_is_friendly_pairing_threshold()
   CHECK(!isFriendlyPairing(low, high, 5, 100)); /* score 0 */
 }
 
+static void test_zero_or_negative_max_trait_value_is_zero()
+{
+  /* mirrors test_zero_trait_count_is_zero but for the other guarded
+   * input -- maxTraitValue is a divisor (maxPossibleDistance), so a
+   * bad caller-supplied scale must not divide by zero. */
+  int a[5] = {50, 50, 50, 50, 50};
+  CHECK_EQ_INT(compatibilityScore(a, a, 5, 0), 0);
+  CHECK_EQ_INT(compatibilityScore(a, a, 5, -1), 0);
+}
+
+static void test_friendly_threshold_is_inclusive_boundary()
+{
+  /* isFriendlyPairing uses >=, not > -- a score of exactly
+   * FRIENDLY_THRESHOLD (50) must count as friendly, and 49 must not. */
+  int base[1] = {0};
+  int scoreFifty[1] = {50};   /* distance 50/100 -> score 100-50 = 50 */
+  int scoreFortyNine[1] = {51}; /* distance 51/100 -> score 100-51 = 49 */
+
+  CHECK_EQ_INT(compatibilityScore(base, scoreFifty, 1, 100), FRIENDLY_THRESHOLD);
+  CHECK(isFriendlyPairing(base, scoreFifty, 1, 100));
+
+  CHECK_EQ_INT(compatibilityScore(base, scoreFortyNine, 1, 100), FRIENDLY_THRESHOLD - 1);
+  CHECK(!isFriendlyPairing(base, scoreFortyNine, 1, 100));
+}
+
 int main()
 {
   test_identical_traits_are_fully_compatible();
@@ -58,5 +83,7 @@ int main()
   test_compatibility_is_symmetric();
   test_zero_trait_count_is_zero();
   test_is_friendly_pairing_threshold();
+  test_zero_or_negative_max_trait_value_is_zero();
+  test_friendly_threshold_is_inclusive_boundary();
   return test_summary("test_npc_disposition");
 }

@@ -35,11 +35,22 @@ static void test_is_discoverable_false_once_already_revealed()
   CHECK(!isDiscoverable(secret, true)); /* already known, nothing to discover */
 }
 
+static void test_is_discoverable_false_when_neither_condition_holds()
+{
+  /* completes the truth table: the other three combinations of
+   * (conditionMet, revealed) are each covered by a separate test above
+   * -- this is the fourth, condition unmet AND already revealed. */
+  Secret secret{101, 5, false};
+  revealSecret(secret);
+  CHECK(!isDiscoverable(secret, false));
+}
+
 int main()
 {
   test_reveal_secret_sets_revealed();
   test_reveal_secret_is_idempotent();
   test_is_discoverable_requires_condition_met();
   test_is_discoverable_false_once_already_revealed();
+  test_is_discoverable_false_when_neither_condition_holds();
   return test_summary("test_npc_secret");
 }
