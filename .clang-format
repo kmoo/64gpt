@@ -1,0 +1,42 @@
+---
+# 64GPT clang-format config. Derived from this codebase's own existing,
+# hand-maintained style (core/, game/src/user/, tests/) rather than
+# picked from a stock preset -- see docs/plan.md's clang-format task
+# for how each setting below was verified against real files before
+# being pinned, not guessed.
+BasedOnStyle: LLVM
+IndentWidth: 2
+UseTab: Never
+ColumnLimit: 100
+
+# Function/namespace/struct/class/union braces on their own line
+# (Allman); if/for/while/else stay attached to the same line -- matches
+# core/ngpt.cpp/ngpt_gru.cpp and every game/src/user/*.h header's
+# existing convention exactly.
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: true
+  AfterNamespace: true
+  AfterClass: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterEnum: false
+  AfterControlStatement: false
+  BeforeElse: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+
+PointerAlignment: Right
+AlignConsecutiveDeclarations: false
+AlignConsecutiveAssignments: false
+# "Empty", not "All" -- existing code deliberately keeps some short
+# functions multi-line (rshift_round et al.) and collapses others
+# (isNight()) by hand judgment a fixed rule can't reproduce; Empty at
+# least avoids force-collapsing anything with a real body.
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: false
+IndentCaseLabels: true
+SpaceBeforeParens: ControlStatements
+NamespaceIndentation: All
+SortIncludes: false
