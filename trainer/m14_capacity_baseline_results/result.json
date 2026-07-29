@@ -1,0 +1,12 @@
+{
+  "seed": 0,
+  "hidden": 320,
+  "device": "mps",
+  "aggregate_val_loss": 0.15104572180548123,
+  "selena_held_out_float_val_loss": 0.13557716865120184,
+  "shadewrath_held_out_float_val_loss": 0.17631342570714004,
+  "selena_holdout_combos": 20,
+  "shadewrath_holdout_combos": 24,
+  "shadewrath_total_combos": 120,
+  "seconds": 39227.16102385521
+}
