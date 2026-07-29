@@ -198,3 +198,11 @@ target_include_directories(test_location_atmosphere PRIVATE ${NGPT_GAME_USER_DIR
 target_compile_options(test_location_atmosphere PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_location_atmosphere PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_location_atmosphere COMMAND test_location_atmosphere)
+
+# Player visible appearance (docs/ideas-m7-living-npcs.md Part 4) --
+# see PlayerAppearance.h's own header comment for scope.
+add_executable(test_player_appearance test_player_appearance.cpp)
+target_include_directories(test_player_appearance PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_player_appearance PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_player_appearance PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_player_appearance COMMAND test_player_appearance)
