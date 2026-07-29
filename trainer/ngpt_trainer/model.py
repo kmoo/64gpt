@@ -973,11 +973,19 @@ def train_corpus_conditioned_film(train_pairs: list[tuple[str, str]],
                                   hidden: int = 256, seed: int = 0, lr: float = 3e-3,
                                   batch_size: int = 64, max_epochs: int = 60,
                                   patience: int = 5,
-                                  device: str | None = None) -> CharGRUFiLM:
+                                  device: str | None = None,
+                                  checkpoint_path: str | None = None) -> CharGRUFiLM:
     """train_corpus_conditioned_attr's shape (prefix-loss masking,
     combo-level val split, early-stop/restore-best), for CharGRUFiLM
     (M12.5, option B): gamma/beta modulate the hidden state every step
-    instead of widening the input (option A, M12.3/M12.4)."""
+    instead of widening the input (option A, M12.3/M12.4).
+
+    checkpoint_path: see train_corpus_conditioned_attr's docstring for
+    the full rationale -- this is the variant where the ORIGINAL M12.5
+    near-OOM incident that motivated checkpointing actually happened,
+    so covering it here closes the gap the prior overnight session left
+    open (the _attr pair got this first; the plain and film pairs did
+    not)."""
     if device is None:
         device = "mps" if torch.backends.mps.is_available() else "cpu"
     torch.manual_seed(seed)
@@ -1039,6 +1047,11 @@ def train_corpus_conditioned_film(train_pairs: list[tuple[str, str]],
             best, since_best = v, 0
             best_state = {k: t.detach().cpu().clone()
                           for k, t in model.state_dict().items()}
+            if checkpoint_path is not None:
+                torch.save({"state": best_state, "val_loss": best,
+                            "epoch": epoch, "hidden": hidden,
+                            "n_desc": n_desc, "n_mood": n_mood},
+                           checkpoint_path)
         else:
             since_best += 1
             if since_best >= patience:
@@ -1057,13 +1070,17 @@ def qat_finetune_film(model: CharGRUFiLM, train_pairs: list[tuple[str, str]],
                       n_desc: int, n_mood: int,
                       seed: int = 0, lr: float = 3e-4, batch_size: int = 64,
                       max_epochs: int = 30, patience: int = 6,
-                      device: str | None = None) -> CharGRUFiLM:
+                      device: str | None = None,
+                      checkpoint_path: str | None = None) -> CharGRUFiLM:
     """qat_finetune's shape for CharGRUFiLM: fake-quantizes cell.weight_ih/
     weight_hh and head.weight exactly like qat_finetune/qat_finetune_attr,
     PLUS a new hook for film.weight -- M12.5's only new quantized tensor.
     gamma/beta ride the SAME int8-weight + Q14-fixed-point machinery as
     everything else (see ref_impl.film_gamma_beta), just a new
-    application site rather than a new number format."""
+    application site rather than a new number format.
+
+    checkpoint_path: see train_corpus_conditioned_attr's docstring for
+    the full rationale -- same on-disk recovery path for the QAT phase."""
     if device is None:
         device = "mps" if torch.backends.mps.is_available() else "cpu"
     torch.manual_seed(seed)
@@ -1155,6 +1172,10 @@ def qat_finetune_film(model: CharGRUFiLM, train_pairs: list[tuple[str, str]],
             best, since_best = v, 0
             best_state = {k: t.detach().cpu().clone()
                           for k, t in model.state_dict().items()}
+            if checkpoint_path is not None:
+                torch.save({"state": best_state, "val_loss": best,
+                            "epoch": epoch, "n_desc": n_desc,
+                            "n_mood": n_mood}, checkpoint_path)
         else:
             since_best += 1
             if since_best >= patience:
