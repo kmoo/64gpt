@@ -25,16 +25,25 @@ from ngpt_trainer.model import _batchify_masked
 
 
 def held_out_loss_for_subset(model, val_pairs, vocab, predicate,
-                             device: str | None = None,
                              batch_size: int = 64) -> float | None:
     """Masked held-out loss (docs/milestones/m7.md's prefix-masking
     scheme, same as train_corpus_conditioned's own val_loss) restricted
     to the val_pairs whose PROMPT satisfies predicate. Returns None if
     predicate matches zero pairs, rather than dividing by zero -- an
     absent character in this val split is a caller error to notice, not
-    a silent 0.0."""
-    if device is None:
-        device = "cpu"
+    a silent 0.0.
+
+    Always runs on CPU, deliberately no device parameter -- model.py's
+    train_corpus_conditioned/qat_finetune ALWAYS return model.to("cpu")
+    regardless of what device training ran on (a firm, tested contract
+    elsewhere in this codebase), so a post-training model here is always
+    CPU-resident. A device parameter would invite exactly the bug a real
+    M14 baseline run hit: passing the training device (e.g. "mps") here
+    moves the INPUT tensors off CPU while the model's weights stay on
+    it, a device-mismatch RuntimeError. make_m12_1_blob.py's own
+    top1_agreement follows the same no-device-parameter precedent for
+    the same reason."""
+    device = "cpu"
     subset = [(p, r) for p, r in val_pairs if predicate(p)]
     if not subset:
         return None

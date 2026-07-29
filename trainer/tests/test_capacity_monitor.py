@@ -7,6 +7,9 @@ to catch again if it recurs post-M9's compositional fix).
 
 Fast toy runs on tiny synthetic corpora, like every other model.py test
 in this suite -- not a claim about production-scale numbers."""
+import pytest
+import torch
+
 from ngpt_trainer.capacity_monitor import (
     capacity_degradation_pct,
     exceeds_split_trigger,
@@ -39,11 +42,9 @@ def test_held_out_loss_for_subset_restricts_to_matching_pairs():
         patience=2, batch_size=4, device="cpu")
 
     selena_loss = held_out_loss_for_subset(
-        model, VAL_PAIRS, vocab, lambda prompt: "N:selena" in prompt,
-        device="cpu")
+        model, VAL_PAIRS, vocab, lambda prompt: "N:selena" in prompt)
     guard_loss = held_out_loss_for_subset(
-        model, VAL_PAIRS, vocab, lambda prompt: "N:guard" in prompt,
-        device="cpu")
+        model, VAL_PAIRS, vocab, lambda prompt: "N:guard" in prompt)
 
     assert isinstance(selena_loss, float)
     assert isinstance(guard_loss, float)
@@ -60,8 +61,7 @@ def test_held_out_loss_for_subset_returns_none_when_predicate_matches_nothing():
         patience=2, batch_size=4, device="cpu")
 
     assert held_out_loss_for_subset(
-        model, VAL_PAIRS, vocab, lambda prompt: "N:nobody_home" in prompt,
-        device="cpu") is None
+        model, VAL_PAIRS, vocab, lambda prompt: "N:nobody_home" in prompt) is None
 
 
 def test_capacity_degradation_pct_positive_means_worse():
@@ -83,3 +83,23 @@ def test_exceeds_split_trigger_boundary_is_strict_greater_than():
 
 def test_exceeds_split_trigger_ignores_improvement():
     assert exceeds_split_trigger(0.10, 0.05, threshold_pct=5.0) is False
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="requires MPS")
+def test_works_correctly_after_mps_training():
+    # train_corpus_conditioned ALWAYS returns model.to("cpu").eval(),
+    # regardless of what device training ran on (model.py's own
+    # contract). held_out_loss_for_subset takes no device parameter and
+    # always runs on CPU for exactly this reason -- a real M14
+    # capacity-baseline run hit a device-mismatch RuntimeError from an
+    # earlier version of this function that DID accept a device
+    # argument and naturally got passed "mps" (matching the training
+    # call) by a caller who assumed that was correct.
+    vocab = _vocab()
+    model = train_corpus_conditioned(
+        TRAIN_PAIRS, VAL_PAIRS, vocab, hidden=8, seed=0, max_epochs=3,
+        patience=2, batch_size=4, device="mps")
+
+    loss = held_out_loss_for_subset(model, VAL_PAIRS, vocab,
+                                    lambda p: "N:selena" in p)
+    assert isinstance(loss, float)

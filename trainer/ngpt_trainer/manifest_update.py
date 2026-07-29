@@ -135,8 +135,7 @@ def run_manifest_update(config: ManifestUpdateConfig) -> ManifestUpdateResult:
 
     gates: list[GateResult] = []
     for check in config.capacity_checks:
-        current = held_out_loss_for_subset(model, val_pairs, vocab, check.predicate,
-                                           device=config.device)
+        current = held_out_loss_for_subset(model, val_pairs, vocab, check.predicate)
         if current is None:
             gates.append(GateResult(
                 f"capacity[{check.name}]", False,
