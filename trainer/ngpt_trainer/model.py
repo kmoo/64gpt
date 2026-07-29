@@ -240,12 +240,18 @@ def train_corpus_conditioned(train_pairs: list[tuple[str, str]],
                              val_pairs: list[tuple[str, str]], vocab,
                              hidden: int = 256, seed: int = 0, lr: float = 3e-3,
                              batch_size: int = 64, max_epochs: int = 60,
-                             patience: int = 5, device: str | None = None) -> CharGRU:
+                             patience: int = 5, device: str | None = None,
+                             checkpoint_path: str | None = None) -> CharGRU:
     """M7 training: prefix-loss masking (above) + an explicit combo-level
     train/val split supplied by the caller (m7.md: hold out whole
     conditioning combos, not just lines within seen combos — the actual
     test of generalizing, not memorizing). Otherwise identical to M4's
-    train_corpus (early-stop on best val loss, restore that model)."""
+    train_corpus (early-stop on best val loss, restore that model).
+
+    checkpoint_path: see train_corpus_conditioned_attr's docstring for
+    the full rationale (a real GPU/Metal OOM crash mid-run motivated
+    this) -- same on-disk recovery path, extended to the plain pair that
+    make_m12_1_blob.py's actual shipped path uses."""
     if device is None:
         device = "mps" if torch.backends.mps.is_available() else "cpu"
     torch.manual_seed(seed)
@@ -307,6 +313,10 @@ def train_corpus_conditioned(train_pairs: list[tuple[str, str]],
             best, since_best = v, 0
             best_state = {k: t.detach().cpu().clone()
                           for k, t in model.state_dict().items()}
+            if checkpoint_path is not None:
+                torch.save({"state": best_state, "val_loss": best,
+                            "epoch": epoch, "hidden": hidden},
+                           checkpoint_path)
         else:
             since_best += 1
             if since_best >= patience:
@@ -345,7 +355,8 @@ def qat_finetune(model: CharGRU, train_pairs: list[tuple[str, str]],
                  val_pairs: list[tuple[str, str]], vocab,
                  seed: int = 0, lr: float = 3e-4, batch_size: int = 64,
                  max_epochs: int = 30, patience: int = 6,
-                 device: str | None = None) -> CharGRU:
+                 device: str | None = None,
+                 checkpoint_path: str | None = None) -> CharGRU:
     """M12.1: quantization-aware fine-tuning after float convergence.
 
     Every forward pass runs with the weights FAKE-QUANTIZED onto the
@@ -371,7 +382,11 @@ def qat_finetune(model: CharGRU, train_pairs: list[tuple[str, str]],
     val loss driving early-stop is the QUANTIZED forward's, which is
     the number that actually predicts shipped behavior. Returns the
     model with plain float weights restored (best raw state), ready for
-    quantize()."""
+    quantize().
+
+    checkpoint_path: see train_corpus_conditioned_attr's docstring for
+    the full rationale -- same on-disk recovery path for the QAT phase
+    of the plain pair."""
     if device is None:
         device = "mps" if torch.backends.mps.is_available() else "cpu"
     torch.manual_seed(seed)
@@ -449,6 +464,9 @@ def qat_finetune(model: CharGRU, train_pairs: list[tuple[str, str]],
             best, since_best = v, 0
             best_state = {k: t.detach().cpu().clone()
                           for k, t in model.state_dict().items()}
+            if checkpoint_path is not None:
+                torch.save({"state": best_state, "val_loss": best,
+                            "epoch": epoch}, checkpoint_path)
         else:
             since_best += 1
             if since_best >= patience:
