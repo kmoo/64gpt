@@ -44,6 +44,13 @@ __pycache__/
 .m12_5_film_model.pt
 .m12_6_density_model.pt
 trainer/m13_mechanism4_checkpoints/
+trainer/m14_portability_checkpoints/
+
+# raw training logs -- their own final "wrote <path>" line bakes in a
+# local absolute path; the committed .json results carry every number
+# that matters (see the m13/m14 result commits for why)
+trainer/m13_mechanism4_results/*.log
+trainer/m14_portability_run.log
 
 # M9 bulk LLM-generated corpus (regenerable via generate_m9_corpus_llm.py)
 trainer/m9_corpus_llm.json

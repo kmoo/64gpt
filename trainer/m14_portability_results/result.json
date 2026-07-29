@@ -1,0 +1,20 @@
+{
+  "seed": 0,
+  "hidden": 320,
+  "float_val_loss": 0.37694384959608107,
+  "qat_val_loss": 0.37567823013440216,
+  "per_group": {
+    "guard": {
+      "lines": 8,
+      "invented_per_line": 4.375
+    },
+    "engineer": {
+      "lines": 8,
+      "invented_per_line": 5.125
+    },
+    "ALL": {
+      "lines": 16,
+      "invented_per_line": 4.75
+    }
+  }
+}
