@@ -166,3 +166,11 @@ target_include_directories(test_word_picker PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_word_picker PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_word_picker PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_word_picker COMMAND test_word_picker)
+
+# Time-of-day state (docs/ideas-m7-living-npcs.md Part 3/4) -- see
+# TimeOfDay.h's own header comment for scope.
+add_executable(test_time_of_day test_time_of_day.cpp)
+target_include_directories(test_time_of_day PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_time_of_day PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_time_of_day PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_time_of_day COMMAND test_time_of_day)
