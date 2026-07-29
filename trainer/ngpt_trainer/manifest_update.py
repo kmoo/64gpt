@@ -32,6 +32,7 @@ import torch
 from ngpt_trainer.capacity_monitor import exceeds_split_trigger, held_out_loss_for_subset
 from ngpt_trainer.manifest_validate import find_undeclared_values, load_manifest
 from ngpt_trainer.model import one_hot, qat_finetune, train_corpus_conditioned
+from ngpt_trainer.npc_service import parse_prompt_fields
 from ngpt_trainer.quantize import quantize
 from ngpt_trainer.ref_impl import gru_step
 from ngpt_trainer.vocab import Vocab
@@ -87,12 +88,30 @@ class ManifestUpdateResult:
     qat_val_loss: float | None = None
 
 
+def _combo_key(prompt: str) -> tuple[str | None, str | None, str | None]:
+    fields = parse_prompt_fields(prompt)
+    return (fields.get("R"), fields.get("M"), fields.get("C"))
+
+
 def _held_out_split(pairs: Pairs, seed: int, val_fraction: float) -> tuple[Pairs, Pairs]:
+    """Combo-level holdout, not a random line-level shuffle -- m7.md's
+    regularization discipline: hold out WHOLE (relationship, mood,
+    context) combos, so held-out data actually tests generalization to
+    unseen combos rather than memorizing more response variations of
+    combos already seen in train. R:/M:/C: are part of prompt_fields()'s
+    own schema (every corpus generator in this toolkit funnels through
+    it, including the sci-fi portability proof's), not a 64GPT-specific
+    assumption -- same technique every real make_mN_blob.py script and
+    m14_capacity_baseline.py already use, via the shared
+    parse_prompt_fields() parser rather than a locally reinvented one."""
+    all_combos = sorted({_combo_key(p) for p, _ in pairs})
     rng = random.Random(seed)
-    shuffled = pairs[:]
-    rng.shuffle(shuffled)
-    n_val = max(1, int(len(shuffled) * val_fraction))
-    return shuffled[n_val:], shuffled[:n_val]
+    n_holdout = max(1, min(len(all_combos), int(len(all_combos) * val_fraction)))
+    held = set(rng.sample(all_combos, n_holdout))
+    train, val = [], []
+    for p, r in pairs:
+        (val if _combo_key(p) in held else train).append((p, r))
+    return train, val
 
 
 def _top1_agreement(model, q, vocab: Vocab, probe: Pairs) -> float:

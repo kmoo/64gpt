@@ -53,6 +53,7 @@ from ngpt_trainer import selena_corpus as sc
 from ngpt_trainer import shadewrath_corpus as swc
 from ngpt_trainer.capacity_monitor import held_out_loss_for_subset
 from ngpt_trainer.model import train_corpus_conditioned
+from ngpt_trainer.npc_service import parse_prompt_fields
 from ngpt_trainer.vocab import Vocab
 
 SEED = 0
@@ -73,11 +74,10 @@ RESULTS_DIR = Path(__file__).resolve().parent / "m14_capacity_baseline_results"
 def generic_combo_key(prompt: str) -> tuple:
     """(R, M, C) straight off the prompt string, no character-specific
     tier-name translation (unlike selena_corpus.combo_key) -- works for
-    any character's prompt built via npc_service.prompt_fields()."""
-    fields = {}
-    for tok in prompt.rstrip("|").split(" "):
-        k, _, v = tok.partition(":")
-        fields[k] = v
+    any character's prompt built via npc_service.prompt_fields(), via
+    that module's own parse_prompt_fields() parser rather than a
+    reimplementation of it."""
+    fields = parse_prompt_fields(prompt)
     return (fields.get("R"), fields.get("M"), fields.get("C"))
 
 

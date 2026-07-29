@@ -10,16 +10,23 @@ import json
 from ngpt_trainer.manifest_update import (
     CapacityCheck,
     ManifestUpdateConfig,
+    _combo_key,
     run_manifest_update,
 )
 
+# Real prompt_fields()-shaped tokens (R:/M:/C:), not the old placeholder
+# "N:x MOOD:y" shape -- _held_out_split does COMBO-level holdout keyed on
+# R:/M:/C:, so the fixtures need those tokens to be meaningful (a fixture
+# with no R:/M:/C: tokens at all would collapse every pair into a single
+# (None, None, None) "combo," making train_pairs empty once that one
+# combo gets held out). Six distinct combos, three per character.
 TRAIN_PAIRS = [
-    ("N:selena MOOD:happy ", "HELLO THERE FRIEND"),
-    ("N:selena MOOD:sad ", "OH NO WHAT HAPPENED"),
-    ("N:guard MOOD:happy ", "GOOD DAY CITIZEN"),
-    ("N:guard MOOD:sad ", "MOVE ALONG NOW"),
-    ("N:selena MOOD:cheerful ", "WHAT A LOVELY DAY"),
-    ("N:guard MOOD:cheerful ", "ALL QUIET ON DUTY"),
+    ("N:selena R:stranger M:happy C:greeting|", "HELLO THERE FRIEND"),
+    ("N:selena R:stranger M:sad C:farewell|", "OH NO WHAT HAPPENED"),
+    ("N:selena R:ally M:cheerful C:item-found|", "WHAT A LOVELY DAY"),
+    ("N:guard R:neutral M:happy C:greeting|", "GOOD DAY CITIZEN"),
+    ("N:guard R:neutral M:sad C:farewell|", "MOVE ALONG NOW"),
+    ("N:guard R:best_friend M:cheerful C:item-found|", "ALL QUIET ON DUTY"),
 ]
 
 CLEAN_MANIFEST = {
@@ -74,6 +81,22 @@ def _base_config(tmp_path, manifest: dict, **overrides) -> ManifestUpdateConfig:
     for k, v in overrides.items():
         setattr(config, k, v)
     return config, calls
+
+
+def test_held_out_split_never_splits_a_combo_across_train_and_val():
+    # m7.md's regularization discipline: held-out data must be WHOLE
+    # combos never seen in train, not just unseen lines from a combo
+    # partially seen -- a random line-level shuffle can't guarantee
+    # that, combo-level holdout can.
+    from ngpt_trainer.manifest_update import _held_out_split
+
+    train, val = _held_out_split(TRAIN_PAIRS, seed=0, val_fraction=0.34)
+    train_combos = {_combo_key(p) for p, _ in train}
+    val_combos = {_combo_key(p) for p, _ in val}
+
+    assert train  # not degenerate -- some pairs remain to actually train on
+    assert val
+    assert train_combos.isdisjoint(val_combos)
 
 
 def test_refuses_at_validate_without_training(tmp_path):
