@@ -1,0 +1,38 @@
+{
+  "label": "rejected",
+  "seed": 0,
+  "extra_fragments_path": "m13_mechanism4_rejected_fragments.json",
+  "float_val_loss": 0.12902926268385037,
+  "qat_val_loss": 0.20950934211848066,
+  "per_group": {
+    "selena": {
+      "lines": 8,
+      "invented_per_line": 3.0
+    },
+    "guard": {
+      "lines": 8,
+      "invented_per_line": 3.125
+    },
+    "cast": {
+      "lines": 8,
+      "invented_per_line": 3.875
+    },
+    "shadewrath": {
+      "lines": 8,
+      "invented_per_line": 2.5
+    },
+    "korrath": {
+      "lines": 8,
+      "invented_per_line": 2.375
+    },
+    "elowen": {
+      "lines": 8,
+      "invented_per_line": 3.125
+    },
+    "ALL": {
+      "lines": 48,
+      "invented_per_line": 3.0
+    }
+  },
+  "guard_korrath_inv_per_line": 2.75
+}

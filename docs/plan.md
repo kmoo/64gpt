@@ -58,6 +58,16 @@ long survives.
   training procedure) before committing to it. Needs its own controlled
   before/after comparison, same discipline as M11.1's/M12's, not bundled
   into whatever milestone is active when someone thinks of it.
+  **Related data point, NOT a substitute for this item, from M13
+  (2026-07-28/29):** M13's mechanism-4 validation added a small amount
+  of new content (K=6 opener fragments) to guard/korrath's existing
+  banks and measured it making coherence WORSE, not better, versus an
+  untouched baseline (`docs/milestones/m13.md`'s FAIL verdict). That's
+  suggestive against "more content helps" as a simple story, but it
+  isn't the controlled test this item calls for -- M13 tested a small
+  fragment injection at K=6 into an EXISTING bank, not "more/better-
+  authored content at a fixed H" as its own distinct controlled
+  before/after comparison. Still open, still needs its own real test.
 
 **Closed:**
 
