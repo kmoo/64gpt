@@ -1,0 +1,38 @@
+{
+  "label": "approved",
+  "seed": 0,
+  "extra_fragments_path": "m13_mechanism4_approved_fragments.json",
+  "float_val_loss": 0.12723331623310757,
+  "qat_val_loss": 0.12908404289397843,
+  "per_group": {
+    "selena": {
+      "lines": 8,
+      "invented_per_line": 1.375
+    },
+    "guard": {
+      "lines": 8,
+      "invented_per_line": 2.375
+    },
+    "cast": {
+      "lines": 8,
+      "invented_per_line": 1.375
+    },
+    "shadewrath": {
+      "lines": 8,
+      "invented_per_line": 1.625
+    },
+    "korrath": {
+      "lines": 8,
+      "invented_per_line": 2.5
+    },
+    "elowen": {
+      "lines": 8,
+      "invented_per_line": 3.0
+    },
+    "ALL": {
+      "lines": 48,
+      "invented_per_line": 2.0416666666666665
+    }
+  },
+  "guard_korrath_inv_per_line": 2.4375
+}
