@@ -3,6 +3,19 @@ from pathlib import Path
 from ngpt_trainer.manifest_validate import load_manifest, find_undeclared_values, find_orphaned_declarations, validate_manifest
 
 MANIFEST_PATH = Path(__file__).resolve().parents[2] / "manifests" / "dungeon_crawler.json"
+SCIFI_MANIFEST_PATH = Path(__file__).resolve().parents[2] / "manifests" / "scifi_freighter.json"
+
+def test_no_undeclared_or_orphaned_values_in_scifi_freighter_manifest():
+    # M14 portability proof (docs/milestones/m14.md section 2): a SECOND
+    # project's manifest, validated through the exact same unmodified
+    # tooling as the dungeon crawler's own -- this is the falsifiable
+    # check, not the manifest merely existing. Unlike the real manifest,
+    # this one is deliberately minimal (one character, no archetypes,
+    # no declared-but-unused headroom), so it should be fully clean:
+    # zero undeclared AND zero orphaned.
+    manifest = load_manifest(SCIFI_MANIFEST_PATH)
+    ok, problems = validate_manifest(manifest)
+    assert ok, problems
 
 def test_no_undeclared_values_in_real_manifest():
     # The real manifest legitimately has ORPHANED declarations today

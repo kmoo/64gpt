@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "_meta": "M14 portability proof (docs/milestones/m14.md section 2): a second project's manifest, shaped by docs/08-manifest-schema.md, proving the meta-schema/tooling generalize beyond the dungeon crawler. mood/trust_tiers reused verbatim from manifests/dungeon_crawler.json on purpose -- those are genre-agnostic axes the schema itself claims are reusable; only occupation/context/species/corpus content are genre-local to this project.",
+  "schema_fields": {
+    "mood": ["cheerful", "worried", "sassy", "tender", "embarrassed"],
+    "context": ["reactor-check", "hull-breach", "quiet-shift"],
+    "trust_tiers": [0, 1, 2],
+    "personality_traits": ["warmth", "humor", "impulsivity", "bravery", "focus"],
+    "occupations": ["engineer"],
+    "species_types": ["human"],
+    "bond_types": ["stranger"],
+    "audience": ["alone", "witnessed"]
+  },
+  "characters": [
+    {
+      "id": "engineer#7",
+      "tier": "full",
+      "occupation": "engineer",
+      "species": "human",
+      "bond": "stranger",
+      "age": 35,
+      "gender": "female",
+      "personality": {"warmth": 55, "humor": 40, "impulsivity": 30, "bravery": 65, "focus": 85},
+      "bible": {
+        "public": "Keeps the ship's systems running, no fuss, no drama.",
+        "private": "Talks to the reactor like it can hear her -- it's the only crew member that never argues back.",
+        "secret": "She stayed on this ship after the last captain died because leaving felt like abandoning the engine, not the crew.",
+        "fear": "That something will break that even she can't fix, in front of everyone.",
+        "desire": "One shift, just one, where nothing needs her."
+      },
+      "corpus_ref": "trainer/ngpt_trainer/scifi_engineer_corpus.py",
+      "memory_persistence": "full",
+      "_status": "M14 portability proof (2026-07-28/29 overnight session). One instance, not a roster -- the proof needs one archetype, not a finished cast (m14.md section 2's own 'lightweight version' framing). Trained as an isolated experiment alongside the existing shared model's guard corpus, not folded into the shipped manifests/dungeon_crawler.json or model.bin -- see trainer/m14_portability_proof.py."
+    }
+  ],
+  "archetypes": []
+}

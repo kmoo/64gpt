@@ -172,9 +172,50 @@ accepted, recorded state (same as `occupations` entries before their
 first archetype), not a bug, but don't condition live gameplay on a
 value nothing was trained on.
 
+## What a new project supplies vs. reuses (M14 porting guide)
+
+M14's DoD needs this stated explicitly, not left implicit in the shape
+above:
+
+**Supplies (genre-local, authored per-project):**
+- `schema_fields.occupations`/`species_types`/`bond_types`/`context` —
+  vocabulary specific to the new setting (e.g. `engineer`/`reactor-check`
+  for a sci-fi project, vs. `guard`/`combat-banter` for the dungeon
+  crawler)
+- Every `characters[]`/`archetypes[]` entry: personality values, bible
+  content, `corpus_ref` pointing at the project's own corpus generator
+- The corpus generator module itself (voice content, template grammar)
+
+**Reuses (mechanism, ships with the toolkit unchanged):**
+- `schema_fields.mood`/`trust_tiers`/`personality_traits`/`audience` —
+  genre-agnostic axes (an engineer can be `worried` or `cheerful` same
+  as a guard can); reusing rather than reinventing these is itself part
+  of the portability claim, not just a convenience
+- `core/`'s streaming API, `NpcService::buildPromptFields()` /
+  `trainer/ngpt_trainer/npc_service.py`'s `prompt_fields()`, the
+  Event Bus / Shared World State shapes, the training pipeline
+  (corpus → schema-conditioned training → quantize → goldens)
+- `manifest_validate.py`/`validate_manifest_cli.py` — runs unmodified
+  against any manifest shaped like this doc, not hardcoded to
+  `dungeon_crawler.json`'s paths
+
+**Concrete proof, not just a claim:** `manifests/scifi_freighter.json`
+(M14 portability proof, `docs/milestones/m14.md` section 2) is a real
+second-project manifest — sci-fi setting, one `engineer` character,
+zero shared vocabulary with the dungeon crawler's occupations/context
+— validated clean through the exact same, unmodified
+`validate_manifest_cli.py`
+(`trainer/tests/test_manifest_validate.py::test_no_undeclared_or_orphaned_values_in_scifi_freighter_manifest`).
+Its corpus generator, `trainer/ngpt_trainer/scifi_engineer_corpus.py`,
+reuses `npc_service.prompt_fields()` unmodified — zero mechanism-code
+changes, exactly what portability requires.
+
 ## Why this doc exists
 
-This is the concrete artifact M11's porting guide points at. "Supply a
-file shaped like `docs/08-manifest-schema.md`" is a testable
-instruction a second project's engineer can follow without reading this
-project's source; "supply your own character bibles" was not.
+This is the concrete artifact M14's porting guide points at (M11 at
+the time this section was first written — see `docs/milestones/m14.md`'s
+own renumbering notes for why the milestone number moved three times
+while this doc's content didn't). "Supply a file shaped like
+`docs/08-manifest-schema.md`" is a testable instruction a second
+project's engineer can follow without reading this project's source;
+"supply your own character bibles" was not.
