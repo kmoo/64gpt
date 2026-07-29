@@ -182,3 +182,11 @@ target_include_directories(test_visit_frequency PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_visit_frequency PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_visit_frequency PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_visit_frequency COMMAND test_visit_frequency)
+
+# NPC's own current condition (docs/ideas-m7-living-npcs.md Part 4) --
+# see NpcCondition.h's own header comment for scope.
+add_executable(test_npc_condition test_npc_condition.cpp)
+target_include_directories(test_npc_condition PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_npc_condition PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_npc_condition PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_npc_condition COMMAND test_npc_condition)
