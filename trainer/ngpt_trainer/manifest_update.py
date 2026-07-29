@@ -21,14 +21,19 @@ m14.md's own recorded decision (2026-07-28/29) is full retrain, always,
 for goldens-never-drift reproducibility -- this always trains from
 scratch.
 """
+import random
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+import numpy as np
+import torch
+
 from ngpt_trainer.capacity_monitor import exceeds_split_trigger, held_out_loss_for_subset
 from ngpt_trainer.manifest_validate import find_undeclared_values, load_manifest
-from ngpt_trainer.model import qat_finetune, train_corpus_conditioned
+from ngpt_trainer.model import one_hot, qat_finetune, train_corpus_conditioned
 from ngpt_trainer.quantize import quantize
+from ngpt_trainer.ref_impl import gru_step
 from ngpt_trainer.vocab import Vocab
 
 Pairs = list[tuple[str, str]]
@@ -83,7 +88,6 @@ class ManifestUpdateResult:
 
 
 def _held_out_split(pairs: Pairs, seed: int, val_fraction: float) -> tuple[Pairs, Pairs]:
-    import random
     rng = random.Random(seed)
     shuffled = pairs[:]
     rng.shuffle(shuffled)
@@ -96,12 +100,6 @@ def _top1_agreement(model, q, vocab: Vocab, probe: Pairs) -> float:
     float top-1 prediction match on held-out probe pairs) -- duplicated
     rather than imported because that module is a project-specific
     build script, not library code this skill should depend on."""
-    import numpy as np
-    import torch
-
-    from ngpt_trainer.model import one_hot
-    from ngpt_trainer.ref_impl import gru_step
-
     match = total = 0
     with torch.no_grad():
         for prompt, response in probe:
@@ -149,6 +147,15 @@ def run_manifest_update(config: ManifestUpdateConfig) -> ManifestUpdateResult:
                 f"capacity[{check.name}]", not over,
                 f"held-out loss {current:.4f} vs baseline {check.baseline_loss:.4f} "
                 f"(threshold {check.threshold_pct}%)"))
+
+    if not all(g.passed for g in gates):
+        # A failed capacity gate already decides the outcome -- skip the
+        # QAT fine-tune (the single most expensive remaining step) rather
+        # than spend real GPU time computing agreement/divergence numbers
+        # for a manifest edit that's refused regardless of what they say.
+        return ManifestUpdateResult(
+            shipped=False, refused_at="acceptance_gates", gates=gates,
+            float_val_loss=float_val_loss)
 
     model = qat_finetune(
         model, train_pairs, val_pairs, vocab, seed=config.seed,

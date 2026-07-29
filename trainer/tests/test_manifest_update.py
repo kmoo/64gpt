@@ -142,6 +142,26 @@ def test_capacity_check_gate_can_fail_and_blocks_shipping(tmp_path):
     assert shipped_with == []
 
 
+def test_capacity_gate_failure_skips_qat_entirely(tmp_path):
+    # A failed capacity gate already decides the outcome (refused) -- QAT
+    # is the single most expensive remaining step, so it must not run for
+    # a manifest edit that's refused regardless of what QAT/agreement/
+    # divergence would have said. Locks in the early-exit optimization:
+    # no "agreement" gate present (proves _top1_agreement/qat_finetune
+    # never ran) and qat_val_loss stays None (float phase only ran).
+    check = CapacityCheck(
+        name="selena", predicate=lambda prompt: "N:selena" in prompt,
+        baseline_loss=1e-6, threshold_pct=5.0)
+
+    config, calls = _base_config(tmp_path, CLEAN_MANIFEST, capacity_checks=[check])
+    result = run_manifest_update(config)
+
+    assert result.shipped is False
+    assert result.qat_val_loss is None
+    assert isinstance(result.float_val_loss, float)
+    assert [g.name for g in result.gates] == ["capacity[selena]"]
+
+
 def test_divergence_gate_can_fail_and_blocks_shipping(tmp_path):
     def fake_divergence(q, vocab):
         return {"mood": 0.10}  # deliberately below any reasonable min
