@@ -174,3 +174,11 @@ target_include_directories(test_time_of_day PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_time_of_day PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_time_of_day PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_time_of_day COMMAND test_time_of_day)
+
+# Visit cadence (docs/ideas-m7-living-npcs.md Part 4) -- see
+# VisitFrequency.h's own header comment for scope.
+add_executable(test_visit_frequency test_visit_frequency.cpp)
+target_include_directories(test_visit_frequency PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_visit_frequency PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_visit_frequency PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_visit_frequency COMMAND test_visit_frequency)
