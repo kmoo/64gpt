@@ -1,7 +1,13 @@
 """CLI wrapper around run_manifest_update (docs/milestones/m14.md section
 1b). Fast toy runs on a tiny synthetic corpus, same scope discipline as
 test_manifest_update.py -- these exercise the CLI's argument handling
-and exit codes, not model quality."""
+and exit codes, not model quality.
+
+TRAIN_PAIRS uses real prompt_fields()-shaped R:/M:/C: tokens, not a
+placeholder shape with none at all -- _held_out_split() does combo-level
+holdout keyed on those tokens (test_manifest_update.py's own fix), and a
+fixture with no R:/M:/C: tokens collapses every pair into one
+(None, None, None) "combo," making train_pairs empty once it's held out."""
 import json
 
 from manifest_update_cli import main
@@ -35,12 +41,12 @@ from pathlib import Path
 from ngpt_trainer.manifest_update import ManifestUpdateConfig
 
 TRAIN_PAIRS = [
-    ("N:selena MOOD:happy ", "HELLO THERE FRIEND"),
-    ("N:selena MOOD:sad ", "OH NO WHAT HAPPENED"),
-    ("N:guard MOOD:happy ", "GOOD DAY CITIZEN"),
-    ("N:guard MOOD:sad ", "MOVE ALONG NOW"),
-    ("N:selena MOOD:cheerful ", "WHAT A LOVELY DAY"),
-    ("N:guard MOOD:cheerful ", "ALL QUIET ON DUTY"),
+    ("N:selena R:stranger M:happy C:greeting|", "HELLO THERE FRIEND"),
+    ("N:selena R:stranger M:sad C:farewell|", "OH NO WHAT HAPPENED"),
+    ("N:selena R:ally M:cheerful C:item-found|", "WHAT A LOVELY DAY"),
+    ("N:guard R:neutral M:happy C:greeting|", "GOOD DAY CITIZEN"),
+    ("N:guard R:neutral M:sad C:farewell|", "MOVE ALONG NOW"),
+    ("N:guard R:best_friend M:cheerful C:item-found|", "ALL QUIET ON DUTY"),
 ]
 
 CONFIG = ManifestUpdateConfig(
