@@ -198,6 +198,47 @@ The on-console proof is re-verified continuously:
       PASS, **44 ch/s restored** (M5-era bar) throughout. Full plan:
       `docs/ideas-coherence-rescue-plan.md`; record: `docs/milestones/
       m12.1.md`.
+- [x] **M12.2–M12.6** — five follow-on conditioning-mechanism experiments
+      chasing the standing coherence gap on Guard/Korrath/Elowen, none
+      shipping a new ROM (**v1.9 unchanged throughout** — every result
+      below is a host-only training experiment, `trainer/m12_*.py`):
+      richer per-character voice content (M12.2, 1.65 inv/line, worse
+      than M12.1's ≤1.00 gate); per-step `D:`/`M:` attribute conditioning
+      (M12.3, 2.33, worse still); the same mechanism with the redundant
+      prefix copy ablated (M12.4, **1.44**, the best of the five, still
+      short of the gate); FiLM hidden-state modulation (M12.5, 2.15,
+      worse than M12.4); densifying Korrath's/Elowen's thinnest phrase
+      banks (M12.6, 1.65, no better than M12.2). **Four honest negatives
+      and one real-but-insufficient improvement, all measured against
+      the same pre-registered ≤1.00 bar** — full tables in each file:
+      `docs/milestones/m12.2.md` · `m12.3.md` · `m12.4.md` · `m12.5.md`
+      · `m12.6.md`.
+- [ ] **M13** — LLM-as-judge phrase-bank distillation (in progress, no
+      ROM shipped). Mechanism 4 (splice judge-approved fragments into
+      Guard/Korrath's banks) ran its full pre-registered protocol —
+      **FINAL VERDICT: FAIL.** Both the approved arm (2.4375 inv/line)
+      and the rejected arm (2.75) landed worse than an untouched
+      baseline (1.50/1.81, noise floor 0.3125) — the judge's *relative*
+      ranking was correct (approved beat rejected) but the underlying
+      premise ("judge-approved content improves real training outcomes")
+      didn't hold. A real, unexpected negative, not a bug — full
+      protocol, numbers, and plausible-cause analysis: `docs/milestones/
+      m13.md`.
+- [ ] **M14** — the portability release: capacity-monitoring metric
+      (`trainer/ngpt_trainer/capacity_monitor.py`, real baseline numbers
+      — Selena 0.1356 / Shadewrath 0.1763 held-out float val loss),
+      capacity split-trigger decided and calibrated against real data
+      (5%, float-loss-only), the manifest-update skill (validate →
+      retrain → gate → ship-or-refuse, `manifest_update.py` +
+      `manifest_update_cli.py`), and the cross-genre portability proof —
+      a sci-fi `engineer` archetype ported through the unmodified
+      toolkit with zero mechanism-code changes (mechanism confirmed;
+      coherence at production density explicitly out of scope for this
+      lightweight proof). **A real hardware demo of the engineer
+      archetype is in progress** (booting it in Ares as the first
+      end-to-end, not just host-side Python, verification of the
+      portability mechanism) — this line updates once that lands. Full
+      record: `docs/milestones/m14.md`.
 
 ## Quickstart
 
@@ -251,7 +292,7 @@ embedded ML — start at 00 and read in order, or jump in:
 - [07 — Performance](docs/07-performance.md)
 - [ADR 0001 — Isolate decision logic into portable C++, host-test it](docs/adr/0001-host-test-portable-cpp-separate-from-libdragon.md)
 - [ADR 0002 — No Debug/Release build type; a source switch gates the boot self-test instead](docs/adr/0002-no-debug-release-build-type-source-level-switch-instead.md)
-- Milestone notes: [m0](docs/milestones/m0.md) · [m1](docs/milestones/m1.md) · [m2](docs/milestones/m2.md) · [m3](docs/milestones/m3.md) · [m4](docs/milestones/m4.md) · [m5](docs/milestones/m5.md) · [m6](docs/milestones/m6.md) · [m6.1](docs/milestones/m6.1.md)
+- Milestone notes: [m0](docs/milestones/m0.md) · [m1](docs/milestones/m1.md) · [m2](docs/milestones/m2.md) · [m3](docs/milestones/m3.md) · [m4](docs/milestones/m4.md) · [m5](docs/milestones/m5.md) · [m6](docs/milestones/m6.md) · [m6.1](docs/milestones/m6.1.md) · [m7](docs/milestones/m7.md) · [m8](docs/milestones/m8.md) · [m8.1](docs/milestones/m8.1.md) · [m9](docs/milestones/m9.md) · [m9.1](docs/milestones/m9.1.md) · [m9.2](docs/milestones/m9.2.md) · [m10](docs/milestones/m10.md) · [m11](docs/milestones/m11.md) · [m11.1](docs/milestones/m11.1.md) · [m12](docs/milestones/m12.md) · [m12.1](docs/milestones/m12.1.md) · [m12.2](docs/milestones/m12.2.md) · [m12.3](docs/milestones/m12.3.md) · [m12.4](docs/milestones/m12.4.md) · [m12.5](docs/milestones/m12.5.md) · [m12.6](docs/milestones/m12.6.md) · [m13](docs/milestones/m13.md) · [m14](docs/milestones/m14.md)
 
 ## Pinned versions
 
