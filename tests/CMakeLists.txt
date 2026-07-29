@@ -190,3 +190,11 @@ target_include_directories(test_npc_condition PRIVATE ${NGPT_GAME_USER_DIR})
 target_compile_options(test_npc_condition PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
 target_link_options(test_npc_condition PRIVATE ${SANITIZE_FLAGS})
 add_test(NAME test_npc_condition COMMAND test_npc_condition)
+
+# Location atmosphere (docs/ideas-m7-living-npcs.md Part 4) -- see
+# LocationAtmosphere.h's own header comment for scope.
+add_executable(test_location_atmosphere test_location_atmosphere.cpp)
+target_include_directories(test_location_atmosphere PRIVATE ${NGPT_GAME_USER_DIR})
+target_compile_options(test_location_atmosphere PRIVATE ${SANITIZE_FLAGS} -Wall -Wextra -Werror)
+target_link_options(test_location_atmosphere PRIVATE ${SANITIZE_FLAGS})
+add_test(NAME test_location_atmosphere COMMAND test_location_atmosphere)
