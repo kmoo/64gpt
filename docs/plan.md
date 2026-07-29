@@ -59,28 +59,32 @@ long survives.
   before/after comparison, same discipline as M11.1's/M12's, not bundled
   into whatever milestone is active when someone thinks of it.
 
-- **Long MPS training runs have zero on-disk checkpointing until the
-  very end (QAT) — raised 2026-07-26 during M12.5, PARTIALLY closed
-  2026-07-27/28 (overnight session).** Every `train_corpus_conditioned_
-  *`-style loop keeps its best-so-far weights as an in-memory
+**Closed:**
+
+- **Long MPS training runs had zero on-disk checkpointing until the
+  very end (QAT) — raised 2026-07-26 during M12.5, RESOLVED
+  2026-07-28/29 (overnight session).** Every `train_corpus_conditioned_
+  *`-style loop kept its best-so-far weights as an in-memory
   CPU-cloned `best_state`, reverted to on patience expiry — real
   protection against a *bad* epoch, but not against the *process* dying
   (a real GPU/Metal command-buffer OOM crashed M12.5's ~3-hour float
   phase mid-run; it recovered only because the corruption happened to
   manifest as unambiguous NaN and the process survived rather than
   getting hard-killed — neither was guaranteed, see the
-  m12.5-film-conditioning-negative memory). `train_corpus_conditioned_
-  attr`/`qat_finetune_attr` (the functions M13's own mechanism-4
-  validation runs use, `trainer/m13_mechanism4_validation.py`) now take
-  an optional `checkpoint_path` and write best-so-far state to disk on
-  every improving epoch, verified on a fast toy run
-  (`trainer/tests/test_checkpointing.py`). **Still open:** the plain
+  m12.5-film-conditioning-negative memory). An earlier overnight session
+  (2026-07-27/28) added `checkpoint_path` to `train_corpus_conditioned_
+  attr`/`qat_finetune_attr` only (the functions M13's own mechanism-4
+  validation runs use). This session finished the sweep: the plain
   `train_corpus_conditioned`/`qat_finetune` pair (the ones
-  `make_m12_1_blob.py`'s actual SHIPPED build path uses) and the `_film`
-  variant (where the original M12.5 incident happened) were not
-  touched — the risk this item exists to close is still real for those.
-
-**Closed:**
+  `make_m12_1_blob.py`'s actual SHIPPED build path uses,
+  `trainer/tests/test_checkpointing_plain.py`) and the `_film` variant
+  (where the original M12.5 incident happened,
+  `trainer/tests/test_checkpointing_film.py`) both now take the same
+  optional `checkpoint_path` and write best-so-far state to disk on
+  every improving epoch. All three pairs verified on fast toy runs, TDD
+  red-then-green for each (confirmed `TypeError` before implementing).
+  Still only verified at toy scale, not a claim about production
+  training-run behavior beyond "the file gets written and reloads."
 
 - **Back-port the golden-generation `max_len` fix to earlier
   `make_mN_blob.py` scripts — raised 2026-07-23, RESOLVED 2026-07-27/28
