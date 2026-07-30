@@ -224,21 +224,24 @@ The on-console proof is re-verified continuously:
       didn't hold. A real, unexpected negative, not a bug — full
       protocol, numbers, and plausible-cause analysis: `docs/milestones/
       m13.md`.
-- [ ] **M14** — the portability release: capacity-monitoring metric
-      (`trainer/ngpt_trainer/capacity_monitor.py`, real baseline numbers
-      — Selena 0.1356 / Shadewrath 0.1763 held-out float val loss),
-      capacity split-trigger decided and calibrated against real data
-      (5%, float-loss-only), the manifest-update skill (validate →
-      retrain → gate → ship-or-refuse, `manifest_update.py` +
+- [x] **M14** — the portability release (landed as a code/docs commit,
+      no new versioned ROM — same convention as M12.2-M12.6):
+      capacity-monitoring metric (`trainer/ngpt_trainer/capacity_monitor.py`,
+      real baseline numbers — Selena 0.1356 / Shadewrath 0.1763 held-out
+      float val loss), capacity split-trigger decided and calibrated
+      against real data (5%, float-loss-only), the manifest-update skill
+      (validate → retrain → gate → ship-or-refuse, `manifest_update.py` +
       `manifest_update_cli.py`), and the cross-genre portability proof —
       a sci-fi `engineer` archetype ported through the unmodified
-      toolkit with zero mechanism-code changes (mechanism confirmed;
-      coherence at production density explicitly out of scope for this
-      lightweight proof). **A real hardware demo of the engineer
-      archetype is in progress** (booting it in Ares as the first
-      end-to-end, not just host-side Python, verification of the
-      portability mechanism) — this line updates once that lands. Full
-      record: `docs/milestones/m14.md`.
+      toolkit with zero mechanism-code changes. **Hardware-verified**:
+      `trainer/make_m14_demo_blob.py` booted the archetype live in Ares
+      — SELFTEST PASS/RSP ON/XCHK PASS both raw (honest, matching the
+      measured 5.125 vs 4.375 invented-words/line gap) and with M12.1's
+      full fix stack applied (trie guard + min-p, zero invented words) —
+      the first time this mechanism has run on the actual console
+      engine, not just host-side Python. Coherence at production
+      density remains its own future corpus investment, explicitly out
+      of scope here. Full record: `docs/milestones/m14.md`.
 
 ## Quickstart
 
